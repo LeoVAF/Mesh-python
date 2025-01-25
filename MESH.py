@@ -107,14 +107,12 @@ class MESH(Operation):
         
         # Receive the algorithm parameters
         self.params = params
-
         # Initizaling Operation class with some operations of MESH
         super().__init__()
         # Chosing the operations just one time
         self.global_best_attribution = super().get_global_best_attribution(params.global_best_attribution_type)
         self.differential_mutation_pool = super().get_differential_mutation_pool(params.dm_pool_type)
         self.differential_mutation_strategy = super().get_differential_mutation_strategy(params.de_mutation_type)
-        
         # Use a random seed if there is
         if(params.random_state):
             np.random.seed(params.random_state)
@@ -145,14 +143,6 @@ class MESH(Operation):
         # Evaluate the initial population
         fitnesses, min_evaluations = self.fitness_evaluations(self.population.position)
         self.population.fitness[:min_evaluations] = fitnesses
-    
-    ''' Evaluate the fitness given a particle position array '''
-    def fitness_evaluation(self, args):
-        # Update the fitness counter and check if the algorithm must stop
-        self.fitness_eval_count += 1
-        if self.fitness_eval_count > self.params.max_fit_eval:
-            raise StoppingAlgorithm()
-        return self.fitness_function(args)
     
     ''' Evaluate the fitness given a particle position matrix '''
     def fitness_evaluations(self, X):
