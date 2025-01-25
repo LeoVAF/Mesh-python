@@ -52,8 +52,8 @@ class MESH_Params:
     def __init__(self,
                  objective_dim, # Number of objectives
                  position_dim, # Design space dimension
-                 position_max_value, # A np.array with each upper bound of problem
-                 position_min_value, # A np.array with each lower bound of problem
+                 position_max_value, # A array with each upper bound of problem
+                 position_min_value, # A array with each lower bound of problem
                  population_size, # Population size
                  memory_size, # Number of particles in memory
                  global_best_attribution_type, # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4 (E3 and E4 with problem)
@@ -151,13 +151,26 @@ class MESH(Operation):
         # Evaluate the initial population
         self.population.fitness[:, :] = np.apply_along_axis(self.fitness_evaluation, 1, self.population.position)
     
-    ''' Evaluate the fitness given a particle position '''
-    def fitness_evaluation(self, *args):
+    ''' Evaluate the fitness given a particle position array '''
+    def fitness_evaluation(self, args):
         # Update the fitness counter and check if the algorithm must stop
         self.fitness_eval_count += 1
         if self.fitness_eval_count > self.params.max_fit_eval:
             raise StoppingAlgorithm()
-        return self.fitness_function(*args)
+        return self.fitness_function(args)
+    
+    ''' Evaluate the fitness given a particle position matrix '''
+    def fitness_evaluations(self, X):
+        # Calculate the minimum number of fitness evaluations
+        min_evaluations = min(self.params.max_fit_eval - self.fitness_eval_count, len(X))
+        # Check if the stopping criterion reached
+        if min_evaluations == 0:
+            raise StoppingAlgorithm()
+        # Update the fitness counter
+        self.fitness_eval_count += min_evaluations
+        # Slice the particle positions for the minimum evaluations
+        X_min = X[:min_evaluations]
+        return np.array([self.fitness_function(x) for x in X_min]), min_evaluations
     
     ''' Check if an array x dominates an array or matrix (axis=1) y (vectorized) '''
     def np_dominate(self, x, y, axis=0):
@@ -202,7 +215,7 @@ class MESH(Operation):
         personal_guides = self.population.personal_best_list
         random_indices = np.random.randint(0, [len(pb_list) for pb_list in personal_guides])
         # Get matrix of personal best list positions
-        pb_positions = np.array([pb_list[idx].position for pb_list, idx in zip(personal_guides, random_indices)])
+        pb_positions = np.array([pb_list[idx].position for pb_list, idx in zip(personal_guides, random_indices)], copy=False)
         # Get the global best positions
         gb_positions = self.population.global_best
         # Get the positions
@@ -237,7 +250,7 @@ class MESH(Operation):
         # self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
         ''' ################################################################################################################################################## '''
         # Evaluate the fitness function
-        self.population.fitness[:, :] = np.array([self.fitness_evaluation(x) for x in positions])
+        self.population.fitness[:, :] = np.array([self.fitness_evaluation(x) for x in positions], copy=False)
 
     ''' Make the selection of the population between the previous and current population '''
     def population_selection(self, prev_position, prev_velocity, prev_fitness):
@@ -265,46 +278,24 @@ class MESH(Operation):
         weights = self.weights
         # Get the values from truncated normal disribution
         weights[:4, :] = truncnorm.rvs(0, 1, size=(4, population_size))
-        weights[4, :] = truncnorm.rvs(0, 0.5, size=population_size)
-        weights[5, :] = truncnorm.rvs(0, 2, size=population_size)
         # Multiply by the mutation rate
         np.multiply(weights, mutation_rate, out=weights)
-        # Make the clips to keep the values ​​within the boundaries
-        weights_slice = weights[:4, :]
-        np.clip(0, 1, weights_slice, out=weights_slice)
-        weights_slice = weights[4, :]
-        np.clip(0, 0.5, weights_slice, out=weights_slice)
-        weights_slice = weights[5, :]
-        np.clip(0, 2, weights_slice, out=weights_slice)
     
     ''' Apply a strategy from differential evolution '''
     #########################################################################################################################################################################
     def differential_mutation(self):
-        # Get the population fitness
-        fitnesses = self.population.fitness
-        # Get the population positions
-        positions = self.population.position
-        # Generating random indexes for each sublist
-        personal_guides = self.population.personal_best_list
-        random_indices = np.random.randint(0, [len(pb_list) for pb_list in personal_guides])
-        # Get matrix of personal best list positions
-        pb_positions = np.array([pb_list[idx].position for pb_list, idx in zip(personal_guides, random_indices)])
-        # A matrix of pool masks in each row
-        xr_pool_tensor = self.differential_mutation_pool(pb_positions)
-        # For each personal best list
-        for idx in range(self.params.population_size):
-            # Choose a personal best randomly
-            personal_best_position = pb_positions[idx]
-            xr_pool = xr_pool_tensor[idx]
-            # Apply a strategy from differential particle
-            xst, strategy_applied = self.differential_mutation_strategy(idx, personal_best_position, xr_pool)
-            if strategy_applied:
-                # Update the current particle if the new particle from DE strategy is better
-                xst_fit = self.fitness_evaluation(xst)
-                if self.dominates(xst_fit, fitnesses[idx]):
-                    positions[idx] = xst
-                    fitnesses[idx] = xst_fit
-                    self.update_personal_best(idx)
+        # A array of a matrix pool in each row
+        xr_pool_tensor = self.differential_mutation_pool()
+        # Apply a strategy
+        xst, valid_idxs = self.differential_mutation_strategy(xr_pool_tensor)
+        # Update the current particle if the new particle from the strategy is better
+        fitnesses, min_evaluations = self.fitness_evaluations(xst)
+        min_valid_idxs = valid_idxs[:min_evaluations]
+        pop_fitnesses = self.population.fitness[min_valid_idxs]
+        domination_mask = self.np_dominate(fitnesses, pop_fitnesses, axis=1)
+        update_idxs = min_valid_idxs[domination_mask]
+        self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
+        self.population.fitness[update_idxs] = fitnesses[domination_mask]
 
     ''' Update the memory '''
     def memory_update(self):
