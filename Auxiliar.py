@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
+from scipy.stats import truncnorm
 
 ''' MESH operations (used in MESH) '''
 class Operation():
@@ -126,7 +127,7 @@ class Operation():
             fronts = self.fronts
             # Generate the random indices for ranks greater than zero
             random_indices = np.random.randint(0, [len(fronts[r]) for r in prev_front_idxs])
-            rank_non_zero_idxs = np.array([fronts[idx][random_indices[i]] for i, idx in enumerate(prev_front_idxs)])
+            rank_non_zero_idxs = np.array([fronts[idx][random_indices[i]] for i, idx in enumerate(prev_front_idxs)], copy=False)
             # Set the global best from previous front
             self.population.global_best[rank_non_zero_mask] = self.population.position[rank_non_zero_idxs]
 
@@ -135,14 +136,13 @@ class Operation():
         return self.dm_pool_type[type]
     
     ''' Return a pool tensor of particles from population '''
-    def differential_mutation_pool_from_population(self, pb_positions):
+    def differential_mutation_pool_from_population(self):
         # Get the positions
         positions = self.population.position
         # A array with each position as a matrix with just one row vector
         position_tensor = np.expand_dims(positions, axis=1)
-        pb_position_tensor = np.expand_dims(pb_positions, axis=1)
         # Get the pool masks
-        pool_masks = np.any((pb_position_tensor != positions) | (position_tensor != positions), axis=2) & (~self.np_dominate(position_tensor, positions, axis=2))
+        pool_masks = np.any(position_tensor != positions, axis=2) & (~self.np_dominate(position_tensor, positions, axis=2))
         # Get the indices to generate the pool with subarrays
         split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
         # Get the indices of the positions for each row of pool masks
@@ -151,65 +151,72 @@ class Operation():
         return np.split(positions[col_indices], split_indices)
 
     ''' Return a pool of particles from memory '''
-    def differential_mutation_pool_from_memory(self, pb_positions):
+    def differential_mutation_pool_from_memory(self):
         # Get the positions
         positions = self.population.position
         # A array with each position as a matrix with just one row vector
         position_tensor = np.expand_dims(positions, axis=1)
-        pb_position_tensor = np.expand_dims(pb_positions, axis=1)
         # Get the memory positions
         mem_positions = self.memory.position
         # Get the pool masks
-        pool_masks = np.any((pb_position_tensor != mem_positions) | (position_tensor != mem_positions), axis=2) & (~self.np_dominate(position_tensor, mem_positions, axis=2))
+        pool_masks = np.any(position_tensor != mem_positions, axis=2) & (~self.np_dominate(position_tensor, mem_positions, axis=2))
         # Get the indices to generate the pool with subarrays
         split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
         # Get the indices of the positions for each row of pool masks
         _, col_indices = np.where(pool_masks)
         # Return the pool
-        return np.split(mem_positions[col_indices], split_indices)
+        return np.split(positions[col_indices], split_indices)
 
     ''' Return a pool of particles from population and memory '''
-    def differential_mutation_pool_from_population_and_memory(self, pb_positions):
+    def differential_mutation_pool_from_population_and_memory(self):
         # Get the positions
         positions = self.population.position
         # Get the memory positions
         mem_positions = self.memory.position
         # A array with each position as a matrix with just one row vector
         position_tensor = np.expand_dims(positions, axis=1)
-        pb_positions_tensor = np.expand_dims(pb_positions, axis=1)
         # Concatenate the population position and the memory position
         pop_and_mem_positions = np.concatenate((positions, mem_positions), axis=0)
         # Get the pool masks
-        pool_masks = np.any((pb_positions_tensor != pop_and_mem_positions) | (position_tensor != pop_and_mem_positions), axis=2) & (~self.np_dominate(position_tensor, pop_and_mem_positions, axis=2))
+        pool_masks = np.any(position_tensor != pop_and_mem_positions, axis=2) & (~self.np_dominate(position_tensor, pop_and_mem_positions, axis=2))
         # Get the indices to generate the pool with subarrays
         split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
         # Get the indices of the positions for each row of pool masks
         _, col_indices = np.where(pool_masks)
         # Return the pool
-        return np.split(pop_and_mem_positions[col_indices], split_indices)
+        return np.split(positions[col_indices], split_indices)
     
     ''' Choose the Differential Mutation strategy '''
     def get_differential_mutation_strategy(self, type):
         return self.de_mutation_type[type]
 
     ''' Applies the DE/rand/1/bin '''
-    def rand_1_bin(self, idx, personal_best_position, xr_pool):
-        if len(xr_pool) >= 3:    
-            # Get three particle positions from pool randomly
-            xr_idx = np.random.choice(np.arange(xr_pool.shape[0]), 3, replace=False)
-            xr = xr_pool[xr_idx]
-            # Apply the DE\rand\1\Bin strategy
-            xst = xr[0] + self.weights[5][idx] * (xr[1] - xr[2])
-            np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-            # Apply the mutation operation
-            mutation_index = np.random.randint(0, self.params.position_dim)
-            mutation_chance = np.random.uniform(0.0, 1.0, self.params.position_dim)
-            mutation_mask = (mutation_chance < self.weights[4][idx]) | idx == mutation_index
-            xst[mutation_mask] = personal_best_position[mutation_mask]
-            return xst, True
-        else:
-            return None, False
+    def rand_1_bin(self, xr_pool_tensor):
+        # Get the mask for the pools with valid length
+        valid_mask = np.array([len(x) >= 3 for x in xr_pool_tensor], copy=False)
+        valid_idxs = np.flatnonzero(valid_mask)
+        idx_size = len(valid_idxs)
+        # Get three random indices for particle positions from pool
+        xr = np.array([xr_pool_tensor[idx][np.random.choice(len(xr_pool_tensor[idx]), 3, replace=False)] for idx in valid_idxs], order='F', copy=False)
+        # Get the operation weight
+        operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1))
+        np.multiply(operation_weight, self.params.mutation_rate, out=operation_weight)
+        # Apply the DE\rand\1\bin strategy
+        xst = xr[:, 1] - xr[:, 2]
+        np.multiply(xst, operation_weight, out=xst)
+        np.add(xst, xr[:, 0], out=xst)
+        np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
+        # Apply the mutation operator
+        mutation_weight = truncnorm.rvs(0, 0.5, size=(idx_size, 1))
+        np.multiply(mutation_weight, self.params.mutation_rate, out=mutation_weight)
+        mutation_index = np.random.randint(0, self.params.position_dim, size=idx_size)
+        mutation_chance = np.random.uniform(0.0, 1.0, size=(idx_size, self.params.position_dim))
+        mutation_mask = mutation_chance < mutation_weight
+        mutation_mask[np.arange(idx_size), mutation_index] = True
+        xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+        return xst, valid_idxs
     
+    ########################################################################################################################################################
     ''' Applies the DE/rand/2/bin '''
     def rand_2_bin(self, idx, personal_best_position, xr_pool):
         if len(xr_pool) >= 5:
