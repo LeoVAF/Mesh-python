@@ -134,13 +134,7 @@ class MESH(Operation):
         self.fitness_function = fitness_function
         self.fitness_eval_count = 0
         # Create a random matrix (4 x population_size) for w1 and two random vectors for w2 and w3
-        w1 = np.random.uniform(0.0, 1.0, [4, params.population_size])
-        w2 = np.random.uniform(0.0, 0.5, [1, params.population_size])
-        w3 = np.random.uniform(0.0, 2.0, [1, params.population_size])
-        # Create a new matrix with the weights by concatenating them by rows
-        self.weights = np.concatenate((w1,w2,w3),axis=0)
-        # A variable to check if a particle was replaced by a particle from a strategy
-        self.update_from_differential_mutation = False
+        self.weights = np.random.uniform(0.0, 1.0, [4, params.population_size])
         # Store some pre-calculated data
         self.pre_calculated = PreCalculated(params.objective_dim, params.position_dim, params.population_size)
         # Variable for logging memory
@@ -149,7 +143,8 @@ class MESH(Operation):
     ''' Initialize the population randomly '''
     def init_population_randomly(self):
         # Evaluate the initial population
-        self.population.fitness[:, :] = np.apply_along_axis(self.fitness_evaluation, 1, self.population.position)
+        fitnesses, min_evaluations = self.fitness_evaluations(self.population.position)
+        self.population.fitness[:min_evaluations] = fitnesses
     
     ''' Evaluate the fitness given a particle position array '''
     def fitness_evaluation(self, args):
@@ -170,7 +165,7 @@ class MESH(Operation):
         self.fitness_eval_count += min_evaluations
         # Slice the particle positions for the minimum evaluations
         X_min = X[:min_evaluations]
-        return np.array([self.fitness_function(x) for x in X_min]), min_evaluations
+        return np.array([self.fitness_function(x) for x in X_min], copy=False), min_evaluations
     
     ''' Check if an array x dominates an array or matrix (axis=1) y (vectorized) '''
     def np_dominate(self, x, y, axis=0):
@@ -250,7 +245,8 @@ class MESH(Operation):
         # self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
         ''' ################################################################################################################################################## '''
         # Evaluate the fitness function
-        self.population.fitness[:, :] = np.array([self.fitness_evaluation(x) for x in positions], copy=False)
+        fitnesses, min_evaluations = self.fitness_evaluations(self.population.position)
+        self.population.fitness[:min_evaluations] = fitnesses
 
     ''' Make the selection of the population between the previous and current population '''
     def population_selection(self, prev_position, prev_velocity, prev_fitness):
@@ -271,15 +267,8 @@ class MESH(Operation):
 
     ''' Mutate the weights by a truncated normal distribution '''
     def mutate_weights(self):
-        # Get the population size and the mutation rate
-        population_size = self.params.population_size
-        mutation_rate = self.params.mutation_rate
-        # Get the weights
-        weights = self.weights
-        # Get the values from truncated normal disribution
-        weights[:4, :] = truncnorm.rvs(0, 1, size=(4, population_size))
-        # Multiply by the mutation rate
-        np.multiply(weights, mutation_rate, out=weights)
+        # Get the values from truncated normal distribution
+        self.weights[:, :] = truncnorm.rvs(0, 1, size=(4, self.params.population_size)) * self.params.mutation_rate
     
     ''' Apply a strategy from differential evolution '''
     #########################################################################################################################################################################
@@ -294,8 +283,13 @@ class MESH(Operation):
         pop_fitnesses = self.population.fitness[min_valid_idxs]
         domination_mask = self.np_dominate(fitnesses, pop_fitnesses, axis=1)
         update_idxs = min_valid_idxs[domination_mask]
+        # Update the positions and the fitnesses
         self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
         self.population.fitness[update_idxs] = fitnesses[domination_mask]
+        # If a particle was replaced for a particle from a strategy
+        if len(update_idxs):
+            self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
+            self.memory_update()
 
     ''' Update the memory '''
     def memory_update(self):
@@ -375,11 +369,6 @@ class MESH(Operation):
                     # Calculate Xst for each particle
                     self.differential_mutation()
                     ''' ############################################################################### '''
-                    # If any particle is replaced by its Xst
-                    if self.update_from_differential_mutation:
-                        self.fronts, self.population.rank = self.get_fronts(self.population.fitness)
-                        self.memory_update()
-                        self.update_from_differential_mutation = False
                     # Mutate the weights
                     self.mutate_weights()
                     # Update global best
