@@ -261,7 +261,6 @@ class MESH(Operation):
         self.weights[:, :] = truncnorm.rvs(0, 1, size=(4, self.params.population_size)) * self.params.mutation_rate
     
     ''' Apply a strategy from differential evolution '''
-    #########################################################################################################################################################################
     def differential_mutation(self):
         # A array of a matrix pool in each row
         xr_pool_tensor = self.differential_mutation_pool()
