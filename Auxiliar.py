@@ -211,20 +211,23 @@ class Operation():
         valid_mask = [len(x) >= valid_size for x in xr_pool_tensor]
         valid_idxs = np.flatnonzero(valid_mask)
         idx_size = len(valid_idxs)
-        # Get three random indices for particle positions from pool
-        xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
-        # Get the operation weight
-        operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
-        # Apply the DE\rand\1\bin strategy
-        xst = xr[:, 1] - xr[:, 2]
-        xst *= operation_weight
-        xst += xr[:, 0]
-        # Clip the positions to the boundaries
-        np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-        # Apply the mutation operator
-        mutation_mask = self.mutation_operator_bin(idx_size)
-        xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
-        return xst, valid_idxs
+        if idx_size:
+            # Get three random indices for particle positions from pool
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            # Get the operation weight
+            operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+            # Apply the DE\rand\1\bin strategy
+            xst = xr[:, 1] - xr[:, 2]
+            xst *= operation_weight
+            xst += xr[:, 0]
+            # Clip the positions to the boundaries
+            np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
+            # Apply the mutation operator
+            mutation_mask = self.mutation_operator_bin(idx_size)
+            xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+            return xst, valid_idxs
+        else:
+            return np.array([]), np.array([])
     
     ''' Applies the DE/rand/2/bin '''
     def rand_2_bin(self, xr_pool_tensor):
@@ -234,22 +237,25 @@ class Operation():
         valid_mask = [len(x) >= valid_size for x in xr_pool_tensor]
         valid_idxs = np.flatnonzero(valid_mask)
         idx_size = len(valid_idxs)
-        # Get three random indices for particle positions from pool
-        xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
-        # Get the operation weight
-        operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
-        # Apply the DE\rand\2\bin strategy
-        xst = xr[:, 3] - xr[:, 4]
-        xst += xr[:, 1]
-        xst -= xr[:, 2]
-        xst *= operation_weight
-        xst += xr[:, 0]
-        # Clip the positions to the boundaries
-        np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-        # Apply the mutation operator
-        mutation_mask = self.mutation_operator_bin(idx_size)
-        xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
-        return xst, valid_idxs
+        if idx_size:
+            # Get three random indices for particle positions from pool
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            # Get the operation weight
+            operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+            # Apply the DE\rand\2\bin strategy
+            xst = xr[:, 3] - xr[:, 4]
+            xst += xr[:, 1]
+            xst -= xr[:, 2]
+            xst *= operation_weight
+            xst += xr[:, 0]
+            # Clip the positions to the boundaries
+            np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
+            # Apply the mutation operator
+            mutation_mask = self.mutation_operator_bin(idx_size)
+            xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+            return xst, valid_idxs
+        else:
+            return np.array([]), np.array([])
     
     ''' Applies the DE/best/1/bin '''
     def best_1_bin(self, xr_pool_tensor):
@@ -261,20 +267,23 @@ class Operation():
         valid_mask = [len(x) >= valid_size for x in xr_pool_tensor]
         valid_idxs = np.flatnonzero(valid_mask)
         idx_size = len(valid_idxs)
-        # Get three random indices for particle positions from pool
-        xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
-        # Get the operation weight
-        operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
-        # Apply the DE\rand\1\bin strategy
-        xst = xr[:, 0] - xr[:, 1]
-        xst *= operation_weight
-        xst += self.population.global_best[valid_idxs]
-        # Clip the positions to the boundaries
-        np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-        # Apply the mutation operator
-        mutation_mask = self.mutation_operator_bin(idx_size)
-        xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
-        return xst, valid_idxs
+        if idx_size:
+            # Get three random indices for particle positions from pool
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            # Get the operation weight
+            operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+            # Apply the DE\rand\1\bin strategy
+            xst = xr[:, 0] - xr[:, 1]
+            xst *= operation_weight
+            xst += self.population.global_best[valid_idxs]
+            # Clip the positions to the boundaries
+            np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
+            # Apply the mutation operator
+            mutation_mask = self.mutation_operator_bin(idx_size)
+            xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+            return xst, valid_idxs
+        else:
+            return np.array([]), np.array([])
     
     ''' Applies the DE/current-to-best/1/bin '''
     def current_to_best_1_bin(self, xr_pool_tensor):
@@ -286,23 +295,26 @@ class Operation():
         valid_mask = [len(x) >= valid_size for x in xr_pool_tensor]
         valid_idxs = np.flatnonzero(valid_mask)
         idx_size = len(valid_idxs)
-        # Get three random indices for particle positions from pool
-        xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
-        # Get the operation weight
-        operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
-        # Apply the DE\rand\1\bin strategy
-        positions = self.population.position
-        xst = xr[:, 0] - xr[:, 1]
-        xst += self.population.global_best[valid_idxs]
-        xst -= positions[valid_idxs]
-        xst *= operation_weight
-        xst += positions[valid_idxs]
-        # Clip the positions to the boundaries
-        np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-        # Apply the mutation operator
-        mutation_mask = self.mutation_operator_bin(idx_size)
-        xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
-        return xst, valid_idxs
+        if idx_size:
+            # Get three random indices for particle positions from pool
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            # Get the operation weight
+            operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+            # Apply the DE\rand\1\bin strategy
+            positions = self.population.position
+            xst = xr[:, 0] - xr[:, 1]
+            xst += self.population.global_best[valid_idxs]
+            xst -= positions[valid_idxs]
+            xst *= operation_weight
+            xst += positions[valid_idxs]
+            # Clip the positions to the boundaries
+            np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
+            # Apply the mutation operator
+            mutation_mask = self.mutation_operator_bin(idx_size)
+            xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+            return xst, valid_idxs
+        else:
+            return np.array([]), np.array([])
     
     ''' Applies the DE/current-to-rand/1/bin '''
     def current_to_rand_1_bin(self, xr_pool_tensor):
@@ -312,22 +324,24 @@ class Operation():
         valid_mask = [len(x) >= valid_size for x in xr_pool_tensor]
         valid_idxs = np.flatnonzero(valid_mask)
         idx_size = len(valid_idxs)
-        # Get three random indices for particle positions from pool
-        xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
-        # Get the operation weight
-        operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
-        # Apply the DE\rand\2\bin strategy
-        xst = xr[:, 2] - xr[:, 3]
-        xst += xr[:, 0]
-        xst -= xr[:, 1]
-        xst *= operation_weight
-        xst += self.population.position[valid_idxs]
-        # Clip the positions to the boundaries
-        np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-        # Apply the mutation operator
-        mutation_mask = self.mutation_operator_bin(idx_size)
-        xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
-        return xst, valid_idxs
+        if idx_size:
+            # Get three random indices for particle positions from pool
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            # Get the operation weight
+            operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+            # Apply the DE\rand\2\bin strategy
+            xst = xr[:, 2] - xr[:, 3]
+            xst += xr[:, 0]
+            xst -= xr[:, 1]
+            xst *= operation_weight
+            xst += self.population.position[valid_idxs]
+            # Clip the positions to the boundaries
+            np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
+            # Apply the mutation operator
+            mutation_mask = self.mutation_operator_bin(idx_size)
+            xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+            return xst, valid_idxs
+            
 
 ''' Algorithm stop '''
 class StoppingAlgorithm(Exception):

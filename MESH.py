@@ -146,11 +146,13 @@ class MESH(Operation):
     
     ''' Evaluate the fitness given a particle position matrix '''
     def fitness_evaluations(self, X):
-        # Calculate the minimum number of fitness evaluations
-        min_evaluations = min(self.params.max_fit_eval - self.fitness_eval_count, len(X))
+        # Calculate remanining evaluations
+        remaining_eval = self.params.max_fit_eval - self.fitness_eval_count
         # Check if the stopping criterion reached
-        if min_evaluations == 0:
+        if remaining_eval == 0:
             raise StoppingAlgorithm()
+        # Calculate the minimum number of fitness evaluations
+        min_evaluations = min(remaining_eval, len(X))
         # Update the fitness counter
         self.fitness_eval_count += min_evaluations
         # Slice the particle positions for the minimum evaluations
@@ -266,20 +268,21 @@ class MESH(Operation):
         xr_pool_tensor = self.differential_mutation_pool()
         # Apply a strategy
         xst, valid_idxs = self.differential_mutation_strategy(xr_pool_tensor)
-        # Update the current particle if the new particle from the strategy is better
-        fitnesses, min_evaluations = self.fitness_evaluations(xst)
-        min_valid_idxs = valid_idxs[:min_evaluations]
-        pop_fitnesses = self.population.fitness[min_valid_idxs]
-        domination_mask = self.np_dominate(fitnesses, pop_fitnesses, axis=1)
-        update_idxs = min_valid_idxs[domination_mask]
-        # Update the positions and the fitnesses
-        self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
-        self.population.fitness[update_idxs] = fitnesses[domination_mask]
-        # If a particle was replaced for a particle from a strategy update some information
-        if len(update_idxs):
-            self.update_personal_best(update_idxs)
-            self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-            self.memory_update()
+        if len(xst):
+            # Update the current particle if the new particle from the strategy is better
+            fitnesses, min_evaluations = self.fitness_evaluations(xst)
+            min_valid_idxs = valid_idxs[:min_evaluations]
+            pop_fitnesses = self.population.fitness[min_valid_idxs]
+            domination_mask = self.np_dominate(fitnesses, pop_fitnesses, axis=1)
+            update_idxs = min_valid_idxs[domination_mask]
+            # Update the positions and the fitnesses
+            self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
+            self.population.fitness[update_idxs] = fitnesses[domination_mask]
+            # If a particle was replaced for a particle from a strategy update some information
+            if len(update_idxs):
+                self.update_personal_best(update_idxs)
+                self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
+                self.memory_update()
 
     ''' Update the memory '''
     def memory_update(self):
