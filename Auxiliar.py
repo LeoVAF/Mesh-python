@@ -165,18 +165,16 @@ class Operation():
         # Get the indices of the positions for each row of pool masks
         _, col_indices = np.where(pool_masks)
         # Return the pool
-        return np.split(positions[col_indices], split_indices)
+        return np.split(mem_positions[col_indices], split_indices)
 
     ''' Return a pool of particles from population and memory '''
     def differential_mutation_pool_from_population_and_memory(self):
         # Get the positions
         positions = self.population.position
-        # Get the memory positions
-        mem_positions = self.memory.position
         # A array with each position as a matrix with just one row vector
         position_tensor = np.expand_dims(positions, axis=1)
         # Concatenate the population position and the memory position
-        pop_and_mem_positions = np.concatenate((positions, mem_positions), axis=0)
+        pop_and_mem_positions = np.concatenate((positions, self.memory.position), axis=0)
         # Get the pool masks
         pool_masks = np.any(position_tensor != pop_and_mem_positions, axis=2) & (~self.np_dominate(position_tensor, pop_and_mem_positions, axis=2))
         # Get the indices to generate the pool with subarrays
@@ -184,7 +182,7 @@ class Operation():
         # Get the indices of the positions for each row of pool masks
         _, col_indices = np.where(pool_masks)
         # Return the pool
-        return np.split(positions[col_indices], split_indices)
+        return np.split(pop_and_mem_positions[col_indices], split_indices)
     
     ''' Choose the Differential Mutation strategy '''
     def get_differential_mutation_strategy(self, type):
