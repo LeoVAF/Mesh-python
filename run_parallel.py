@@ -17,7 +17,7 @@ def run_mesh(experiment_name,
 	position_min_value = np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
 	position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
 	max_iterations = 0 # Maximum number of iterations (not used if it less than one)
-	max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
+	max_fitness_eval = 3000 # Maximum fitness evaluations (not used if it is less than one)
 	population_size = 100 # Population size
 	num_final_solutions = population_size # Number of final solutions
 	memory_size = population_size # Maximum number of particles in memory
@@ -98,7 +98,7 @@ def list_of_funcs(func_name, position_dim, objective_dim):
 
 if __name__ == "__main__":
 	# Parameters list
-	mesh_exp = ['zdt1']
+	mesh_exp = ['zdt2']
 	mesh_runs = [1]
 	mesh_pos_dim = [10]
 	mesh_obj_dim = [2]
