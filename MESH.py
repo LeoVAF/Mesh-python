@@ -275,8 +275,9 @@ class MESH(Operation):
         # Update the positions and the fitnesses
         self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
         self.population.fitness[update_idxs] = fitnesses[domination_mask]
-        # If a particle was replaced for a particle from a strategy
+        # If a particle was replaced for a particle from a strategy update some information
         if len(update_idxs):
+            self.update_personal_best(update_idxs)
             self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
             self.memory_update()
 
@@ -309,32 +310,33 @@ class MESH(Operation):
             self.memory.fitness = selected_fitness[idxs]
 
     ''' Update the list of particle's personal best '''
-    def update_personal_best(self, idx):
-        # Get the current personal best list
-        pb_list = self.population.personal_best_list[idx]
-        # Get the current particle fitness
-        fitness = self.population.fitness[idx]
-        # Particles that will be removed from the list of personal best
-        removal_particles = set()
-        # Flag to indicate that a particle from personal best list will be removed
-        is_changed = False
-        # Check if the current particle is better than the previous particles from the list of personal best
-        for pb in pb_list:
-            # If the current particle is dominated by at least one personal best, then ignore the current particle
-            if(self.dominates(pb.fitness, fitness)):
-                return
-            # If the current particle dominates this personal best, then add this particle in a removal list
-            elif(self.dominates(fitness, pb.fitness)):
-                is_changed = True
-                removal_particles.add(pb)
-        # Filter the personal bests if there are changes
-        if is_changed:
+    def update_personal_best(self, indices):
+        for idx in indices:
+            # Get the current personal best list
+            pb_list = self.population.personal_best_list[idx]
+            # Get the current particle fitness
+            fitness = self.population.fitness[idx]
+            # Particles that will be removed from the list of personal best
+            removal_particles = set()
+            # Flag to indicate that a particle from personal best list will be removed
+            is_changed = False
+            # Check if the current particle is better than the previous particles from the list of personal best
+            for pb in pb_list:
+                # If the current particle is dominated by at least one personal best, then ignore the current particle
+                if(self.dominates(pb.fitness, fitness)):
+                    return
+                # If the current particle dominates this personal best, then add this particle in a removal list
+                elif(self.dominates(fitness, pb.fitness)):
+                    is_changed = True
+                    removal_particles.add(pb)
+            # Filter the personal bests if there are changes
+            if is_changed:
+                # Update the personal best list
+                pb_list = deque([pb for pb in pb_list if pb not in removal_particles], maxlen=self.params.max_personal_guides)
+            # Create a new personal best and include it to the list
+            pb_list.appendleft(PBest(self.population.position[idx], fitness))
             # Update the personal best list
-            pb_list = deque([pb for pb in pb_list if pb not in removal_particles], maxlen=self.params.max_personal_guides)
-        # Create a new personal best and include it to the list
-        pb_list.appendleft(PBest(self.population.position[idx], fitness))
-        # Update the personal best list
-        self.population.personal_best_list[idx] = pb_list
+            self.population.personal_best_list[idx] = pb_list
 
     ''' Run the MESH '''
     def run(self):
@@ -366,8 +368,7 @@ class MESH(Operation):
                     # Select the best particles from those before and after movement
                     self.population_selection(prev_pos, prev_vel, prev_fit)
                     # Update the personal best
-                    for _ in map(self.update_personal_best, np.arange(self.params.population_size)):
-                        pass
+                    self.update_personal_best(np.arange(self.params.population_size))
                     # Get the fronts
                     self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                     # Update memory
