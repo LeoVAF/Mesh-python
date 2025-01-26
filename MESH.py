@@ -70,9 +70,9 @@ class MESH_Params:
         # Set the number of objectives
         self.objective_dim = objective_dim
         # Set the maximum number of fitness evaluations
-        self.max_fit_eval = max_fit_eval
+        self.max_fit_eval = max(max_fit_eval, 0)
         # Set the maximum number o generations
-        self.max_gen = max_gen
+        self.max_gen = max(max_gen, 0)
         # Set the position dimension and the position boundaries
         self.position_dim = position_dim
         self.position_max_value = position_max_value
@@ -158,7 +158,6 @@ class MESH(Operation):
         else:
             self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
             self.total_bar = min(params.population_size*(2*params.max_gen+1), params.max_fit_eval)
-
 
     ''' Initialize the population randomly '''
     def init_population_randomly(self):
