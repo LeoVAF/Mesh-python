@@ -339,6 +339,8 @@ class Operation():
             mutation_mask = self.mutation_operator_bin(idx_size)
             xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
             return xst, valid_idxs
+        else:
+            return np.array([]), np.array([])
             
 
 ''' Algorithm stop '''
