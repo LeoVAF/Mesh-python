@@ -11,7 +11,7 @@ objective_dim = 5
 position_dim = 10
 max_iterations = 0
 max_fitness_eval = 10000
-population_size = 100
+population_size = 200
 
 random_state = 42
 
@@ -23,7 +23,7 @@ communication_probability = 0.7
 mutation_rate = 0.9
 personal_guide_array_size = 3
 global_best_attribution_type = 0
-Xr_pool_type = 2
+Xr_pool_type = 0
 DE_mutation_type = 0
 crowding_distance_type = 0
 optimization_type = [False]*objective_dim
