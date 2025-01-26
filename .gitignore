@@ -1,6 +1,6 @@
 *.pyc
 *.txt
-.pkl
+*.pkl
 
 benchmark.py
 GraficosResultados.ipynb
