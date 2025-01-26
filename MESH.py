@@ -351,13 +351,8 @@ class MESH(Operation):
                 self.memory.init(self.population, self.fronts[0], self.params.memory_size)
                 # Main loop
                 while True:
-                    # Finds the global best of each particle
-                    if self.params.de_mutation_type == 2 or self.params.de_mutation_type == 3 or self.params.de_mutation_type == 4: # Somente se for necessario na mutação do DE
-                        self.global_best_attribution()
-                    ''' ############################################################################### '''
                     # Calculate Xst for each particle
                     self.differential_mutation()
-                    ''' ############################################################################### '''
                     # Mutate the weights
                     self.mutate_weights()
                     # Update global best

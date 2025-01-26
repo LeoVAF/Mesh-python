@@ -253,6 +253,8 @@ class Operation():
     
     ''' Applies the DE/best/1/bin '''
     def best_1_bin(self, xr_pool_tensor):
+        # Update the global best
+        self.global_best_attribution()
         # Set the valid size of each pool
         valid_size = 2
         # Get the mask for the pools with valid length
@@ -276,6 +278,8 @@ class Operation():
     
     ''' Applies the DE/current-to-best/1/bin '''
     def current_to_best_1_bin(self, xr_pool_tensor):
+        # Update the global best
+        self.global_best_attribution()
         # Set the valid size of each pool
         valid_size = 2
         # Get the mask for the pools with valid length
