@@ -167,7 +167,7 @@ class MESH(Operation):
     
     ''' Evaluate the fitness given a particle position matrix '''
     def fitness_evaluations(self, X):
-        return np.array([self.fitness_function(x) for x in X], copy=False), len(X)
+        return np.array([self.fitness_function(x) for x in X]), len(X)
     
     ''' Check if an array x dominates an array or matrix (axis=1) y (vectorized) '''
     def np_dominate(self, x, y, axis=0):
@@ -212,7 +212,7 @@ class MESH(Operation):
         personal_guides = self.population.personal_best_list
         random_indices = np.random.randint(0, [len(pb_list) for pb_list in personal_guides])
         # Get matrix of personal best list positions
-        pb_positions = np.array([pb_list[idx].position for pb_list, idx in zip(personal_guides, random_indices)], copy=False)
+        pb_positions = np.array([pb_list[idx].position for pb_list, idx in zip(personal_guides, random_indices)])
         # Get the global best positions
         gb_positions = self.population.global_best
         # Get the positions
