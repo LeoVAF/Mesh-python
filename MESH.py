@@ -292,10 +292,10 @@ class MESH(Operation):
             if len(update_idxs):
                 self.update_personal_best(update_idxs)
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-                self.memory_update()
+                self.update_memory()
 
     ''' Update the memory '''
-    def memory_update(self):
+    def update_memory(self):
         # Get the indices of the Pareto frontier
         Pareto_idxs = self.fronts[0]
         # Get the unique positions from the Pareto frontier and the memory
@@ -385,7 +385,7 @@ class MESH(Operation):
                     # Get the fronts
                     self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                     # Update memory
-                    self.memory_update()
+                    self.update_memory()
                     # Update the progress bar
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
                     # Count generations if it is a stopping criterion
@@ -398,7 +398,7 @@ class MESH(Operation):
             # Get the fronts
             self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
             # Update memory
-            self.memory_update()
+            self.update_memory()
             # Log the memory
             if self.log_memory:
                 self.logging()
