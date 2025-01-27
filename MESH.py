@@ -261,10 +261,17 @@ class MESH(Operation):
         prev_mask = best_N_idxs < population_size
         prev_idxs = best_N_idxs[prev_mask]
         current_idxs = best_N_idxs[~prev_mask] - population_size
-        # Select the best N particles
-        self.population.position[:, :] = np.concatenate((prev_position[prev_idxs], self.population.position[current_idxs]), axis=0)
-        self.population.velocity[:, :] = np.concatenate((prev_velocity[prev_idxs], self.population.velocity[current_idxs]), axis=0)
-        self.population.fitness[:, :] = np.concatenate((prev_fitness[prev_idxs], self.population.fitness[current_idxs]), axis=0)
+        # Get the previous and the current size of indices
+        prev_idx_size = len(prev_idxs)
+        # Select the best previous particles
+        self.population.position[:prev_idx_size] = prev_position[prev_idxs]
+        self.population.velocity[:prev_idx_size] = prev_velocity[prev_idxs]
+        self.population.fitness[:prev_idx_size] = prev_fitness[prev_idxs]
+        # Select the best current particles
+        self.population.position[prev_idx_size:] = self.population.position[current_idxs]
+        self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
+        self.population.fitness[prev_idx_size:] = self.population.fitness[current_idxs]
+        # Select the best N personal best
         self.population.personal_best_list[:] = deepcopy(self.population.personal_best_list[np.concatenate((prev_idxs, current_idxs), axis=0)])
 
     ''' Mutate the weights by a truncated normal distribution '''
@@ -280,22 +287,22 @@ class MESH(Operation):
         xst, valid_idxs = self.differential_mutation_strategy(xr_pool_tensor)
         if len(xst):
             # Update the current particle if the new particle from the strategy is better
-            fitnesses, min_evaluations = self.count_fitness_eval(xst)
+            st_fitnesses, min_evaluations = self.count_fitness_eval(xst)
             min_valid_idxs = valid_idxs[:min_evaluations]
-            pop_fitnesses = self.population.fitness[min_valid_idxs]
-            domination_mask = self.np_dominate(fitnesses, pop_fitnesses, axis=1)
+            valid_pop_fitnesses = self.population.fitness[min_valid_idxs]
+            domination_mask = self.np_dominate(st_fitnesses, valid_pop_fitnesses, axis=1)
             update_idxs = min_valid_idxs[domination_mask]
             # Update the positions and the fitnesses
             self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
-            self.population.fitness[update_idxs] = fitnesses[domination_mask]
+            self.population.fitness[update_idxs] = st_fitnesses[domination_mask]
             # If a particle was replaced for a particle from a strategy update some information
             if len(update_idxs):
                 self.update_personal_best(update_idxs)
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-                self.memory_update()
+                self.update_memory()
 
     ''' Update the memory '''
-    def memory_update(self):
+    def update_memory(self):
         # Get the indices of the Pareto frontier
         Pareto_idxs = self.fronts[0]
         # Get the unique positions from the Pareto frontier and the memory
@@ -385,7 +392,7 @@ class MESH(Operation):
                     # Get the fronts
                     self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                     # Update memory
-                    self.memory_update()
+                    self.update_memory()
                     # Update the progress bar
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
                     # Count generations if it is a stopping criterion
@@ -398,7 +405,7 @@ class MESH(Operation):
             # Get the fronts
             self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
             # Update memory
-            self.memory_update()
+            self.update_memory()
             # Log the memory
             if self.log_memory:
                 self.logging()
