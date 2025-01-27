@@ -280,14 +280,14 @@ class MESH(Operation):
         xst, valid_idxs = self.differential_mutation_strategy(xr_pool_tensor)
         if len(xst):
             # Update the current particle if the new particle from the strategy is better
-            fitnesses, min_evaluations = self.count_fitness_eval(xst)
+            st_fitnesses, min_evaluations = self.count_fitness_eval(xst)
             min_valid_idxs = valid_idxs[:min_evaluations]
-            pop_fitnesses = self.population.fitness[min_valid_idxs]
-            domination_mask = self.np_dominate(fitnesses, pop_fitnesses, axis=1)
+            valid_pop_fitnesses = self.population.fitness[min_valid_idxs]
+            domination_mask = self.np_dominate(st_fitnesses, valid_pop_fitnesses, axis=1)
             update_idxs = min_valid_idxs[domination_mask]
             # Update the positions and the fitnesses
             self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
-            self.population.fitness[update_idxs] = fitnesses[domination_mask]
+            self.population.fitness[update_idxs] = st_fitnesses[domination_mask]
             # If a particle was replaced for a particle from a strategy update some information
             if len(update_idxs):
                 self.update_personal_best(update_idxs)
