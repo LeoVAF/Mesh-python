@@ -164,6 +164,8 @@ class MESH(Operation):
         # Evaluate the initial population
         fitnesses, min_evaluations = self.count_fitness_eval(self.population.position)
         self.population.fitness[:min_evaluations] = fitnesses
+        # Repeat the population fitness for all personal best input
+        self.population.personal_best_list_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
     
     ''' Evaluate the fitness given a particle position matrix '''
     def fitness_evaluations(self, X):
@@ -209,10 +211,9 @@ class MESH(Operation):
         # Get the population size and the position dimension
         population_size = params.population_size
         # Generating random indexes for each sublist
-        personal_guides = self.population.personal_best_list
-        random_indices = np.random.randint(0, [len(pb_list) for pb_list in personal_guides])
+        random_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
         # Get matrix of personal best list positions
-        pb_positions = np.array([pb_list[idx].position for pb_list, idx in zip(personal_guides, random_indices)], copy=False)
+        pb_positions = self.population.personal_best_list_pos[np.arange(population_size), random_indices, :]
         # Get the global best positions
         gb_positions = self.population.global_best
         # Get the positions
@@ -272,7 +273,10 @@ class MESH(Operation):
         self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
         self.population.fitness[prev_idx_size:] = self.population.fitness[current_idxs]
         # Select the best N personal best
-        self.population.personal_best_list[:] = deepcopy(self.population.personal_best_list[np.concatenate((prev_idxs, current_idxs), axis=0)])
+        pb_idxs = np.concatenate((prev_idxs, current_idxs), axis=0)
+        self.population.personal_best_list_fit[:] = self.population.personal_best_list_fit[pb_idxs]
+        self.population.personal_best_list_pos[:] = self.population.personal_best_list_pos[pb_idxs]
+
 
     ''' Mutate the weights by a truncated normal distribution '''
     def mutate_weights(self):
@@ -331,32 +335,46 @@ class MESH(Operation):
 
     ''' Update the list of particle's personal best '''
     def update_personal_best(self, indices):
-        for idx in indices:
-            # Get the current personal best list
-            pb_list = self.population.personal_best_list[idx]
-            # Get the current particle fitness
-            fitness = self.population.fitness[idx]
-            # Particles that will be removed from the list of personal best
-            removal_particles = set()
-            # Flag to indicate that a particle from personal best list will be removed
-            is_changed = False
-            # Check if the current particle is better than the previous particles from the list of personal best
-            for pb in pb_list:
-                # If the current particle is dominated by at least one personal best, then ignore the current particle
-                if(self.dominates(pb.fitness, fitness)):
-                    return
-                # If the current particle dominates this personal best, then add this particle in a removal list
-                elif(self.dominates(fitness, pb.fitness)):
-                    is_changed = True
-                    removal_particles.add(pb)
-            # Filter the personal bests if there are changes
-            if is_changed:
-                # Update the personal best list
-                pb_list = deque([pb for pb in pb_list if pb not in removal_particles], maxlen=self.params.max_personal_guides)
-            # Create a new personal best and include it to the list
-            pb_list.appendleft(PBest(self.population.position[idx], fitness))
-            # Update the personal best list
-            self.population.personal_best_list[idx] = pb_list
+        # Get the population fitness as a tensor
+        fitness_tensor = np.expand_dims(self.population.fitness[indices], axis=1)
+        # Get the population position
+        positions = self.population.position
+        # Get the personal best fitness
+        pb_fitnesses = self.population.personal_best_list_fit[indices]
+        # Get the mask to update the personal best
+        update_mask = ~np.any(self.np_dominate(pb_fitnesses, fitness_tensor, axis=2), axis=1)
+        update_idxs = indices[update_mask]
+        # Get the fitnesses to update
+        update_fitness_tensor = fitness_tensor[update_mask]
+        update_pb_fitnesses = pb_fitnesses[update_mask]
+        # Get the mask to remove the personal best dominated by the current particle
+        removal_mask = self.np_dominate(update_fitness_tensor, update_pb_fitnesses, axis=2)
+        removal_mask_vec = np.any(removal_mask, axis=1)
+        removal_idxs = update_idxs[removal_mask_vec]
+        removal_mask_extended = removal_mask[..., np.newaxis]
+
+        # Replace the dominated personal best by the current particle
+        removal_pb_fitness = update_pb_fitnesses.copy()
+        removal_pb_fitness[removal_mask_extended] #= update_fitness_tensor[removal_mask_vec]
+        print(removal_pb_fitness[removal_mask_extended])
+        exit()
+        # removal_pb_position = self.population.personal_best_list_pos[removal_idxs]
+        # self.population.personal_best_list_fit[removal_idxs] = 
+        # self.population.personal_best_list_pos[removal_idxs] = 
+        
+        
+        # Get the mask to add the current to the personal best list
+        add_mask = ~removal_mask_vec
+        add_idxs = update_idxs[add_mask]
+        # Rotate the personal best list to throw away the oldest personal best
+        add_pb_fitness = np.roll(update_pb_fitnesses[add_mask], shift=1, axis=1)
+        add_pb_position = np.roll(self.population.personal_best_list_pos[add_idxs], shift=1, axis=1)
+        # Add the current fitness and position to the personal best
+        add_pb_fitness[:, 0, :] = update_fitness_tensor[add_mask, 0, :]
+        add_pb_position[:, 0, :] = positions[add_idxs]
+        # Update the personal best list
+        self.population.personal_best_list_fit[add_idxs] = add_pb_fitness
+        self.population.personal_best_list_pos[add_idxs] = add_pb_position
 
     ''' Run the MESH '''
     def run(self):
