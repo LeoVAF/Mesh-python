@@ -210,7 +210,7 @@ class MESH(Operation):
         params = self.params
         # Get the population size and the position dimension
         population_size = params.population_size
-        # Generating random indexes for each sublist
+        # Generating random indices for each sublist
         random_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
         # Get matrix of personal best list positions
         pb_positions = self.population.personal_best_list_pos[np.arange(population_size), random_indices, :]
@@ -256,12 +256,14 @@ class MESH(Operation):
         population_size = self.params.population_size
         # Get the fitness matrix with the previous and the current population
         fitness_matrix = np.concatenate((prev_fitness, self.population.fitness), axis=0)
-        # Find the best N indexes
+        # Find the best N indices
         best_N_idxs = select_best_N_mo(fitness_matrix, population_size)
-        # Separate the previous and current population indexes from best_N_idxs
-        prev_mask = best_N_idxs < population_size
-        prev_idxs = best_N_idxs[prev_mask]
-        current_idxs = best_N_idxs[~prev_mask] - population_size
+        # Separate the previous and current population indices from best_N_idxs
+        mask = best_N_idxs < population_size
+        prev_idxs = best_N_idxs[mask]
+        # Get the current indices
+        np.logical_not(mask, out=mask)
+        current_idxs = best_N_idxs[mask] - population_size
         # Get the previous and the current size of indices
         prev_idx_size = len(prev_idxs)
         # Select the best previous particles
@@ -327,7 +329,7 @@ class MESH(Operation):
             selected_fitness = fitness_matrix[memory_pareto_front_idxs]
             # Calculate the crowding distance
             crowd_distances = crowding_distance(selected_fitness)
-            # Get the indexes of the particles with the highest crowd distance
+            # Get the indices of the particles with the highest crowd distance
             idxs = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
             # Update the memory
             self.memory.position = position_matrix[memory_pareto_front_idxs[idxs]]
@@ -342,7 +344,7 @@ class MESH(Operation):
         pb_fitness = self.population.personal_best_list_fit[indices]
         pb_position = self.population.personal_best_list_pos[indices]
         # Get the mask to update the personal best
-        update_mask = ~np.any(self.np_dominate(pb_fitness, fitness_tensor, axis=2), axis=1)
+        update_mask = np.logical_not(np.any(self.np_dominate(pb_fitness, fitness_tensor, axis=2), axis=1))
         update_idxs = indices[update_mask]
         # Get the fitnesses and positions to update
         update_fitness_tensor = fitness_tensor[update_mask]
@@ -353,16 +355,8 @@ class MESH(Operation):
         removal_mask = self.np_dominate(update_fitness_tensor, update_pb_fitness, axis=2)
         removal_mask_vec = np.any(removal_mask, axis=1)
         removal_idxs = update_idxs[removal_mask_vec]
-        # Replace the dominated personal best by the current particle
-        removal_pb_fitness = update_pb_fitness.copy()
-        removal_pb_position = update_pb_position.copy()
-        tensor_idxs = np.nonzero(removal_mask)[0]
-        removal_pb_fitness[removal_mask] = update_fitness_tensor[tensor_idxs, 0, :]
-        self.population.personal_best_list_fit[removal_idxs] = removal_pb_fitness[removal_mask_vec]
-        removal_pb_position[removal_mask] = update_position_tensor[tensor_idxs, 0, :]
-        self.population.personal_best_list_pos[removal_idxs] = removal_pb_position[removal_mask_vec]
         # Get the mask to add the current to the personal best list
-        add_mask = ~removal_mask_vec
+        add_mask = np.logical_not(removal_mask_vec)
         add_idxs = update_idxs[add_mask]
         # Rotate the personal best list to throw away the oldest personal best
         add_pb_fitness = np.roll(update_pb_fitness[add_mask], shift=1, axis=1)
@@ -373,6 +367,14 @@ class MESH(Operation):
         # Update the personal best list
         self.population.personal_best_list_fit[add_idxs] = add_pb_fitness
         self.population.personal_best_list_pos[add_idxs] = add_pb_position
+        # Replace the dominated personal best by the current particle
+        removal_pb_fitness = update_pb_fitness
+        removal_pb_position = update_pb_position
+        tensor_idxs = np.nonzero(removal_mask)[0]
+        removal_pb_fitness[removal_mask] = update_fitness_tensor[tensor_idxs, 0, :]
+        self.population.personal_best_list_fit[removal_idxs] = removal_pb_fitness[removal_mask_vec]
+        removal_pb_position[removal_mask] = update_position_tensor[tensor_idxs, 0, :]
+        self.population.personal_best_list_pos[removal_idxs] = removal_pb_position[removal_mask_vec]
 
     ''' Run the MESH '''
     def run(self):
