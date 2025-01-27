@@ -70,10 +70,9 @@ class MESH_Params:
         # Set the number of objectives
         self.objective_dim = objective_dim
         # Set the maximum number of fitness evaluations
-        if(max_gen == 0):
-            self.max_fit_eval = max_fit_eval
-        else:
-            self.max_fit_eval = max(population_size*(2*max_gen+1), max_fit_eval)
+        self.max_fit_eval = max(max_fit_eval, 0)
+        # Set the maximum number o generations
+        self.max_gen = max(max_gen, 0)
         # Set the position dimension and the position boundaries
         self.position_dim = position_dim
         self.position_max_value = position_max_value
@@ -130,34 +129,45 @@ class MESH(Operation):
         self.fronts = []
         # Estabilish the fitness function and start the fitness counter
         self.fitness_function = fitness_function
-        self.fitness_eval_count = 0
+        self.fitness_eval_counter = 0
+        # Start the generation counter
+        self.generation_counter = 0
         # Create a random matrix (4 x population_size) for w1 and two random vectors for w2 and w3
         self.weights = np.random.uniform(0.0, 1.0, [4, params.population_size])
         # Store some pre-calculated data
         self.pre_calculated = PreCalculated(params.objective_dim, params.position_dim, params.population_size)
         # Variable for logging memory
         self.log_memory = log_memory
+        # Check if generation is a stopping criterion
+        if self.params.max_gen > 0:
+            self.count_generation = self.stopping_by_generation
+        else:
+            self.count_generation = lambda : None
+        # Check if the fitness evaluation is a stopping criterion
+        if self.params.max_fit_eval > 0:
+            self.count_fitness_eval = self.stopping_by_fitness_eval
+        else:
+            self.count_fitness_eval = self.fitness_evaluations
+        # Choose the way to update the algorithm progress bar
+        if self.params.max_gen == 0:
+            self.total_bar = params.max_fit_eval
+            self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
+        elif self.params.max_fit_eval == 0:
+            self.total_bar = params.max_gen
+            self.update_progress_bar = self.update_progress_bar_by_generation
+        else:
+            self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
+            self.total_bar = min(params.population_size*(2*params.max_gen+1), params.max_fit_eval)
 
     ''' Initialize the population randomly '''
     def init_population_randomly(self):
         # Evaluate the initial population
-        fitnesses, min_evaluations = self.fitness_evaluations(self.population.position)
+        fitnesses, min_evaluations = self.count_fitness_eval(self.population.position)
         self.population.fitness[:min_evaluations] = fitnesses
     
     ''' Evaluate the fitness given a particle position matrix '''
     def fitness_evaluations(self, X):
-        # Calculate remanining evaluations
-        remaining_eval = self.params.max_fit_eval - self.fitness_eval_count
-        # Check if the stopping criterion reached
-        if remaining_eval == 0:
-            raise StoppingAlgorithm()
-        # Calculate the minimum number of fitness evaluations
-        min_evaluations = min(remaining_eval, len(X))
-        # Update the fitness counter
-        self.fitness_eval_count += min_evaluations
-        # Slice the particle positions for the minimum evaluations
-        X_min = X[:min_evaluations]
-        return np.array([self.fitness_function(x) for x in X_min], copy=False), min_evaluations
+        return np.array([self.fitness_function(x) for x in X]), len(X)
     
     ''' Check if an array x dominates an array or matrix (axis=1) y (vectorized) '''
     def np_dominate(self, x, y, axis=0):
@@ -202,7 +212,7 @@ class MESH(Operation):
         personal_guides = self.population.personal_best_list
         random_indices = np.random.randint(0, [len(pb_list) for pb_list in personal_guides])
         # Get matrix of personal best list positions
-        pb_positions = np.array([pb_list[idx].position for pb_list, idx in zip(personal_guides, random_indices)], copy=False)
+        pb_positions = np.array([pb_list[idx].position for pb_list, idx in zip(personal_guides, random_indices)])
         # Get the global best positions
         gb_positions = self.population.global_best
         # Get the positions
@@ -237,7 +247,7 @@ class MESH(Operation):
         # self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
         ''' ################################################################################################################################################## '''
         # Evaluate the fitness function
-        fitnesses, min_evaluations = self.fitness_evaluations(self.population.position)
+        fitnesses, min_evaluations = self.count_fitness_eval(self.population.position)
         self.population.fitness[:min_evaluations] = fitnesses
 
     ''' Make the selection of the population between the previous and current population '''
@@ -252,10 +262,16 @@ class MESH(Operation):
         prev_mask = best_N_idxs < population_size
         prev_idxs = best_N_idxs[prev_mask]
         current_idxs = best_N_idxs[~prev_mask] - population_size
-        # Select the best N particles
-        self.population.position[:, :] = np.concatenate((population_copy.position_copy[prev_idxs], self.population.position[current_idxs]), axis=0)
-        self.population.velocity[:, :] = np.concatenate((population_copy.velocity_copy[prev_idxs], self.population.velocity[current_idxs]), axis=0)
-        self.population.fitness[:, :] = np.concatenate((population_copy.fitness_copy[prev_idxs], self.population.fitness[current_idxs]), axis=0)
+        # Get the previous and the current size of indices
+        prev_idx_size = len(prev_idxs)
+        # Select the best previous particles
+        self.population.position[:prev_idx_size] = population_copy.position_copy[prev_idxs]
+        self.population.velocity[:prev_idx_size] = population_copy.velocity_copy[prev_idxs]
+        self.population.fitness[:prev_idx_size] = population_copy.fitness_copy[prev_idxs]
+        # Select the best current particles
+        self.population.position[prev_idx_size:] = self.population.position[current_idxs]
+        self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
+        self.population.fitness[prev_idx_size:] = self.population.fitness[current_idxs]
         self.population.personal_best_list[:] = deepcopy(self.population.personal_best_list[np.concatenate((prev_idxs, current_idxs), axis=0)])
 
     ''' Mutate the weights by a truncated normal distribution '''
@@ -271,22 +287,22 @@ class MESH(Operation):
         xst, valid_idxs = self.differential_mutation_strategy(xr_pool_tensor)
         if len(xst):
             # Update the current particle if the new particle from the strategy is better
-            fitnesses, min_evaluations = self.fitness_evaluations(xst)
+            st_fitnesses, min_evaluations = self.count_fitness_eval(xst)
             min_valid_idxs = valid_idxs[:min_evaluations]
-            pop_fitnesses = self.population.fitness[min_valid_idxs]
-            domination_mask = self.np_dominate(fitnesses, pop_fitnesses, axis=1)
+            valid_pop_fitnesses = self.population.fitness[min_valid_idxs]
+            domination_mask = self.np_dominate(st_fitnesses, valid_pop_fitnesses, axis=1)
             update_idxs = min_valid_idxs[domination_mask]
             # Update the positions and the fitnesses
             self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
-            self.population.fitness[update_idxs] = fitnesses[domination_mask]
+            self.population.fitness[update_idxs] = st_fitnesses[domination_mask]
             # If a particle was replaced for a particle from a strategy update some information
             if len(update_idxs):
                 self.update_personal_best(update_idxs)
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-                self.memory_update()
+                self.update_memory()
 
     ''' Update the memory '''
-    def memory_update(self):
+    def update_memory(self):
         # Get the indices of the Pareto frontier
         Pareto_idxs = self.fronts[0]
         # Get the unique positions from the Pareto frontier and the memory
@@ -346,9 +362,9 @@ class MESH(Operation):
     def run(self):
         try:
             # Start the progress bars
-            with tqdm(total=self.params.max_fit_eval, leave=False) as pbar:
+            with tqdm(total=self.total_bar, leave=False) as pbar:
                 # A variable to update the tqdm bar
-                prev_fitness_eval = 0
+                prev_bar_value = 0
                 # Initialize population
                 self.init_population_randomly()
                 # get the population frontiers and ranks
@@ -376,11 +392,11 @@ class MESH(Operation):
                     # Get the fronts
                     self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                     # Update memory
-                    self.memory_update()
+                    self.update_memory()
                     # Update the progress bar
-                    delta_evals = self.fitness_eval_count - prev_fitness_eval
-                    pbar.update(delta_evals)
-                    prev_fitness_eval = self.fitness_eval_count
+                    prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
+                    # Count generations if it is a stopping criterion
+                    self.count_generation()
         # The end of the algorithm
         except StoppingAlgorithm:
             ''' ############################################################################### '''
@@ -389,10 +405,39 @@ class MESH(Operation):
             # Get the fronts
             self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
             # Update memory
-            self.memory_update()
+            self.update_memory()
             # Log the memory
             if self.log_memory:
                 self.logging()
+
+    ''' Update the progress bar by fitness evaluations '''
+    def update_progress_bar_by_fitness_evaluation(self, pbar, prev_bar_value):
+        pbar.update(self.fitness_eval_counter - prev_bar_value)
+        return self.fitness_eval_counter
+    
+    ''' Update the progress bar by generations '''
+    def update_progress_bar_by_generation(self, pbar, prev_bar_value):
+        pbar.update(self.generation_counter - prev_bar_value)
+        return self.generation_counter
+
+    ''' Count generations if it is a stopping criterion '''
+    def stopping_by_generation(self):
+        self.generation_counter += 1
+        if self.generation_counter >= self.params.max_gen:
+            raise StoppingAlgorithm()
+    
+    ''' Count fitness evaluations if it is a stopping criterion '''
+    def stopping_by_fitness_eval(self, X):
+        # Check if the stopping criterion reached
+        if self.fitness_eval_counter == self.params.max_fit_eval:
+            raise StoppingAlgorithm()
+        # Calculate the minimum number of fitness evaluations
+        min_evaluations = min(self.params.max_fit_eval - self.fitness_eval_counter, len(X))
+        # Update the fitness counter
+        self.fitness_eval_counter += min_evaluations
+        # Slice the particle positions for the minimum evaluations
+        X_min = X[:min_evaluations]
+        return self.fitness_evaluations(X_min)
 
     ''' Return the algorithm results '''
     def get_results(self):
