@@ -338,13 +338,14 @@ class MESH(Operation):
     ''' Update the list of particle's personal best '''
     def update_personal_best(self, indices):
         # Get the population fitness and position as a tensor
-        fitness_tensor = np.expand_dims(self.population.fitness[indices], axis=1)
-        position_tensor = np.expand_dims(self.population.position[indices], axis=1)
+        fitness_tensor = self.population.fitness[indices, np.newaxis]
+        position_tensor = self.population.position[indices, np.newaxis]
         # Get the personal best fitness and position
         pb_fitness = self.population.personal_best_list_fit[indices]
         pb_position = self.population.personal_best_list_pos[indices]
         # Get the mask to update the personal best
-        update_mask = np.logical_not(np.any(self.np_dominate(pb_fitness, fitness_tensor, axis=2), axis=1))
+        update_mask = np.any(self.np_dominate(pb_fitness, fitness_tensor, axis=2), axis=1)
+        np.logical_not(update_mask, out=update_mask)
         update_idxs = indices[update_mask]
         # Get the fitnesses and positions to update
         update_fitness_tensor = fitness_tensor[update_mask]
@@ -360,7 +361,7 @@ class MESH(Operation):
         add_idxs = update_idxs[add_mask]
         # Rotate the personal best list to throw away the oldest personal best
         add_pb_fitness = np.roll(update_pb_fitness[add_mask], shift=1, axis=1)
-        add_pb_position = np.roll(self.population.personal_best_list_pos[add_idxs], shift=1, axis=1)
+        add_pb_position = np.roll(update_pb_position[add_mask], shift=1, axis=1)
         # Add the current fitness and position to the personal best
         add_pb_fitness[:, 0, :] = update_fitness_tensor[add_mask, 0, :]
         add_pb_position[:, 0, :] = update_position_tensor[add_mask, 0, :]

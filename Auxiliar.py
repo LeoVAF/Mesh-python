@@ -140,7 +140,7 @@ class Operation():
         # Get the positions
         positions = self.population.position
         # A array with each position as a matrix with just one row vector
-        position_tensor = np.expand_dims(positions, axis=1)
+        position_tensor = positions[:, np.newaxis]
         # Get the pool masks
         pool_masks = np.any(position_tensor != positions, axis=2) & (~self.np_dominate(position_tensor, positions, axis=2))
         # Get the indices to generate the pool with subarrays
@@ -155,7 +155,7 @@ class Operation():
         # Get the positions
         positions = self.population.position
         # A array with each position as a matrix with just one row vector
-        position_tensor = np.expand_dims(positions, axis=1)
+        position_tensor = positions[:, np.newaxis]
         # Get the memory positions
         mem_positions = self.memory.position
         # Get the pool masks
@@ -172,7 +172,7 @@ class Operation():
         # Get the positions
         positions = self.population.position
         # A array with each position as a matrix with just one row vector
-        position_tensor = np.expand_dims(positions, axis=1)
+        position_tensor = positions[:, np.newaxis]
         # Concatenate the population position and the memory position
         pop_and_mem_positions = np.concatenate((positions, self.memory.position), axis=0)
         # Get the pool masks
