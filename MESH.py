@@ -261,10 +261,17 @@ class MESH(Operation):
         prev_mask = best_N_idxs < population_size
         prev_idxs = best_N_idxs[prev_mask]
         current_idxs = best_N_idxs[~prev_mask] - population_size
-        # Select the best N particles
-        self.population.position[:, :] = np.concatenate((prev_position[prev_idxs], self.population.position[current_idxs]), axis=0)
-        self.population.velocity[:, :] = np.concatenate((prev_velocity[prev_idxs], self.population.velocity[current_idxs]), axis=0)
-        self.population.fitness[:, :] = np.concatenate((prev_fitness[prev_idxs], self.population.fitness[current_idxs]), axis=0)
+        # Get the previous and the current size of indices
+        prev_idx_size = len(prev_idxs)
+        # Select the best previous particles
+        self.population.position[:prev_idx_size] = prev_position[prev_idxs]
+        self.population.velocity[:prev_idx_size] = prev_velocity[prev_idxs]
+        self.population.fitness[:prev_idx_size] = prev_fitness[prev_idxs]
+        # Select the best current particles
+        self.population.position[prev_idx_size:] = self.population.position[current_idxs]
+        self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
+        self.population.fitness[prev_idx_size:] = self.population.fitness[current_idxs]
+        # Select the best N personal best
         self.population.personal_best_list[:] = deepcopy(self.population.personal_best_list[np.concatenate((prev_idxs, current_idxs), axis=0)])
 
     ''' Mutate the weights by a truncated normal distribution '''
