@@ -358,3 +358,6 @@ class PreCalculated():
         self.nearest_neighbors = NearestNeighbors(n_neighbors=2, algorithm='auto', metric='euclidean')
         self.matrix_for_operations = np.empty((population_size, position_dim))
         self.vector_for_operations = np.empty(population_size)
+        self.position_copy = np.empty((population_size, position_dim))
+        self.velocity_copy = np.empty((population_size, position_dim))
+        self.fitness_copy = np.empty((population_size, objective_dim))

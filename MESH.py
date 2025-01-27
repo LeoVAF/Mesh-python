@@ -241,10 +241,11 @@ class MESH(Operation):
         self.population.fitness[:min_evaluations] = fitnesses
 
     ''' Make the selection of the population between the previous and current population '''
-    def population_selection(self, prev_position, prev_velocity, prev_fitness):
+    def population_selection(self):
         population_size = self.params.population_size
+        population_copy = self.pre_calculated
         # Get the fitness matrix with the previous and the current population
-        fitness_matrix = np.concatenate((prev_fitness, self.population.fitness), axis=0)
+        fitness_matrix = np.concatenate((population_copy.fitness_copy, self.population.fitness), axis=0)
         # Find the best N indexes
         best_N_idxs = select_best_N_mo(fitness_matrix, population_size)
         # Separate the previous and current population indexes from best_N_idxs
@@ -252,9 +253,9 @@ class MESH(Operation):
         prev_idxs = best_N_idxs[prev_mask]
         current_idxs = best_N_idxs[~prev_mask] - population_size
         # Select the best N particles
-        self.population.position[:, :] = np.concatenate((prev_position[prev_idxs], self.population.position[current_idxs]), axis=0)
-        self.population.velocity[:, :] = np.concatenate((prev_velocity[prev_idxs], self.population.velocity[current_idxs]), axis=0)
-        self.population.fitness[:, :] = np.concatenate((prev_fitness[prev_idxs], self.population.fitness[current_idxs]), axis=0)
+        self.population.position[:, :] = np.concatenate((population_copy.position_copy[prev_idxs], self.population.position[current_idxs]), axis=0)
+        self.population.velocity[:, :] = np.concatenate((population_copy.velocity_copy[prev_idxs], self.population.velocity[current_idxs]), axis=0)
+        self.population.fitness[:, :] = np.concatenate((population_copy.fitness_copy[prev_idxs], self.population.fitness[current_idxs]), axis=0)
         self.population.personal_best_list[:] = deepcopy(self.population.personal_best_list[np.concatenate((prev_idxs, current_idxs), axis=0)])
 
     ''' Mutate the weights by a truncated normal distribution '''
@@ -363,13 +364,13 @@ class MESH(Operation):
                     # Update global best
                     self.global_best_attribution()
                     # Store some data of the population before the movement
-                    prev_pos = self.population.position.copy()
-                    prev_vel = self.population.velocity.copy()
-                    prev_fit = self.population.fitness.copy()
+                    self.pre_calculated.position_copy[:] = self.population.position.copy()
+                    self.pre_calculated.velocity_copy[:] = self.population.velocity.copy()
+                    self.pre_calculated.fitness_copy[:] = self.population.fitness.copy()
                     # Apply the movviment to the particles
                     self.move_population()
                     # Select the best particles from those before and after movement
-                    self.population_selection(prev_pos, prev_vel, prev_fit)
+                    self.population_selection()
                     # Update the personal best
                     self.update_personal_best(np.arange(self.params.population_size))
                     # Get the fronts
