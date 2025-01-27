@@ -357,7 +357,7 @@ class MESH(Operation):
         removal_mask_vec = np.any(removal_mask, axis=1)
         removal_idxs = update_idxs[removal_mask_vec]
         # Get the mask to add the current to the personal best list
-        add_mask = np.logical_not(removal_mask_vec)
+        add_mask = ~removal_mask_vec
         add_idxs = update_idxs[add_mask]
         # Rotate the personal best list to throw away the oldest personal best
         add_pb_fitness = np.roll(update_pb_fitness[add_mask], shift=1, axis=1)
@@ -369,13 +369,11 @@ class MESH(Operation):
         self.population.personal_best_list_fit[add_idxs] = add_pb_fitness
         self.population.personal_best_list_pos[add_idxs] = add_pb_position
         # Replace the dominated personal best by the current particle
-        removal_pb_fitness = update_pb_fitness
-        removal_pb_position = update_pb_position
         tensor_idxs = np.nonzero(removal_mask)[0]
-        removal_pb_fitness[removal_mask] = update_fitness_tensor[tensor_idxs, 0, :]
-        self.population.personal_best_list_fit[removal_idxs] = removal_pb_fitness[removal_mask_vec]
-        removal_pb_position[removal_mask] = update_position_tensor[tensor_idxs, 0, :]
-        self.population.personal_best_list_pos[removal_idxs] = removal_pb_position[removal_mask_vec]
+        update_pb_fitness[removal_mask] = update_fitness_tensor[tensor_idxs, 0, :]
+        self.population.personal_best_list_fit[removal_idxs] = update_pb_fitness[removal_mask_vec]
+        update_pb_position[removal_mask] = update_position_tensor[tensor_idxs, 0, :]
+        self.population.personal_best_list_pos[removal_idxs] = update_pb_position[removal_mask_vec]
 
     ''' Run the MESH '''
     def run(self):
