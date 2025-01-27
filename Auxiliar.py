@@ -127,7 +127,7 @@ class Operation():
             fronts = self.fronts
             # Generate the random indices for ranks greater than zero
             random_indices = np.random.randint(0, [len(fronts[r]) for r in prev_front_idxs])
-            rank_non_zero_idxs = np.array([fronts[idx][random_indices[i]] for i, idx in enumerate(prev_front_idxs)], copy=False)
+            rank_non_zero_idxs = np.array([fronts[idx][random_indices[i]] for i, idx in enumerate(prev_front_idxs)])
             # Set the global best from previous front
             self.population.global_best[rank_non_zero_mask] = self.population.position[rank_non_zero_idxs]
 
@@ -211,7 +211,7 @@ class Operation():
         idx_size = len(valid_idxs)
         if idx_size:
             # Get three random indices for particle positions from pool
-            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F')
             # Get the operation weight
             operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
             # Apply the DE\rand\1\bin strategy
@@ -237,7 +237,7 @@ class Operation():
         idx_size = len(valid_idxs)
         if idx_size:
             # Get three random indices for particle positions from pool
-            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F')
             # Get the operation weight
             operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
             # Apply the DE\rand\2\bin strategy
@@ -267,7 +267,7 @@ class Operation():
         idx_size = len(valid_idxs)
         if idx_size:
             # Get three random indices for particle positions from pool
-            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F')
             # Get the operation weight
             operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
             # Apply the DE\rand\1\bin strategy
@@ -295,7 +295,7 @@ class Operation():
         idx_size = len(valid_idxs)
         if idx_size:
             # Get three random indices for particle positions from pool
-            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F')
             # Get the operation weight
             operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
             # Apply the DE\rand\1\bin strategy
@@ -324,7 +324,7 @@ class Operation():
         idx_size = len(valid_idxs)
         if idx_size:
             # Get three random indices for particle positions from pool
-            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F', copy=False)
+            xr = np.array([xr_pool_tensor[idx][np.random.permutation(len(xr_pool_tensor[idx]))[:valid_size]] for idx in valid_idxs], order='F')
             # Get the operation weight
             operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
             # Apply the DE\rand\2\bin strategy

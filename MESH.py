@@ -169,7 +169,7 @@ class MESH(Operation):
     
     ''' Evaluate the fitness given a particle position matrix '''
     def fitness_evaluations(self, X):
-        return np.array([self.fitness_function(x) for x in X], copy=False), len(X)
+        return np.array([self.fitness_function(x) for x in X]), len(X)
     
     ''' Check if an array x dominates an array or matrix (axis=1) y (vectorized) '''
     def np_dominate(self, x, y, axis=0):
@@ -351,15 +351,10 @@ class MESH(Operation):
         removal_mask = self.np_dominate(update_fitness_tensor, update_pb_fitnesses, axis=2)
         removal_mask_vec = np.any(removal_mask, axis=1)
         removal_idxs = update_idxs[removal_mask_vec]
-        removal_mask_extended = removal_mask[..., np.newaxis]
-
         # Replace the dominated personal best by the current particle
         removal_pb_fitness = update_pb_fitnesses.copy()
-        removal_pb_fitness[removal_mask_extended] #= update_fitness_tensor[removal_mask_vec]
-        print(removal_pb_fitness[removal_mask_extended])
-        exit()
-        # removal_pb_position = self.population.personal_best_list_pos[removal_idxs]
-        # self.population.personal_best_list_fit[removal_idxs] = 
+        removal_pb_fitness[removal_mask] = update_fitness_tensor[np.nonzero(removal_mask)[0], 0, :]
+        self.population.personal_best_list_fit[removal_idxs] = removal_pb_fitness[removal_mask_vec]
         # self.population.personal_best_list_pos[removal_idxs] = 
         
         
