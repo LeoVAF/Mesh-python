@@ -39,7 +39,7 @@ class Operation():
         # Get the sum of each line in the fitness matrix
         sum_squared_fitnesses = np.sum(squared_fitnesses, axis=1, keepdims=True)
         # Take the indexes to make the combination of differences (simulate a lower triangular matrix per vector to make the differences efficiently)
-        row_indexes, col_indexes = self.pre_calculated.np_tril_indices
+        row_indexes, col_indexes = self.pre_alocated.np_tril_indices
         # Get the fitness differences
         differences = squared_fitnesses[:, row_indexes] - squared_fitnesses[:, col_indexes]
         # Calculate the sigma values for each particle
@@ -54,7 +54,7 @@ class Operation():
             return np.zeros(num_particles, dtype=int)
         else:
             # Get the nearest neighbor distances and indices
-            distances, indices = self.pre_calculated.nearest_neighbors.fit(memory_sigma).kneighbors(self.population.sigma[particle_idxs])
+            distances, indices = self.pre_alocated.nearest_neighbors.fit(memory_sigma).kneighbors(self.population.sigma[particle_idxs])
             # The nearest neighbor must be different from itself
             zero_distances_mask = distances[:, 0] == 0
             first_valid_idxs = np.where(zero_distances_mask, 1, 0)
@@ -70,7 +70,7 @@ class Operation():
             return np.zeros(num_particles, dtype=int)
         else:
             # Get the nearest neighbor distances and indices
-            distances, indices = self.pre_calculated.nearest_neighbors.fit(population_sigma[search_idxs]).kneighbors(population_sigma[particle_idxs])
+            distances, indices = self.pre_alocated.nearest_neighbors.fit(population_sigma[search_idxs]).kneighbors(population_sigma[particle_idxs])
             # The nearest neighbor must be different from itself
             non_zero_distances_mask = distances[:, 0] == 0
             first_valid_idxs = np.where(non_zero_distances_mask, 1, 0)
@@ -349,14 +349,23 @@ class StoppingAlgorithm(Exception):
     def __init__(self):
         pass
 
-''' Pre-calculated data '''
-class PreCalculated():
+''' Pre-alocated data '''
+class PreAlocated():
     ''' Initialize the instance '''
     def __init__(self,
                  objective_dim,
                  position_dim,
                  population_size):
+        # Used to calculate the sigma
         self.np_tril_indices = np.tril_indices(objective_dim, k=-1)
+        # The object to get the nearest neighbors
         self.nearest_neighbors = NearestNeighbors(n_neighbors=2, algorithm='auto', metric='euclidean')
+        # Structures used to calculate repetitive operations
         self.matrix_for_operations = np.empty((population_size, position_dim))
         self.vector_for_operations = np.empty(population_size)
+        # Fitness matrix for the population selection
+        self.fitness_selection = np.empty((2*population_size, objective_dim))
+        # Copies for the population
+        self.position_copy = np.empty((population_size, position_dim))
+        self.velocity_copy = np.empty((population_size, position_dim))
+        self.fitness_copy = np.empty((population_size, objective_dim))

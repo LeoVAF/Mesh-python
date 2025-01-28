@@ -135,7 +135,7 @@ class MESH(Operation):
         # Create a random matrix (4 x population_size) for w1 and two random vectors for w2 and w3
         self.weights = np.random.uniform(0.0, 1.0, [4, params.population_size])
         # Store some pre-calculated data
-        self.pre_calculated = PreCalculated(params.objective_dim, params.position_dim, params.population_size)
+        self.pre_alocated = PreAlocated(params.objective_dim, params.position_dim, params.population_size)
         # Variable for logging memory
         self.log_memory = log_memory
         # Check if generation is a stopping criterion
@@ -225,12 +225,12 @@ class MESH(Operation):
         # Calculate the inertia term and accumulate it in the velocities
         np.multiply(velocities, weights[0][:, np.newaxis], out=velocities)
         # Calculate the memory term and accumulate it in the velocities
-        matrix_for_operations = self.pre_calculated.matrix_for_operations
+        matrix_for_operations = self.pre_alocated.matrix_for_operations
         np.subtract(pb_positions, positions, out=matrix_for_operations)
         np.multiply(matrix_for_operations, weights[1][:, np.newaxis], out=matrix_for_operations)
         np.add(velocities, matrix_for_operations, out=velocities)
         # Calculate the cooperation term
-        vector_for_operations = self.pre_calculated.vector_for_operations
+        vector_for_operations = self.pre_alocated.vector_for_operations
         vector_for_operations[:] = np.random.normal(0, 1, population_size)
         np.multiply(vector_for_operations, weights[3], out=vector_for_operations)
         np.add(vector_for_operations, 1, out=vector_for_operations)
@@ -252,12 +252,14 @@ class MESH(Operation):
         self.population.fitness[:min_evaluations] = fitnesses
 
     ''' Make the selection of the population between the previous and current population '''
-    def population_selection(self, prev_position, prev_velocity, prev_fitness):
+    def population_selection(self):
         population_size = self.params.population_size
+        pre_alocated = self.pre_alocated
         # Get the fitness matrix with the previous and the current population
-        fitness_matrix = np.concatenate((prev_fitness, self.population.fitness), axis=0)
+        pre_alocated.fitness_selection[:population_size] = pre_alocated.fitness_copy
+        pre_alocated.fitness_selection[population_size:] = self.population.fitness
         # Find the best N indices
-        best_N_idxs = select_best_N_mo(fitness_matrix, population_size)
+        best_N_idxs = select_best_N_mo(pre_alocated.fitness_selection, population_size)
         # Separate the previous and current population indices from best_N_idxs
         mask = best_N_idxs < population_size
         prev_idxs = best_N_idxs[mask]
@@ -267,9 +269,9 @@ class MESH(Operation):
         # Get the previous and the current size of indices
         prev_idx_size = len(prev_idxs)
         # Select the best previous particles
-        self.population.position[:prev_idx_size] = prev_position[prev_idxs]
-        self.population.velocity[:prev_idx_size] = prev_velocity[prev_idxs]
-        self.population.fitness[:prev_idx_size] = prev_fitness[prev_idxs]
+        self.population.position[:prev_idx_size] = pre_alocated.position_copy[prev_idxs]
+        self.population.velocity[:prev_idx_size] = pre_alocated.velocity_copy[prev_idxs]
+        self.population.fitness[:prev_idx_size] = pre_alocated.fitness_copy[prev_idxs]
         # Select the best current particles
         self.population.position[prev_idx_size:] = self.population.position[current_idxs]
         self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
@@ -397,13 +399,13 @@ class MESH(Operation):
                     # Update global best
                     self.global_best_attribution()
                     # Store some data of the population before the movement
-                    prev_pos = self.population.position.copy()
-                    prev_vel = self.population.velocity.copy()
-                    prev_fit = self.population.fitness.copy()
+                    self.pre_alocated.position_copy[:] = self.population.position.copy()
+                    self.pre_alocated.velocity_copy[:] = self.population.velocity.copy()
+                    self.pre_alocated.fitness_copy[:] = self.population.fitness.copy()
                     # Apply the movviment to the particles
                     self.move_population()
                     # Select the best particles from those before and after movement
-                    self.population_selection(prev_pos, prev_vel, prev_fit)
+                    self.population_selection()
                     # Update the personal best
                     self.update_personal_best(np.arange(self.params.population_size))
                     # Get the fronts
