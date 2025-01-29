@@ -339,19 +339,19 @@ class MESH(Operation):
 
     ''' Update the list of particle's personal best '''
     def update_personal_best(self, indices):
-        # Get the population fitness and position as a tensor
+        # Get the population fitness
         fitness_tensor = self.population.fitness[indices, np.newaxis]
-        position_tensor = self.population.position[indices, np.newaxis]
         # Get the personal best fitness and position
         pb_fitness = self.population.personal_best_list_fit[indices]
         pb_position = self.population.personal_best_list_pos[indices]
         # Get the mask to update the personal best
-        update_mask = np.any(self.np_dominate(pb_fitness, fitness_tensor, axis=2), axis=1)
-        np.logical_not(update_mask, out=update_mask)
+        update_mask = ~np.any(self.np_dominate(pb_fitness, fitness_tensor, axis=2), axis=1)
         update_idxs = indices[update_mask]
+        # Get the positions will be updated
+        positions = self.population.position[update_idxs]
         # Get the fitnesses and positions to update
         update_fitness_tensor = fitness_tensor[update_mask]
-        update_position_tensor = position_tensor[update_mask]
+        # update_position_tensor = position_tensor[update_mask]
         update_pb_fitness = pb_fitness[update_mask]
         update_pb_position = pb_position[update_mask]
         # Get the mask to remove the personal best dominated by the current particle
@@ -366,7 +366,7 @@ class MESH(Operation):
         add_pb_position = np.roll(update_pb_position[add_mask], shift=1, axis=1)
         # Add the current fitness and position to the personal best
         add_pb_fitness[:, 0, :] = update_fitness_tensor[add_mask, 0, :]
-        add_pb_position[:, 0, :] = update_position_tensor[add_mask, 0, :]
+        add_pb_position[:, 0, :] = positions[add_mask, :]
         # Update the personal best list
         self.population.personal_best_list_fit[add_idxs] = add_pb_fitness
         self.population.personal_best_list_pos[add_idxs] = add_pb_position
@@ -374,7 +374,7 @@ class MESH(Operation):
         tensor_idxs = np.nonzero(removal_mask)[0]
         update_pb_fitness[removal_mask] = update_fitness_tensor[tensor_idxs, 0, :]
         self.population.personal_best_list_fit[removal_idxs] = update_pb_fitness[removal_mask_vec]
-        update_pb_position[removal_mask] = update_position_tensor[tensor_idxs, 0, :]
+        update_pb_position[removal_mask] = positions[tensor_idxs, :]
         self.population.personal_best_list_pos[removal_idxs] = update_pb_position[removal_mask_vec]
 
     ''' Run the MESH '''
