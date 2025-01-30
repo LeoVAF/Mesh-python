@@ -11,8 +11,7 @@ def run_mesh(experiment_name,
 						func, # Fitness Function
 						global_best_attribution_type,
 						Xr_pool_type,
-						DE_mutation_type,
-						crowding_distance_type):
+						DE_mutation_type):
 
 	position_min_value = np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
 	position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
@@ -26,8 +25,8 @@ def run_mesh(experiment_name,
 	personal_guide_array_size = 3 # Number of personal guides
 	random_state = None # Defines a seed for random numbers (not used if it is None)
 
-	config = f"E{global_best_attribution_type+1}V{Xr_pool_type+1}D{DE_mutation_type+1}C{crowding_distance_type+1}_{experiment_name}"
-	print(f"Running E{global_best_attribution_type+1}V{Xr_pool_type+1}D{DE_mutation_type+1}C{crowding_distance_type+1}-{experiment_name} on MG")
+	config = f"E{global_best_attribution_type+1}V{Xr_pool_type+1}D{DE_mutation_type+1}_{experiment_name}"
+	print(f"Running E{global_best_attribution_type+1}V{Xr_pool_type+1}D{DE_mutation_type+1}-{experiment_name} on MG")
 
 	result = {}
 	combined_F = None
@@ -100,7 +99,7 @@ def list_of_funcs(func_name, position_dim, objective_dim):
 
 if __name__ == "__main__":
 	# Parameters list
-	mesh_exp = ['zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
+	mesh_exp = ['zdt2'] # ['zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
 	mesh_runs = [10]
 	mesh_pos_dim = [10]
 	mesh_obj_dim = [2]
@@ -119,5 +118,5 @@ if __name__ == "__main__":
 	]
 
 	# Execute in parallel
-	workers = 4
+	workers = 16
 	resultados = execute_with_parallelism(run_mesh, params_list, max_workers=workers)
