@@ -35,9 +35,11 @@ def run_mesh(experiment_name,
 	for i in tqdm(range(num_runs)):
 		params = MESH_Params(objective_dim,
 							position_dim, position_max_value, position_min_value, 
-							population_size, memory_size,
-							global_best_attribution_type, DE_mutation_type, Xr_pool_type, crowding_distance_type,
-							communication_probability, mutation_rate,
+							population_size, memory_size=memory_size,
+							global_best_attribution_type=global_best_attribution_type,
+							de_mutation_type=DE_mutation_type,
+							dm_pool_type=Xr_pool_type,
+							communication_probability=communication_probability, mutation_rate=mutation_rate,
 							max_gen=max_iterations, max_fit_eval=max_fitness_eval,
 							max_personal_guides=personal_guide_array_size,
 							random_state=random_state)
@@ -102,9 +104,9 @@ if __name__ == "__main__":
 	mesh_runs = [10]
 	mesh_pos_dim = [10]
 	mesh_obj_dim = [2]
-	mesh_global_best_type = [0] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
-	mesh_xr_pool_type = [0] # 0 -> V1 | 1 -> V2 | 2 -> V3
-	mesh_differential_evolution_type = [0] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
+	mesh_global_best_type = [0,1,2,3] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
+	mesh_xr_pool_type = [0,1,2] # 0 -> V1 | 1 -> V2 | 2 -> V3
+	mesh_differential_evolution_type = [0,1,2,3,4] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 	params_list = [
 		[mf, runs, p_dim, obj_dim, list_of_funcs(mf, p_dim, obj_dim), gb_type, pool_type, de_type]
 		for mf in mesh_exp
