@@ -80,18 +80,6 @@ def main():
 
     random_state = 42 # Defines a seed for random numbers (not used if it is None)
 
-    """
-    In this experiment, we aim to identify a good algorithm configuration for MESH such as to choose the particle guide, the sampling
-    vector and the mutation strategy. The particle guide can be chosen
-    according to the following: A particle from memory (E1) and a particle
-    close to the upper bound to the actual Pareto front (E2). The three
-    sampling vectors can be: swarm (V1); memory (V2) and a combination
-    between V1 and V2 generating the (V3). We have tested the following mutation strategies' options (taken from Differential Evolution
-    algorithm): DE/Rand/1/bin (D1); DE/Rand/2/bin (D2); DE/Best/1/Bin
-    (D3); DE/Current-to-best/1/bin (D4); DE/Current-to-rand/1/bin (D5).
-    In this way, 30 (2 * 3 * 5) different MESH configurations have been
-    analyzed.
-    """
     global_best_attribution_type = 0 # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
     Xr_pool_type = 0 # 0 -> V1 | 1 -> V2 | 2 -> V3
     DE_mutation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
