@@ -90,6 +90,8 @@ class Particles:
         if global_best_attribution_type < 2:
             self.sigma = np.full((population_size, comb(objective_dim, 2)), np.inf) # Sigma value for the sigma method
         self.global_best = np.zeros((population_size, position_dim)) # The global best position
-        # List of personal best
-        self.personal_best_list = np.empty(population_size, dtype=object)
-        self.personal_best_list[:] = [deque([PBest(self.position[i], self.fitness[i])], maxlen=max_personal_guides) for i in range(population_size)]
+        # Create a tensor of personal best information
+        self.personal_best_list_pos = np.empty((population_size, max_personal_guides, position_dim))
+        self.personal_best_list_fit = np.empty((population_size, max_personal_guides, objective_dim))
+        # Repeat the population position for all personal best input
+        self.personal_best_list_pos[:, :, :] = np.repeat(self.position[:, np.newaxis, :], max_personal_guides, axis=1)

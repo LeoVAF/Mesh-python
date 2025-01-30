@@ -38,7 +38,6 @@ from Auxiliar import *
 from scipy.stats import truncnorm
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo
-from copy import deepcopy
 
 # import tracemalloc
 # tracemalloc.start()
@@ -135,7 +134,7 @@ class MESH(Operation):
         # Create a random matrix (4 x population_size) for w1 and two random vectors for w2 and w3
         self.weights = np.random.uniform(0.0, 1.0, [4, params.population_size])
         # Store some pre-calculated data
-        self.pre_calculated = PreCalculated(params.objective_dim, params.position_dim, params.population_size)
+        self.pre_alocated = PreAlocated(params.objective_dim, params.position_dim, params.population_size)
         # Variable for logging memory
         self.log_memory = log_memory
         # Check if generation is a stopping criterion
@@ -164,6 +163,8 @@ class MESH(Operation):
         # Evaluate the initial population
         fitnesses, min_evaluations = self.count_fitness_eval(self.population.position)
         self.population.fitness[:min_evaluations] = fitnesses
+        # Repeat the population fitness for all personal best input
+        self.population.personal_best_list_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
     
     ''' Evaluate the fitness given a particle position matrix '''
     def fitness_evaluations(self, X):
@@ -208,11 +209,10 @@ class MESH(Operation):
         params = self.params
         # Get the population size and the position dimension
         population_size = params.population_size
-        # Generating random indexes for each sublist
-        personal_guides = self.population.personal_best_list
-        random_indices = np.random.randint(0, [len(pb_list) for pb_list in personal_guides])
+        # Generating random indices for each sublist
+        random_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
         # Get matrix of personal best list positions
-        pb_positions = np.array([pb_list[idx].position for pb_list, idx in zip(personal_guides, random_indices)])
+        pb_positions = self.population.personal_best_list_pos[np.arange(population_size), random_indices, :]
         # Get the global best positions
         gb_positions = self.population.global_best
         # Get the positions
@@ -224,12 +224,12 @@ class MESH(Operation):
         # Calculate the inertia term and accumulate it in the velocities
         np.multiply(velocities, weights[0][:, np.newaxis], out=velocities)
         # Calculate the memory term and accumulate it in the velocities
-        matrix_for_operations = self.pre_calculated.matrix_for_operations
+        matrix_for_operations = self.pre_alocated.matrix_for_operations
         np.subtract(pb_positions, positions, out=matrix_for_operations)
         np.multiply(matrix_for_operations, weights[1][:, np.newaxis], out=matrix_for_operations)
         np.add(velocities, matrix_for_operations, out=velocities)
         # Calculate the cooperation term
-        vector_for_operations = self.pre_calculated.vector_for_operations
+        vector_for_operations = self.pre_alocated.vector_for_operations
         vector_for_operations[:] = np.random.normal(0, 1, population_size)
         np.multiply(vector_for_operations, weights[3], out=vector_for_operations)
         np.add(vector_for_operations, 1, out=vector_for_operations)
@@ -253,26 +253,32 @@ class MESH(Operation):
     ''' Make the selection of the population between the previous and current population '''
     def population_selection(self):
         population_size = self.params.population_size
-        population_copy = self.pre_calculated
+        pre_alocated = self.pre_alocated
         # Get the fitness matrix with the previous and the current population
-        fitness_matrix = np.concatenate((population_copy.fitness_copy, self.population.fitness), axis=0)
-        # Find the best N indexes
-        best_N_idxs = select_best_N_mo(fitness_matrix, population_size)
-        # Separate the previous and current population indexes from best_N_idxs
-        prev_mask = best_N_idxs < population_size
-        prev_idxs = best_N_idxs[prev_mask]
-        current_idxs = best_N_idxs[~prev_mask] - population_size
+        pre_alocated.fitness_selection[:population_size] = pre_alocated.fitness_copy
+        pre_alocated.fitness_selection[population_size:] = self.population.fitness
+        # Find the best N indices
+        best_N_idxs = select_best_N_mo(pre_alocated.fitness_selection, population_size)
+        # Separate the previous and current population indices from best_N_idxs
+        mask = best_N_idxs < population_size
+        prev_idxs = best_N_idxs[mask]
+        # Get the current indices
+        np.logical_not(mask, out=mask)
+        current_idxs = best_N_idxs[mask] - population_size
         # Get the previous and the current size of indices
         prev_idx_size = len(prev_idxs)
         # Select the best previous particles
-        self.population.position[:prev_idx_size] = population_copy.position_copy[prev_idxs]
-        self.population.velocity[:prev_idx_size] = population_copy.velocity_copy[prev_idxs]
-        self.population.fitness[:prev_idx_size] = population_copy.fitness_copy[prev_idxs]
+        self.population.position[:prev_idx_size] = pre_alocated.position_copy[prev_idxs]
+        self.population.velocity[:prev_idx_size] = pre_alocated.velocity_copy[prev_idxs]
+        self.population.fitness[:prev_idx_size] = pre_alocated.fitness_copy[prev_idxs]
         # Select the best current particles
         self.population.position[prev_idx_size:] = self.population.position[current_idxs]
         self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
         self.population.fitness[prev_idx_size:] = self.population.fitness[current_idxs]
-        self.population.personal_best_list[:] = deepcopy(self.population.personal_best_list[np.concatenate((prev_idxs, current_idxs), axis=0)])
+        # Select the best N personal best
+        pb_idxs = np.concatenate((prev_idxs, current_idxs), axis=0)
+        self.population.personal_best_list_fit[:] = self.population.personal_best_list_fit[pb_idxs]
+        self.population.personal_best_list_pos[:] = self.population.personal_best_list_pos[pb_idxs]
 
     ''' Mutate the weights by a truncated normal distribution '''
     def mutate_weights(self):
@@ -323,7 +329,7 @@ class MESH(Operation):
             selected_fitness = fitness_matrix[memory_pareto_front_idxs]
             # Calculate the crowding distance
             crowd_distances = crowding_distance(selected_fitness)
-            # Get the indexes of the particles with the highest crowd distance
+            # Get the indices of the particles with the highest crowd distance
             idxs = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
             # Update the memory
             self.memory.position = position_matrix[memory_pareto_front_idxs[idxs]]
@@ -331,32 +337,28 @@ class MESH(Operation):
 
     ''' Update the list of particle's personal best '''
     def update_personal_best(self, indices):
-        for idx in indices:
-            # Get the current personal best list
-            pb_list = self.population.personal_best_list[idx]
-            # Get the current particle fitness
-            fitness = self.population.fitness[idx]
-            # Particles that will be removed from the list of personal best
-            removal_particles = set()
-            # Flag to indicate that a particle from personal best list will be removed
-            is_changed = False
-            # Check if the current particle is better than the previous particles from the list of personal best
-            for pb in pb_list:
-                # If the current particle is dominated by at least one personal best, then ignore the current particle
-                if(self.dominates(pb.fitness, fitness)):
-                    return
-                # If the current particle dominates this personal best, then add this particle in a removal list
-                elif(self.dominates(fitness, pb.fitness)):
-                    is_changed = True
-                    removal_particles.add(pb)
-            # Filter the personal bests if there are changes
-            if is_changed:
-                # Update the personal best list
-                pb_list = deque([pb for pb in pb_list if pb not in removal_particles], maxlen=self.params.max_personal_guides)
-            # Create a new personal best and include it to the list
-            pb_list.appendleft(PBest(self.population.position[idx], fitness))
-            # Update the personal best list
-            self.population.personal_best_list[idx] = pb_list
+        # Get the population fitness as a tensor
+        fitness_tensor = self.population.fitness[indices, np.newaxis]
+        # Get the personal best fitness and position
+        pb_fitness = self.population.personal_best_list_fit[indices]
+        # Get the mask to update the personal best
+        update_mask = ~np.any(self.np_dominate(pb_fitness, fitness_tensor, axis=2), axis=1)
+        update_idxs = indices[update_mask]
+        # Get the mask to replace the personal best dominated by the current particle
+        replace_mask = self.np_dominate(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
+        # Replace the dominated personal best by the current particle
+        replace_row, replace_col = np.nonzero(replace_mask)
+        particle_to_replace_pb = update_idxs[replace_row]
+        self.population.personal_best_list_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_best_list_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
+        # Get the mask to add the current to the personal best list
+        add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
+        # Delete the oldest personal best and include the current particle as a new personal best
+        self.population.personal_best_list_fit[add_idxs, 1:, :] = self.population.personal_best_list_fit[add_idxs, :-1, :]
+        self.population.personal_best_list_pos[add_idxs, 1:, :] = self.population.personal_best_list_pos[add_idxs, :-1, :]
+        # Update the personal best list by adding the current particle as a new personal best
+        self.population.personal_best_list_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
+        self.population.personal_best_list_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
     ''' Run the MESH '''
     def run(self):
@@ -380,9 +382,9 @@ class MESH(Operation):
                     # Update global best
                     self.global_best_attribution()
                     # Store some data of the population before the movement
-                    self.pre_calculated.position_copy[:] = self.population.position.copy()
-                    self.pre_calculated.velocity_copy[:] = self.population.velocity.copy()
-                    self.pre_calculated.fitness_copy[:] = self.population.fitness.copy()
+                    self.pre_alocated.position_copy[:] = self.population.position.copy()
+                    self.pre_alocated.velocity_copy[:] = self.population.velocity.copy()
+                    self.pre_alocated.fitness_copy[:] = self.population.fitness.copy()
                     # Apply the movviment to the particles
                     self.move_population()
                     # Select the best particles from those before and after movement
