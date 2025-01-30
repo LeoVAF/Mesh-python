@@ -105,9 +105,8 @@ if __name__ == "__main__":
 	mesh_global_best_type = [0] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
 	mesh_xr_pool_type = [0] # 0 -> V1 | 1 -> V2 | 2 -> V3
 	mesh_differential_evolution_type = [0] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
-	mesh_crowding_distance_type = [0] # 0 -> Traditional Crowding Distance (C1)
 	params_list = [
-		[mf, runs, p_dim, obj_dim, list_of_funcs(mf, p_dim, obj_dim), gb_type, pool_type, de_type, cd_type]
+		[mf, runs, p_dim, obj_dim, list_of_funcs(mf, p_dim, obj_dim), gb_type, pool_type, de_type]
 		for mf in mesh_exp
 		for runs in mesh_runs
 		for p_dim in mesh_pos_dim
@@ -115,7 +114,6 @@ if __name__ == "__main__":
 		for gb_type in mesh_global_best_type
 		for pool_type in mesh_xr_pool_type
 		for de_type in mesh_differential_evolution_type
-		for cd_type in mesh_crowding_distance_type
 	]
 
 	# Execute in parallel
