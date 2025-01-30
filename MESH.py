@@ -38,7 +38,6 @@ from Auxiliar import *
 from scipy.stats import truncnorm
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo
-from copy import deepcopy
 
 # import tracemalloc
 # tracemalloc.start()
