@@ -53,7 +53,7 @@ def run_new():
     params = MESH_Params(objective_dim,
                              position_dim, position_max_value, position_min_value, 
                              population_size, memory_size,
-                             global_best_attribution_type, DE_mutation_type, Xr_pool_type, crowding_distance_type,
+                             global_best_attribution_type, DE_mutation_type, Xr_pool_type,
                              communication_probability, mutation_rate,
                              max_gen=max_iterations, max_fit_eval=max_fitness_eval,
                              max_personal_guides=personal_guide_array_size,
