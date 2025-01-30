@@ -54,13 +54,12 @@ class MESH_Params:
                  position_max_value, # A array with each upper bound of problem
                  position_min_value, # A array with each lower bound of problem
                  population_size, # Population size
-                 memory_size, # Number of particles in memory
-                 global_best_attribution_type, # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4 (E3 and E4 with problem)
-                 de_mutation_type, # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
-                 dm_pool_type, # Sampling vectors 0 -> swarm (V1) | 1 -> memory (V2) | 2 -> both swarm and memory (V3)
-                 crowding_distance_type, # 0 -> Crowding Distance Tradicional (C1)
-                 communication_probability, # Communication probability
-                 mutation_rate, # Mutation rate
+                 memory_size=None, # Number of particles in memory
+                 global_best_attribution_type=0, # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4 (E3 and E4 with problem)
+                 de_mutation_type=0, # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
+                 dm_pool_type=0, # Sampling vectors 0 -> swarm (V1) | 1 -> memory (V2) | 2 -> both swarm and memory (V3)
+                 communication_probability=0.7, # Communication probability
+                 mutation_rate=0.9, # Mutation rate
                  max_gen=0, # Maximum number of generations (not used if it less than one)
                  max_fit_eval=0, # Maximum number of fitness evaluations (not used if it is less than one)
                  max_personal_guides=3, # Maximum number of personal guides (greater than zero)
@@ -68,30 +67,69 @@ class MESH_Params:
         
         # Set the number of objectives
         self.objective_dim = objective_dim
+        if objective_dim < 1:
+            raise ValueError('The number of objectives must be greater than 0!')
+        elif type(objective_dim) != int:
+            raise TypeError('The input objective_dim must be an integer!')
         # Set the maximum number of fitness evaluations
         self.max_fit_eval = max(max_fit_eval, 0)
         # Set the maximum number o generations
         self.max_gen = max(max_gen, 0)
+        if max_gen < 1 and max_fit_eval < 1:
+            raise ValueError('Either maximum generation or maximum fitness eval must be greater than 0!')
         # Set the position dimension and the position boundaries
         self.position_dim = position_dim
+        if position_dim < 1:
+            raise ValueError('The number of decision variables must be greater than 0!')
+        elif type(objective_dim) != int:
+            raise TypeError('The input position_dim must be an integer!')
         self.position_max_value = position_max_value
         self.position_min_value = position_min_value
         # Set the maximum and minimum velocities
         self.velocity_max_value = self.position_max_value - self.position_min_value
         self.velocity_min_value = -self.velocity_max_value
-        # Set the population and the memory sizes
+        # Set the population size
         self.population_size = population_size
+        if population_size < 1:
+            raise ValueError('The number of particles must be greater than 0!')
+        elif type(objective_dim) != int:
+            raise TypeError('The input population_size must be an integer!')
+        # Set the memory size
         self.memory_size = memory_size
-        # Set the strategies and operators
+        if memory_size == None:
+            self.memory_size = population_size
+        elif memory_size < 1:
+            raise ValueError('Memory size must be greater than 0!')
+        elif type(memory_size) != int:
+            raise TypeError('The input memory_size must be an integer!')
+        # Set the global attribution type
         self.global_best_attribution_type = global_best_attribution_type
+        if global_best_attribution_type not in {0,1,2,3}:
+            raise ValueError(f'The input global best attribution type must be one of these options: {(0,1,2,3)}!')
+        # Set the differential mutation type
         self.de_mutation_type = de_mutation_type
+        if de_mutation_type not in {0,1,2,3,4}:
+            raise ValueError(f'The input differential mutation type must be one of these options: {(0,1,2,3,4)}!')
+        # Set the differential mutation pool type
         self.dm_pool_type = dm_pool_type
-        self.crowding_distance_type = crowding_distance_type
-        # Set the communication and the mutation rates
-        self.communication_probability = communication_probability
-        self.mutation_rate = mutation_rate
+        if dm_pool_type not in {0,1,2}:
+            raise ValueError(f'The input cdifferential mutation pool type type must be one of these options: {(0,1,2)}!')
+        # Set the communication probability
+        if 0 <= communication_probability <= 1:
+            self.communication_probability = communication_probability
+        else:
+            raise ValueError('Communication probability must be a number between 0 and 1!')
+        # Set the mutation rate
+        if 0 <= mutation_rate <= 1:
+            self.mutation_rate = mutation_rate
+        else:
+            raise ValueError('Mutation rate must be a number between 0 and 1!')
         # Set the number of personal guides
         self.max_personal_guides = max_personal_guides
+        if max_personal_guides < 1:
+            raise ValueError('Maximum personal guides must be greater than 0!')
+        elif type(max_personal_guides) != int:
+            TypeError('The input max_personal_guides must be an integer!')
         # Set the random state (if different from None)
         self.random_state = random_state
         
@@ -431,7 +469,7 @@ class MESH(Operation):
     ''' Count fitness evaluations if it is a stopping criterion '''
     def stopping_by_fitness_eval(self, X):
         # Check if the stopping criterion reached
-        if self.fitness_eval_counter == self.params.max_fit_eval:
+        if self.fitness_eval_counter >= self.params.max_fit_eval:
             raise StoppingAlgorithm()
         # Calculate the minimum number of fitness evaluations
         min_evaluations = min(self.params.max_fit_eval - self.fitness_eval_counter, len(X))
