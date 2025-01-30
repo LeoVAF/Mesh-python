@@ -17,7 +17,7 @@ def run_mesh(experiment_name,
 	position_min_value = np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
 	position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
 	max_iterations = 0 # Maximum number of iterations (not used if it less than one)
-	max_fitness_eval = 3000 # Maximum fitness evaluations (not used if it is less than one)
+	max_fitness_eval = 5000 # Maximum fitness evaluations (not used if it is less than one)
 	population_size = 100 # Population size
 	num_final_solutions = population_size # Number of final solutions
 	memory_size = population_size # Maximum number of particles in memory
@@ -98,13 +98,13 @@ def list_of_funcs(func_name, position_dim, objective_dim):
 
 if __name__ == "__main__":
 	# Parameters list
-	mesh_exp = ['zdt2']
-	mesh_runs = [1]
+	mesh_exp = ['zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
+	mesh_runs = [10]
 	mesh_pos_dim = [10]
 	mesh_obj_dim = [2]
-	mesh_global_best_type = [0,1,2,3] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
-	mesh_xr_pool_type = [0,1,2] # 0 -> V1 | 1 -> V2 | 2 -> V3
-	mesh_differential_evolution_type = [0,1,2,3,4] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
+	mesh_global_best_type = [0] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
+	mesh_xr_pool_type = [0] # 0 -> V1 | 1 -> V2 | 2 -> V3
+	mesh_differential_evolution_type = [0] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 	mesh_crowding_distance_type = [0] # 0 -> Traditional Crowding Distance (C1)
 	params_list = [
 		[mf, runs, p_dim, obj_dim, list_of_funcs(mf, p_dim, obj_dim), gb_type, pool_type, de_type, cd_type]
