@@ -340,20 +340,18 @@ class MESH(Operation):
     def update_personal_best(self, indices):
         # Get the population fitness as a tensor
         fitness_tensor = self.population.fitness[indices, np.newaxis]
-        # Get the personal best fitness
+        # Get the personal best fitness and position
         pb_fitness = self.population.personal_best_list_fit[indices]
         # Get the mask to update the personal best
         update_mask = ~np.any(self.np_dominate(pb_fitness, fitness_tensor, axis=2), axis=1)
         update_idxs = indices[update_mask]
-        # Get the fitnesses to update
-        update_fitness_tensor = fitness_tensor[update_mask]
         # Get the mask to replace the personal best dominated by the current particle
-        replace_mask = self.np_dominate(update_fitness_tensor, pb_fitness[update_mask], axis=2)
+        replace_mask = self.np_dominate(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
         # Replace the dominated personal best by the current particle
-        replace_idxs = np.nonzero(replace_mask)
-        particle_to_replace_pb = update_idxs[replace_idxs[0]]
-        self.population.personal_best_list_fit[particle_to_replace_pb, replace_idxs[1], :] =  self.population.fitness[particle_to_replace_pb, :]
-        self.population.personal_best_list_pos[particle_to_replace_pb, replace_idxs[1], :] =  self.population.position[particle_to_replace_pb, :]
+        replace_row, replace_col = np.nonzero(replace_mask)
+        particle_to_replace_pb = update_idxs[replace_row]
+        self.population.personal_best_list_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_best_list_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
         # Get the mask to add the current to the personal best list
         add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
         # Delete the oldest personal best and include the current particle as a new personal best
