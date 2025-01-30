@@ -347,25 +347,21 @@ class MESH(Operation):
         update_idxs = indices[update_mask]
         # Get the fitnesses to update
         update_fitness_tensor = fitness_tensor[update_mask]
-        update_pb_fitness = pb_fitness[update_mask]
-        # Get the positions that will be updated
-        update_position = self.population.position[update_idxs]
         # Get the mask to replace the personal best dominated by the current particle
-        replace_mask = self.np_dominate(update_fitness_tensor, update_pb_fitness, axis=2)
+        replace_mask = self.np_dominate(update_fitness_tensor, pb_fitness[update_mask], axis=2)
         # Replace the dominated personal best by the current particle
         replace_idxs = np.nonzero(replace_mask)
         particle_to_replace_pb = update_idxs[replace_idxs[0]]
-        self.population.personal_best_list_fit[particle_to_replace_pb, replace_idxs[1], :] =  update_fitness_tensor[replace_idxs[0], 0, :]
-        self.population.personal_best_list_pos[particle_to_replace_pb, replace_idxs[1], :] =  update_position[replace_idxs[0], :]
+        self.population.personal_best_list_fit[particle_to_replace_pb, replace_idxs[1], :] =  self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_best_list_pos[particle_to_replace_pb, replace_idxs[1], :] =  self.population.position[particle_to_replace_pb, :]
         # Get the mask to add the current to the personal best list
-        add_mask = ~np.any(replace_mask, axis=1)
-        add_idxs = update_idxs[add_mask]
+        add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
         # Delete the oldest personal best and include the current particle as a new personal best
         self.population.personal_best_list_fit[add_idxs, 1:, :] = self.population.personal_best_list_fit[add_idxs, :-1, :]
         self.population.personal_best_list_pos[add_idxs, 1:, :] = self.population.personal_best_list_pos[add_idxs, :-1, :]
         # Update the personal best list by adding the current particle as a new personal best
-        self.population.personal_best_list_fit[add_idxs, 0, :] = update_fitness_tensor[add_mask, 0, :]
-        self.population.personal_best_list_pos[add_idxs, 0, :] = update_position[add_mask, :]
+        self.population.personal_best_list_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
+        self.population.personal_best_list_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
     ''' Run the MESH '''
     def run(self):
