@@ -280,7 +280,6 @@ class MESH(Operation):
         self.population.personal_best_list_fit[:] = self.population.personal_best_list_fit[pb_idxs]
         self.population.personal_best_list_pos[:] = self.population.personal_best_list_pos[pb_idxs]
 
-
     ''' Mutate the weights by a truncated normal distribution '''
     def mutate_weights(self):
         # Get the values from truncated normal distribution
