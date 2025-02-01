@@ -2,8 +2,8 @@
 *.txt
 *.pkl
 
-benchmark.py
-GraficosResultados.ipynb
-run_mesh.py
-run_parallel.py
-metrics.py
+# benchmark.py
+# GraficosResultados.ipynb
+# run_mesh.py
+# run_parallel.py
+# metrics.py
