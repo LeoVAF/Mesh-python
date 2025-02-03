@@ -1,4 +1,3 @@
-
 def GridConnected(Pw,Pp,Eb,Ebmax,uinv,Pl,t,Edump,gridc,Ebmin, Emet, DumpCredit):
     Eb[t] = Eb[t-1] + (Pw[t] + Pp[t] - ((Pl[t] / uinv) * 1))
     if Eb[t] > Ebmax:

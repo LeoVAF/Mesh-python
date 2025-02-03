@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from .Particles import *
-from .Auxiliar import *
+from Particles import *
+from Auxiliar import *
 
 from scipy.stats import truncnorm
 from tqdm import tqdm
