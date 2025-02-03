@@ -1,0 +1,7 @@
+README.md
+setup.py
+src/MESH.egg-info/PKG-INFO
+src/MESH.egg-info/SOURCES.txt
+src/MESH.egg-info/dependency_links.txt
+src/MESH.egg-info/top_level.txt
+src/utils/__init__.py
