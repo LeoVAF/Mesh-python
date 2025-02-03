@@ -14,3 +14,4 @@ dependencies:
   - plotly=5.24
   - nbformat=5.10
   - pandas=2.2
+  - cython=3.0
