@@ -1,3 +1,10 @@
 *.pyc
 *.txt
 *.pkl
+
+# Arquivos gerados durante a compilação
+*.c
+*.pyd
+*.lib
+*.exp
+*.obj
