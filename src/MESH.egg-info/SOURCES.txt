@@ -4,6 +4,8 @@ src/MESH.egg-info/PKG-INFO
 src/MESH.egg-info/SOURCES.txt
 src/MESH.egg-info/dependency_links.txt
 src/MESH.egg-info/top_level.txt
+src/compiled/__init__.py
+src/compiled/setup.py
 src/utils/Auxiliar.py
 src/utils/Particles.py
 src/utils/__init__.py
