@@ -103,7 +103,7 @@ def main():
                              max_personal_guides=personal_guide_array_size,
                              random_state=random_state)
         
-        log = f"result/{config}_run{i+1}"
+        log = False # f"result/{config}_run{i+1}"
         MCDEEPSO = MESH(params, func, log_memory=log)
         MCDEEPSO.run()
         Pos, Fit = MCDEEPSO.get_results()
