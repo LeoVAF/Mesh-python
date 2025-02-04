@@ -2,9 +2,13 @@
 *.txt
 *.pkl
 
-# Arquivos gerados durante a compilação
+# Arquivos gerados durante a compilação (Windows)
 *.c
 *.pyd
 *.lib
 *.exp
 *.obj
+
+# Arquivos gerados durante a compilação (Linux)
+*.so
+*.o
