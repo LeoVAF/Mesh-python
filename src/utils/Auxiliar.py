@@ -2,6 +2,7 @@ import numpy as np
 
 from sklearn.neighbors import NearestNeighbors
 from scipy.stats import truncnorm
+from compiled.to_compile import sigma_evaluation_compiled
 
 ''' MESH operations (used in MESH) '''
 class Operation():
@@ -79,9 +80,15 @@ class Operation():
 
     ''' Global best attribution with sigma in memory '''
     def sigma_method_in_memory(self):
+        # Get the indices from a lower triangular matrix
+        row_indices, col_indices = self.pre_alocated.np_tril_indices
         # Evaluate sigma
         self.memory.sigma = self.sigma_evaluation(self.memory.fitness)
         self.population.sigma[:, :] = self.sigma_evaluation(self.population.fitness)
+
+        # self.memory.sigma = sigma_evaluation_compiled(self.memory.fitness, row_indices, col_indices)
+        # self.population.sigma[:, :] = sigma_evaluation_compiled(self.population.fitness, row_indices, col_indices)
+        
         # Choose the global best for the population by the nearest neighbors using sigma value
         nearest_idxs = self.sigma_nearest_by_memory(np.arange(self.params.population_size))
         self.population.global_best[:, :] = self.memory.position[nearest_idxs]

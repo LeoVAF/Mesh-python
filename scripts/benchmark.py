@@ -13,8 +13,8 @@ from pymoo.problems import get_problem
 objective_dim = 5
 position_dim = 10
 max_iterations = 0
-max_fitness_eval = 10000
-population_size = 200
+max_fitness_eval = 20000
+population_size = 500
 
 random_state = 42
 
