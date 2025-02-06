@@ -83,12 +83,12 @@ class Operation():
         # Get the indices from a lower triangular matrix
         row_indices, col_indices = self.pre_alocated.np_tril_indices
         # Evaluate sigma
-        # self.memory.sigma = self.sigma_evaluation(self.memory.fitness)
-        # self.population.sigma[:, :] = self.sigma_evaluation(self.population.fitness)
-
-        self.memory.sigma = sigma_evaluation_compiled(self.memory.fitness, row_indices, col_indices)
-        self.population.sigma[:, :] = sigma_evaluation_compiled(self.population.fitness, row_indices, col_indices)
-        
+        ######################################################################################################################################################
+        self.memory.sigma = self.sigma_evaluation(self.memory.fitness)
+        self.population.sigma[:, :] = self.sigma_evaluation(self.population.fitness)
+        # self.memory.sigma = sigma_evaluation_compiled(self.memory.fitness, row_indices, col_indices)
+        # self.population.sigma[:, :] = sigma_evaluation_compiled(self.population.fitness, row_indices, col_indices)
+        ######################################################################################################################################################
         # Choose the global best for the population by the nearest neighbors using sigma value
         nearest_idxs = self.sigma_nearest_by_memory(np.arange(self.params.population_size))
         self.population.global_best[:, :] = self.memory.position[nearest_idxs]

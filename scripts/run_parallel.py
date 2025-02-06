@@ -14,8 +14,8 @@ def run_mesh(experiment_name,
 						position_dim, objective_dim, # Number of variables and dimension of objective space
 						func, # Fitness Function
 						global_best_attribution_type,
-						Xr_pool_type,
-						DE_mutation_type):
+						dm_pool_type,
+						de_mutation_type):
 
 	position_min_value = np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
 	position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
@@ -29,27 +29,27 @@ def run_mesh(experiment_name,
 	personal_guide_array_size = 3 # Number of personal guides
 	random_state = None # Defines a seed for random numbers (not used if it is None)
 
-	config = f"E{global_best_attribution_type+1}V{Xr_pool_type+1}D{DE_mutation_type+1}_{experiment_name}"
-	print(f"Running E{global_best_attribution_type+1}V{Xr_pool_type+1}D{DE_mutation_type+1}-{experiment_name} on MG")
+	config = f"E{global_best_attribution_type+1}V{dm_pool_type+1}D{de_mutation_type+1}_{experiment_name}"
+	print(f"Running E{global_best_attribution_type+1}V{dm_pool_type+1}D{de_mutation_type+1}-{experiment_name} on MG")
 
 	result = {}
 	combined_F = None
 	combined_P = None
 	for i in tqdm(range(num_runs)):
-		params = MESH_Params(objective_dim,
+		params = MESHParameters(objective_dim,
 							position_dim, position_max_value, position_min_value, 
 							population_size, memory_size=memory_size,
 							global_best_attribution_type=global_best_attribution_type,
-							de_mutation_type=DE_mutation_type,
-							dm_pool_type=Xr_pool_type,
+							dm_pool_type=dm_pool_type,
+							de_mutation_type=de_mutation_type,
 							communication_probability=communication_probability, mutation_rate=mutation_rate,
 							max_gen=max_iterations, max_fit_eval=max_fitness_eval,
 							max_personal_guides=personal_guide_array_size,
 							random_state=random_state)
 		log = False
-		MCDEEPSO = MESH(params, func, log_memory=log)
-		MCDEEPSO.run()
-		Pos, Fit = MCDEEPSO.get_results()
+		mesh = MESH(params, func, log_memory=log)
+		mesh.run()
+		Pos, Fit = mesh.get_results()
 		result[i+1] = {"F":Fit, "P":Pos}
 		# Accumulates the results of all executions
 		if combined_F is None:
@@ -108,7 +108,7 @@ if __name__ == "__main__":
 	mesh_pos_dim = [10]
 	mesh_obj_dim = [2]
 	mesh_global_best_type = [0,1,2,3] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
-	mesh_xr_pool_type = [0,1,2] # 0 -> V1 | 1 -> V2 | 2 -> V3
+	mesh_dm_pool_type = [0,1,2] # 0 -> V1 | 1 -> V2 | 2 -> V3
 	mesh_differential_evolution_type = [0,1,2,3,4] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 	params_list = [
 		[mf, runs, p_dim, obj_dim, list_of_funcs(mf, p_dim, obj_dim), gb_type, pool_type, de_type]
@@ -117,7 +117,7 @@ if __name__ == "__main__":
 		for p_dim in mesh_pos_dim
 		for obj_dim in mesh_obj_dim
 		for gb_type in mesh_global_best_type
-		for pool_type in mesh_xr_pool_type
+		for pool_type in mesh_dm_pool_type
 		for de_type in mesh_differential_evolution_type
 	]
 

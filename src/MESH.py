@@ -46,7 +46,7 @@ from pygmo import fast_non_dominated_sorting, select_best_N_mo
 # tracemalloc.stop()
 
 ''' MESH parameters '''
-class MESH_Params:
+class MESHParameters:
     ''' Initialize the instance '''
     def __init__(self,
                  objective_dim, # Number of objectives
@@ -56,8 +56,8 @@ class MESH_Params:
                  population_size, # Population size
                  memory_size=None, # Number of particles in memory
                  global_best_attribution_type=0, # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4 (E3 and E4 with problem)
-                 de_mutation_type=0, # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
                  dm_pool_type=0, # Sampling vectors 0 -> swarm (V1) | 1 -> memory (V2) | 2 -> both swarm and memory (V3)
+                 de_mutation_type=0, # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
                  communication_probability=0.7, # Communication probability
                  mutation_rate=0.9, # Mutation rate
                  max_gen=0, # Maximum number of generations (not used if it less than one)

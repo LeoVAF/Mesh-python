@@ -57,8 +57,8 @@ def main():
 
     objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
-    position_min_value = np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
-    position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
+    position_min_value = np.array([0]*position_dim) # Lower bound of problem
+    position_max_value = np.array([1]*position_dim) # Upper bound of problem
     # position_min_value = np.array([10, 1, 100]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
     # position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
     
@@ -83,30 +83,30 @@ def main():
     random_state = 42 # Defines a seed for random numbers (not used if it is None)
 
     global_best_attribution_type = 0 # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
-    Xr_pool_type = 0 # 0 -> V1 | 1 -> V2 | 2 -> V3
-    DE_mutation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
+    dm_pool_type = 0 # 0 -> V1 | 1 -> V2 | 2 -> V3
+    de_mutation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
-    config = f"E{global_best_attribution_type+1}V{Xr_pool_type+1}D{DE_mutation_type+1}_{experiment_name}"
-    print(f"Running E{global_best_attribution_type+1}V{Xr_pool_type+1}D{DE_mutation_type+1}-{experiment_name} on MG")
+    config = f"E{global_best_attribution_type+1}V{dm_pool_type+1}D{de_mutation_type+1}_{experiment_name}"
+    print(f"Running E{global_best_attribution_type+1}V{dm_pool_type+1}D{de_mutation_type+1}-{experiment_name} on MG")
     result = {}
     combined_F = None
     combined_P = None
     for i in tqdm(range(num_runs)):
-        params = MESH_Params(objective_dim,
-                             position_dim, position_max_value, position_min_value, 
-                             population_size, memory_size=memory_size,
-                             global_best_attribution_type=global_best_attribution_type,
-                             de_mutation_type=DE_mutation_type,
-                             dm_pool_type=Xr_pool_type,
-                             communication_probability=communication_probability, mutation_rate=mutation_rate,
-                             max_gen=max_iterations, max_fit_eval=max_fitness_eval,
-                             max_personal_guides=personal_guide_array_size,
-                             random_state=random_state)
+        params = MESHParameters(objective_dim,
+                                 position_dim, position_max_value, position_min_value, 
+                                 population_size, memory_size=memory_size,
+                                 global_best_attribution_type=global_best_attribution_type,
+                                 dm_pool_type=dm_pool_type,
+                                 de_mutation_type=de_mutation_type,
+                                 communication_probability=communication_probability, mutation_rate=mutation_rate,
+                                 max_gen=max_iterations, max_fit_eval=max_fitness_eval,
+                                 max_personal_guides=personal_guide_array_size,
+                                 random_state=random_state)
         
         log = False # f"result/{config}_run{i+1}"
-        MCDEEPSO = MESH(params, func, log_memory=log)
-        MCDEEPSO.run()
-        Pos, Fit = MCDEEPSO.get_results()
+        mesh = MESH(params, func, log_memory=log)
+        mesh.run()
+        Pos, Fit = mesh.get_results()
         result[i+1] = {"F":Fit, "P":Pos}
         # Accumulates the results of all executions
         if combined_F is None:

@@ -26,8 +26,8 @@ communication_probability = 0.7
 mutation_rate = 0.9
 personal_guide_array_size = 3
 global_best_attribution_type = 0
-Xr_pool_type = 0
-DE_mutation_type = 0
+dm_pool_type = 0
+de_mutation_type = 0
 crowding_distance_type = 0
 optimization_type = [False]*objective_dim
 def generate_objective_function(objective_dim):
@@ -53,10 +53,10 @@ def generate_objective_function(objective_dim):
 func = generate_objective_function(objective_dim)
 
 def run_new():
-    params = MESH_Params(objective_dim,
+    params = MESHParameters(objective_dim,
                              position_dim, position_max_value, position_min_value, 
                              population_size, memory_size,
-                             global_best_attribution_type, DE_mutation_type, Xr_pool_type,
+                             global_best_attribution_type, dm_pool_type, de_mutation_type,
                              communication_probability, mutation_rate,
                              max_gen=max_iterations, max_fit_eval=max_fitness_eval,
                              max_personal_guides=personal_guide_array_size,
@@ -65,8 +65,8 @@ def run_new():
     #experiment_name = 'zdt2'
     #func = get_problem(experiment_name, n_var=position_dim).evaluate
     ##########################################################
-    alg_new = MESH(params, func)
-    alg_new.run()
+    new_mesh = MESH(params, func)
+    new_mesh.run()
 
 def run_old():
     params_old = MESH_Params_old(objective_dim,
@@ -78,14 +78,14 @@ def run_old():
                                 population_size,memory_size,
                                 0,
                                 global_best_attribution_type,
-                                DE_mutation_type,
-                                Xr_pool_type,
+                                de_mutation_type,
+                                dm_pool_type,
                                 crowding_distance_type,
                                 communication_probability,
                                 mutation_rate,
                                 personal_guide_array_size)
-    alg_old = MESH_old(params_old, func)
-    alg_old.run()
+    old_mesh = MESH_old(params_old, func)
+    old_mesh.run()
 
 
 # print("Estatísticas para algoritmo original:")
