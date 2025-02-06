@@ -46,7 +46,7 @@ from pygmo import fast_non_dominated_sorting, select_best_N_mo
 # tracemalloc.stop()
 
 ''' MESH parameters '''
-class MESHParameters:
+class MeshParameters:
     ''' Initialize the instance '''
     def __init__(self,
                  objective_dim, # Number of objectives

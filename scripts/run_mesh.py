@@ -53,7 +53,7 @@ def main():
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 0
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
-    experiment_name = "zdt2"
+    experiment_name = "dtlz1"
 
     objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
@@ -67,20 +67,20 @@ def main():
     #     #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
     #     r[-1] = -r[-1] # Maximizing renewable factor
     #     return r
-    func = get_problem(experiment_name, n_var=position_dim).evaluate
-    # func = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim).evaluate
+    # func = get_problem(experiment_name, n_var=position_dim).evaluate
+    func = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim).evaluate
 
     max_iterations = 0 # Maximum number of iterations (not used if it less than one)
-    max_fitness_eval = 3000 # Maximum fitness evaluations (not used if it is less than one)
+    max_fitness_eval = 5000 # Maximum fitness evaluations (not used if it is less than one)
     population_size = 100 # Population size
     num_final_solutions = population_size # Number of final solutions
     memory_size = population_size # Maximum number of particles in memory
 
-    communication_probability = 0.7 # Communication probability
-    mutation_rate = 0.9 # Mutation rate
-    personal_guide_array_size = 3 # Number of personal guides
+    communication_probability = 0.75 # 0.7 # Communication probability
+    mutation_rate = 0.45 # Mutation rate
+    personal_guide_array_size = 2 # Number of personal guides
 
-    random_state = 42 # Defines a seed for random numbers (not used if it is None)
+    random_state = None # Defines a seed for random numbers (not used if it is None)
 
     global_best_attribution_type = 0 # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
     dm_pool_type = 0 # 0 -> V1 | 1 -> V2 | 2 -> V3
@@ -92,7 +92,7 @@ def main():
     combined_F = None
     combined_P = None
     for i in tqdm(range(num_runs)):
-        params = MESHParameters(objective_dim,
+        params = MeshParameters(objective_dim,
                                  position_dim, position_max_value, position_min_value, 
                                  population_size, memory_size=memory_size,
                                  global_best_attribution_type=global_best_attribution_type,

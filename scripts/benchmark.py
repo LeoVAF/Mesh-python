@@ -53,7 +53,7 @@ def generate_objective_function(objective_dim):
 func = generate_objective_function(objective_dim)
 
 def run_new():
-    params = MESHParameters(objective_dim,
+    params = MeshParameters(objective_dim,
                              position_dim, position_max_value, position_min_value, 
                              population_size, memory_size,
                              global_best_attribution_type, dm_pool_type, de_mutation_type,
