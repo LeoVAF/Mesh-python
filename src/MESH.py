@@ -66,70 +66,79 @@ class MeshParameters:
                  random_state = None): # Numpy random seed to generate random numbers
         
         # Set the number of objectives
+        if not isinstance(objective_dim, int) or (objective_dim < 1):
+            raise ValueError('The input "objective_dim" must be a positive integer greater than 0!')
         self.objective_dim = objective_dim
-        if objective_dim < 1:
-            raise ValueError('The number of objectives must be greater than 0!')
-        elif type(objective_dim) != int:
-            raise TypeError('The input objective_dim must be an integer!')
-        # Set the maximum number of fitness evaluations
-        self.max_fit_eval = max(max_fit_eval, 0)
-        # Set the maximum number o generations
-        self.max_gen = max(max_gen, 0)
-        if max_gen < 1 and max_fit_eval < 1:
-            raise ValueError('Either maximum generation or maximum fitness eval must be greater than 0!')
         # Set the position dimension and the position boundaries
+        if not isinstance(position_dim, int) or (position_dim < 1):
+            raise ValueError('The input "position_dim" must be a positive integer greater than 0!')
         self.position_dim = position_dim
-        if position_dim < 1:
-            raise ValueError('The number of decision variables must be greater than 0!')
-        elif type(objective_dim) != int:
-            raise TypeError('The input position_dim must be an integer!')
+        # Set the maximum and minimum boundaries for positions
+        if not isinstance(position_max_value, np.ndarray):
+            raise TypeError('The input "position_max_value" must be a numpy.ndarray!')
+        if not isinstance(position_min_value, np.ndarray):
+            raise TypeError('The input "position_min_value" must be a numpy.ndarray!')
+        if not np.issubdtype(position_max_value.dtype, np.number) or np.any(np.isnan(position_max_value)):
+            raise TypeError('The input "position_max_value" must be an array of numbers (without NaN values)!')
+        if not np.issubdtype(position_min_value.dtype, np.number) or np.any(np.isnan(position_min_value)):
+            raise TypeError('The input "position_min_value" must be an array of numbers (without NaN values)!')
+        if position_max_value.ndim != 1:
+            raise ValueError('The input "position_max_value" must be a one-dimensional array!')
+        if position_min_value.ndim != 1:
+            raise ValueError('The input "position_min_value" must be a one-dimensional array!')
+        if np.any(position_max_value < position_min_value):
+            raise ValueError('Each element of "position_max_value" must be greater than or equal to "position_min_value"!')
         self.position_max_value = position_max_value
         self.position_min_value = position_min_value
-        # Set the maximum and minimum velocities
+        # Set the maximum and minimum boundaries for velocities
         self.velocity_max_value = self.position_max_value - self.position_min_value
         self.velocity_min_value = -self.velocity_max_value
         # Set the population size
+        if not isinstance(population_size, int) or population_size < 1:
+            raise ValueError('The input "population_size" must be a positive integer greater than 0!')
         self.population_size = population_size
-        if population_size < 1:
-            raise ValueError('The number of particles must be greater than 0!')
-        elif type(objective_dim) != int:
-            raise TypeError('The input population_size must be an integer!')
         # Set the memory size
-        self.memory_size = memory_size
-        if memory_size == None:
+        if memory_size is None:
             self.memory_size = population_size
-        elif memory_size < 1:
-            raise ValueError('Memory size must be greater than 0!')
-        elif type(memory_size) != int:
-            raise TypeError('The input memory_size must be an integer!')
+        elif not isinstance(memory_size, int) or memory_size < 1:
+            raise ValueError('The input "memory_size" must be a positive integer greater than 0!')
+        else:
+            self.memory_size = memory_size
+        # Validate the options of the MESH
+        valid_options = {
+            "global_best_attribution_type": (0, 1, 2, 3),
+            "de_mutation_type": (0, 1, 2, 3, 4),
+            "dm_pool_type": (0, 1, 2),
+        }
+        for param, valid_set in valid_options.items():
+            if locals()[param] not in valid_set:
+                raise ValueError(f'The input "{param}" must be one of these options: {valid_set}!')
         # Set the global attribution type
         self.global_best_attribution_type = global_best_attribution_type
-        if global_best_attribution_type not in {0,1,2,3}:
-            raise ValueError(f'The input global best attribution type must be one of these options: {(0,1,2,3)}!')
         # Set the differential mutation type
         self.de_mutation_type = de_mutation_type
-        if de_mutation_type not in {0,1,2,3,4}:
-            raise ValueError(f'The input differential mutation type must be one of these options: {(0,1,2,3,4)}!')
         # Set the differential mutation pool type
         self.dm_pool_type = dm_pool_type
-        if dm_pool_type not in {0,1,2}:
-            raise ValueError(f'The input cdifferential mutation pool type type must be one of these options: {(0,1,2)}!')
         # Set the communication probability
-        if 0 <= communication_probability <= 1:
-            self.communication_probability = communication_probability
-        else:
+        if not isinstance(communication_probability, (float, int)) or (not (0 <= communication_probability <= 1)):
             raise ValueError('Communication probability must be a number between 0 and 1!')
+        self.communication_probability = communication_probability
         # Set the mutation rate
-        if 0 <= mutation_rate <= 1:
-            self.mutation_rate = mutation_rate
-        else:
+        if not isinstance(mutation_rate, (float, int)) or (not (0 <= mutation_rate <= 1)):
             raise ValueError('Mutation rate must be a number between 0 and 1!')
+        self.mutation_rate = mutation_rate
+        # Set the maximum number of generations
+        if not isinstance(max_gen, int):
+            raise TypeError('The input "max_gen" must be an integer number!')
+        self.max_gen = max(max_gen, 0)
+        # Set the maximum number of fitness evaluations
+        if not isinstance(max_fit_eval, int):
+            raise TypeError('The input "max_fit_eval" must be an integer number!')
+        self.max_fit_eval = max(max_fit_eval, 0)
         # Set the number of personal guides
+        if not isinstance(max_personal_guides, int) or max_personal_guides < 1:
+            raise ValueError('The input "max_personal_guides" must be a positive integer greater than 0!')
         self.max_personal_guides = max_personal_guides
-        if max_personal_guides < 1:
-            raise ValueError('Maximum personal guides must be greater than 0!')
-        elif type(max_personal_guides) != int:
-            TypeError('The input max_personal_guides must be an integer!')
         # Set the random state (if different from None)
         self.random_state = random_state
         
@@ -174,6 +183,8 @@ class MESH(Operation):
         # Store some pre-calculated data
         self.pre_alocated = PreAlocated(params.objective_dim, params.position_dim, params.population_size)
         # Variable for logging memory
+        if not isinstance(log_memory, str) and log_memory:
+            raise TypeError('The input "log_memory" must be either a string or a falsy value!')
         self.log_memory = log_memory
         # Check if generation is a stopping criterion
         if self.params.max_gen > 0:
@@ -413,6 +424,8 @@ class MESH(Operation):
                 self.memory.init(self.population, self.fronts[0], self.params.memory_size)
                 # Main loop
                 while True:
+                    # Count generations if it is a stopping criterion
+                    self.count_generation()
                     # Calculate Xst for each particle
                     self.differential_mutation()
                     # Mutate the weights
@@ -435,8 +448,6 @@ class MESH(Operation):
                     self.update_memory()
                     # Update the progress bar
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
-                    # Count generations if it is a stopping criterion
-                    self.count_generation()
         # The end of the algorithm
         except StoppingAlgorithm:
             ''' ############################################################################### '''
@@ -463,7 +474,7 @@ class MESH(Operation):
     ''' Count generations if it is a stopping criterion '''
     def stopping_by_generation(self):
         self.generation_counter += 1
-        if self.generation_counter >= self.params.max_gen:
+        if self.generation_counter > self.params.max_gen:
             raise StoppingAlgorithm()
     
     ''' Count fitness evaluations if it is a stopping criterion '''

@@ -76,9 +76,9 @@ def main():
     num_final_solutions = population_size # Number of final solutions
     memory_size = population_size # Maximum number of particles in memory
 
-    communication_probability = 0.15 # 0.7 # Communication probability
-    mutation_rate = 0.25 # 0.9 # Mutation rate
-    personal_guide_array_size = 2 #3 # Number of personal guides
+    communication_probability =  0.7 # Communication probability
+    mutation_rate = 0.9 # Mutation rate
+    personal_guide_array_size = 3 # Number of personal guides
 
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
