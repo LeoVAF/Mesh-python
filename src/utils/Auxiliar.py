@@ -2,7 +2,6 @@ import numpy as np
 
 from sklearn.neighbors import NearestNeighbors
 from scipy.stats import truncnorm
-from compiled.functions import sigma_evaluation_compiled
 
 ''' MESH operations (used in MESH) '''
 class Operation():
@@ -80,15 +79,9 @@ class Operation():
 
     ''' Global best attribution with sigma in memory '''
     def sigma_method_in_memory(self):
-        # Get the indices from a lower triangular matrix
-        row_indices, col_indices = self.pre_alocated.np_tril_indices
         # Evaluate sigma
-        ######################################################################################################################################################
         self.memory.sigma = self.sigma_evaluation(self.memory.fitness)
         self.population.sigma[:, :] = self.sigma_evaluation(self.population.fitness)
-        # self.memory.sigma = sigma_evaluation_compiled(self.memory.fitness, row_indices, col_indices)
-        # self.population.sigma[:, :] = sigma_evaluation_compiled(self.population.fitness, row_indices, col_indices)
-        ######################################################################################################################################################
         # Choose the global best for the population by the nearest neighbors using sigma value
         nearest_idxs = self.sigma_nearest_by_memory(np.arange(self.params.population_size))
         self.population.global_best[:, :] = self.memory.position[nearest_idxs]
@@ -197,7 +190,7 @@ class Operation():
         return self.de_mutation_type[type]
 
     ''' Make the mutation mask to apply the binomial mutation '''
-    def mutation_operator_bin(self, idx_size):
+    def binomial_mutation_operator(self, idx_size):
         # Get the mutation weight
         mutation_weight = truncnorm.rvs(0, 0.5, size=(idx_size, 1)) * self.params.mutation_rate
         # Make the mutation index for each particle
@@ -229,7 +222,7 @@ class Operation():
             # Clip the positions to the boundaries
             np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
             # Apply the mutation operator
-            mutation_mask = self.mutation_operator_bin(idx_size)
+            mutation_mask = self.binomial_mutation_operator(idx_size)
             xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
             return xst, valid_idxs
         else:
@@ -257,7 +250,7 @@ class Operation():
             # Clip the positions to the boundaries
             np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
             # Apply the mutation operator
-            mutation_mask = self.mutation_operator_bin(idx_size)
+            mutation_mask = self.binomial_mutation_operator(idx_size)
             xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
             return xst, valid_idxs
         else:
@@ -285,7 +278,7 @@ class Operation():
             # Clip the positions to the boundaries
             np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
             # Apply the mutation operator
-            mutation_mask = self.mutation_operator_bin(idx_size)
+            mutation_mask = self.binomial_mutation_operator(idx_size)
             xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
             return xst, valid_idxs
         else:
@@ -316,7 +309,7 @@ class Operation():
             # Clip the positions to the boundaries
             np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
             # Apply the mutation operator
-            mutation_mask = self.mutation_operator_bin(idx_size)
+            mutation_mask = self.binomial_mutation_operator(idx_size)
             xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
             return xst, valid_idxs
         else:
@@ -344,7 +337,7 @@ class Operation():
             # Clip the positions to the boundaries
             np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
             # Apply the mutation operator
-            mutation_mask = self.mutation_operator_bin(idx_size)
+            mutation_mask = self.binomial_mutation_operator(idx_size)
             xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
             return xst, valid_idxs
         else:
