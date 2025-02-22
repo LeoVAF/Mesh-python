@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "mesh"
 version = "0.1.0"
-description = "antion of MESH"
+description = "implementation of MESH"
 authors = ["Leonardo Veiga Acioly Filho"]
 license = "MIT"
 readme = "README.md"
