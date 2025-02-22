@@ -1,6 +1,6 @@
 # mesh
 
-antion of MESH
+implementation of MESH
 
 ## Installation
 
