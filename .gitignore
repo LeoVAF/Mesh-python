@@ -2,13 +2,28 @@
 *.txt
 *.pkl
 
-# Arquivos gerados durante a compilação (Windows)
+# Files generated during compilation (Windows)
 *.c
 *.pyd
 *.lib
 *.exp
 *.obj
 
-# Arquivos gerados durante a compilação (Linux)
+# Files generated during compilation (Linux)
 *.so
 *.o
+
+# Files generated during the documentation building
+*.doctree
+*.html
+*.js
+*.css
+*.pickle
+*.buildinfo
+*.eot
+*.svg
+*.ttf
+*.woff
+*.woff2
+*.png
+*.inv 

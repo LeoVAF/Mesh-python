@@ -2,9 +2,9 @@ name: mesh
 channels:
   - conda-forge
 dependencies:
-  #development support tools
+  # Development support tools
   - python=3.13
-  #project libraries
+  # Project libraries
   - numpy=2.2
   - matplotlib=3.10
   - scikit-learn=1.6
@@ -16,3 +16,11 @@ dependencies:
   - pandas=2.2
   - hyperopt=0.2
   - cython=3.0
+  # Project management
+  # - poetry=2.1
+  - make=4.4
+  - sphinx=8.2
+  - myst-nb=1.2
+  - sphinx-autoapi=3.5
+  - sphinx-rtd-theme=3.0
+  - jsonschema=4.23
