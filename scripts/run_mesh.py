@@ -35,7 +35,7 @@
 import numpy as np
 import pickle
 
-from MESH import *
+from mesh.MESH import *
 
 from pathlib import Path
 from microgrid.techno_ka import *
