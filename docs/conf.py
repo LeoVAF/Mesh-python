@@ -20,8 +20,12 @@ extensions = [
     "autoapi.extension",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    'sphinx.ext.autodoc'
 ]
 autoapi_dirs = ["../src"]
+
+# Show typehints as content of the function or method The typehints of overloaded functions or methods will still be represented in the signature.
+autodoc_typehints = 'description'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -32,5 +36,4 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"

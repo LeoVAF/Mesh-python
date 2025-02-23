@@ -35,45 +35,28 @@ import numpy as np
 
 from pygmo import crowding_distance
 from math import comb
+from typing import Optional
 
-''' Represents the algorithm's particle personal best '''
-class PBest:
-    def __init__(self, position, fitness):
-        self.position = position.copy()
-        self.fitness = fitness.copy()
-
-''' Represents the algorithm's memory '''
-class Memory:
-    ''' Initialize the instance '''
-    def __init__(self, global_best_attribution_type):
-        self.position = None # Memory position
-        self.fitness = None # Memory fitness
-        if global_best_attribution_type < 2:
-            self.sigma = None # Memory sigma value
+# class PBest:
+#     """
+#     Represents the algorithm's particle personal best.
     
-    ''' Initialize the memory from the Pareto frontier '''
-    def init(self, population, pareto_frontier, memory_size):
-        if(len(pareto_frontier) <= memory_size):
-            self.position = population.position[pareto_frontier]
-            self.fitness = population.fitness[pareto_frontier]
-        else:
-            # Calculate the crowd distance
-            crowd_distances = crowding_distance(population.fitness[pareto_frontier])
-            # Sort the Pareto frontier by the crowding distance
-            idx = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
-            # Initialize the memory with the best solutions
-            self.position = population.position[pareto_frontier[idx]]
-            self.fitness = population.fitness[pareto_frontier[idx]]
-        return self
+#     Attributes:
+#         position (np.ndarray): An numpy matrix with the personal best position.
+#         fitness (np.ndarray): An numpy matrix with the personal best fitness.
+#     """
+#     def __init__(self, position: np.ndarray, fitness: np.ndarray):
+#         self.position = position.copy()
+#         self.fitness = fitness.copy()
 
 ''' Represents the algorithm's population (an input for the respective particle) '''
-class Particles:
+class Population:
     ''' Initialize the instance'''
     def __init__(self,
-                 population_size, # Number of particles
-                 max_personal_guides, # Maximum personal guides
-                 objective_dim, # Number of objectives
-                 position_dim, # Number of variables
+                 population_size: int, # Number of particles
+                 max_personal_guides: int, # Maximum personal guides
+                 objective_dim: int, # Number of objectives
+                 position_dim: int, # Number of variables
                  position_bounds, # Tuple with the lower and upper bounds of the position
                  velocity_bounds, # Tuple with the lower and upper bounds of the velocity
                  global_best_attribution_type): # Global best choice type
@@ -95,3 +78,32 @@ class Particles:
         self.personal_best_list_fit = np.empty((population_size, max_personal_guides, objective_dim))
         # Repeat the population position for all personal best input
         self.personal_best_list_pos[:, :, :] = np.repeat(self.position[:, np.newaxis, :], max_personal_guides, axis=1)
+
+class Memory:
+    """
+    Represents the algorithm's memory.
+
+    Args:
+        population (Particles): A `Particles` instance that represents the algorithm's population.
+        pareto_frontier (np.ndarray[np.uint64]): A numpy array of the particle indices for the population matrices.
+        memory_size (int): The maximum size of the memory.
+    """
+    
+    def __init__(self, population: Population, pareto_frontier: np.ndarray[np.uint64], memory_size: int) -> None:
+        self.position: np.ndarray[np.float64] 
+        """ A numpy matrix with the memory position. """
+        self.fitness: np.ndarray[np.float64]
+        """ A numpy matrix with the memory fitness. """
+        self.sigma: Optional[np.ndarray[np.float64]] = None
+        """ A numpy matrix with the memory sigma values. This attribute is only used when the sigma method is used. """
+        if(len(pareto_frontier) <= memory_size):
+            self.position = population.position[pareto_frontier]
+            self.fitness = population.fitness[pareto_frontier]
+        else:
+            # Calculate the crowd distance
+            crowd_distances = crowding_distance(population.fitness[pareto_frontier])
+            # Sort the Pareto frontier by the crowding distance
+            idx = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
+            # Initialize the memory with the best solutions
+            self.position = population.position[pareto_frontier[idx]]
+            self.fitness = population.fitness[pareto_frontier[idx]]

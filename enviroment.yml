@@ -22,5 +22,5 @@ dependencies:
   - sphinx=8.2
   - myst-nb=1.2
   - sphinx-autoapi=3.5
-  - sphinx-rtd-theme=3.0
+  - sphinx-book-theme=1.1
   - jsonschema=4.23
