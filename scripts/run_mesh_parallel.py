@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 
-from mesh.MESH import *
+from MESH import *
 
 from pymoo.problems import get_problem
 from concurrent.futures import ProcessPoolExecutor, as_completed

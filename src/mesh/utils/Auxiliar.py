@@ -4,24 +4,24 @@ from sklearn.neighbors import NearestNeighbors
 from scipy.stats import truncnorm
 
 ''' MESH operations (used in MESH) '''
-class Operation():
+class Operations():
     ''' Initialize the instance '''
     def __init__(self):
         # The options of global guide attribution
-        self.global_best_attribution_type = {
+        self.global_best_attribution_type_options = {
             0: self.sigma_method_in_memory,
             1: self.sigma_method_in_fronts,
             2: self.random_in_memory,
             3: self.random_in_fronts
         }
         # The options of Differential Mutation pool
-        self.dm_pool_type = {
+        self.dm_pool_type_options = {
             0: self.differential_mutation_pool_from_population,
             1: self.differential_mutation_pool_from_memory,
             2: self.differential_mutation_pool_from_population_and_memory
         }
         # The options of Differential Evolution strategy
-        self.de_mutation_type = {
+        self.de_mutation_type_options = {
             0: self.rand_1_bin,
             1: self.rand_2_bin,
             2: self.best_1_bin,
@@ -31,7 +31,7 @@ class Operation():
 
     ''' Choose the global best attribution type'''
     def get_global_best_attribution(self, type):
-        return self.global_best_attribution_type[type]
+        return self.global_best_attribution_type_options[type]
 
     """ Calculate the sigma value for the particle set """
     def sigma_evaluation(self, fitness_matrix):
@@ -134,7 +134,7 @@ class Operation():
 
     ''' Choose the differential mutation pool type'''
     def get_differential_mutation_pool(self, type):
-        return self.dm_pool_type[type]
+        return self.dm_pool_type_options[type]
     
     ''' Return a pool tensor of particles from population '''
     def differential_mutation_pool_from_population(self):
@@ -187,7 +187,7 @@ class Operation():
     
     ''' Choose the Differential Mutation strategy '''
     def get_differential_mutation_strategy(self, type):
-        return self.de_mutation_type[type]
+        return self.de_mutation_type_options[type]
 
     ''' Make the mutation mask to apply the binomial mutation '''
     def binomial_mutation_operator(self, idx_size):

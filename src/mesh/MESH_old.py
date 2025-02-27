@@ -35,7 +35,7 @@ import numpy as np
 import sys
 import copy
 from scipy.stats import truncnorm
-from mesh.Particle_old import *
+from Particle_old import *
 from tqdm import tqdm
 
 

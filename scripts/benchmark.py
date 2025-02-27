@@ -4,8 +4,8 @@ import statistics
 import cProfile
 import pstats
 
-from mesh.MESH import *
-from mesh.MESH_old import *
+from MESH import *
+from MESH_old import *
 
 from pymoo.problems import get_problem
 

@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from mesh.utils.Particles import *
-from mesh.utils.Auxiliar import *
+from utils.particles import *
+from utils.auxiliar import *
 
 from scipy.stats import truncnorm
 from tqdm import tqdm
@@ -143,7 +143,7 @@ class MeshParameters:
         self.random_state = random_state
         
 ''' Algoritmo MESH inheriting operations from the Operation class '''
-class MESH(Operation):
+class MESH(Operations):
     ''' Initialize the instance '''
     def __init__(self,
                  params, # MESH parameters
@@ -162,13 +162,13 @@ class MESH(Operation):
         if(params.random_state):
             np.random.seed(params.random_state)
         # Particles
-        self.population = Population(params.population_size,
-                                    params.max_personal_guides,
-                                    params.objective_dim,
+        self.population = Population(params.objective_dim,
                                     params.position_dim,
                                     (params.position_min_value, params.position_max_value),
                                     (params.velocity_min_value, params.velocity_max_value),
-                                    params.global_best_attribution_type)
+                                    params.population_size,
+                                    params.global_best_attribution_type,
+                                    params.max_personal_guides)
         # Memory particles (and the final result after run MESH)
         self.memory = None
         # Frontiers (a list of numpy arrays with index of each particle in the respective frontier)

@@ -35,7 +35,7 @@
 import numpy as np
 import pickle
 
-from mesh.MESH import *
+from MESH import *
 
 from pathlib import Path
 from microgrid.techno_ka import *
@@ -80,7 +80,7 @@ def main():
     mutation_rate = 0.9 # Mutation rate
     personal_guide_array_size = 3 # Number of personal guides
 
-    random_state = None # Defines a seed for random numbers (not used if it is None)
+    random_state = 42 # Defines a seed for random numbers (not used if it is None)
 
     global_best_attribution_type = 0 # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
     dm_pool_type = 0 # 0 -> V1 | 1 -> V2 | 2 -> V3
@@ -103,7 +103,7 @@ def main():
                                  max_personal_guides=personal_guide_array_size,
                                  random_state=random_state)
         
-        log = False # f"result/{config}_run{i+1}"
+        log = f"result/{config}_run{i+1}"
         mesh = MESH(params, func, log_memory=log)
         mesh.run()
         Pos, Fit = mesh.get_results()
