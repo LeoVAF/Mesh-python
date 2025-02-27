@@ -39,7 +39,7 @@ from typing import Optional, Literal
 
 # class PBest:
 #     """
-#     Represents the algorithm's particle personal best.
+#     Represents the MESH particle personal best.
     
 #     Attributes:
 #         position (np.ndarray): An numpy matrix with the personal best position.
@@ -51,21 +51,21 @@ from typing import Optional, Literal
 
 class Population:
     """
-    Represents the algorithm's population.
+    Represents the MESH population.
 
     Args:
-        objective_dim (``int``): Number of objectives in the problem.
-        position_dim (``int``): Number of variables in the problem.
-        position_bounds (``tuple[np.ndarray[np.float64], np.ndarray[np.float64]]``): Tuple with the lower (first numpy array) and upper (second numpy array) bounds of the positions.
-        velocity_bounds (``tuple[np.ndarray[np.float64], np.ndarray[np.float64]]``): Tuple with the lower (first numpy array) and upper (second numpy array) bounds of the velocities.
-        population_size (``int``): Number of particles.
-        global_best_attribution_type (``{0, 1, 2, 3}``): Global best selection method. The options are:
+        objective_dim (:type:`int`): Number of objectives in the problem.
+        position_dim (:type:`int`): Number of variables in the problem.
+        position_bounds (:type:`tuple[np.ndarray[np.float64], np.ndarray[np.float64]]`): The lower and upper bounds of the positions, respectively.
+        velocity_bounds (:type:`tuple[np.ndarray[np.float64], np.ndarray[np.float64]]`): The lower and upper bounds of the fitnesses, respectively.
+        population_size (:type:`int`): Number of particles.
+        global_best_attribution_type (:type:`{0, 1, 2, 3}`): Global best selection method. The options are:
 
-            - ``0``: Applies Sigma method in memory to select the global best.
-            - ``1``: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-            - ``2``: Chooses randomly under uniform distribution a particle from memory.
-            - ``3``: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-        max_personal_guides (``int``): Number of maximum personal guides.
+            - :data:`0`: Applies Sigma method in memory to select the global best.
+            - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+            - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
+            - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+        max_personal_guides (:type:`int`): Number of maximum personal guides.
     """
 
     def __init__(self,
@@ -81,18 +81,18 @@ class Population:
         self.velocity: np.ndarray[np.float64, 2]
         ''' Numpy matrix with the particle's velocities initialized randomly under uniform distribution. '''
         self.fitness: np.ndarray[np.float64, 2]
-        ''' Numpy matrix with the particle's fitnesses initialized with ``np.inf`` values. '''
+        ''' Numpy matrix with the particle's fitnesses initialized with :data:`np.inf` values. '''
         self.rank: np.ndarray[np.float64]
         ''' Numpy array with the particle's rank. '''
-        self.sigma: np.ndarray[np.float64, 2]
-        ''' Numpy matrix for the sigma values. Initialized with ``np.inf`` values. Used only if the sigma method is used. '''
+        self.sigma: Optional[np.ndarray[np.float64, 2]] = None
+        ''' Numpy matrix for the sigma values. Initialized with :data:`np.inf` values. Used only if the Sigma method is used. '''
         self.global_best: np.ndarray[np.float64, 2]
         ''' Numpy matrix with the best global position for each particle. '''
         self.personal_best_list_pos: np.ndarray[np.float64, 3]
-        ''' Numpy tensor with a matrix of personal guide positions for each particle. Each matrix has ``max_personal_guides`` positions.
+        ''' Numpy tensor with a matrix of personal guide positions for each particle. Each matrix has :attr:`~mesh.MESH.MeshParameters.max_personal_guides` positions.
         Initialized with the respective particle's position repeated for all matrix entries. '''
         self.personal_best_list_fit: np.ndarray[np.float64, 3]
-        ''' Numpy tensor with a matrix of personal guide fitnesses for each particle. Each matrix has ``max_personal_guides`` fitnesses. '''
+        ''' Numpy tensor with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.MESH.MeshParameters.max_personal_guides` fitnesses. '''
 
         self.position = np.random.uniform(position_bounds[0], position_bounds[1], (population_size, position_dim))
         self.velocity = np.random.uniform(velocity_bounds[0], velocity_bounds[1], (population_size, position_dim))
@@ -106,12 +106,12 @@ class Population:
 
 class Memory:
     """
-    Represents the algorithm's memory.
+    Represents the MESH memory.
 
     Args:
-        population (``Particles``): A ``Particles`` instance that represents the algorithm's population.
-        pareto_frontier (``np.ndarray[np.uint64]``): A numpy array of the particle indices for the population matrices.
-        memory_size (``int``): The maximum size of the memory.
+        population (:class:`Population`): A :class:`Population` instance that represents the MESH population.
+        pareto_frontier (:type:`np.ndarray[np.uint64]`): A numpy array of the particle indices for the population matrices.
+        memory_size (:type:`int`): The maximum size of the memory. See :attr:`~mesh.MESH.MeshParameters.memory_size`.
     """
     
     def __init__(self, population: Population, pareto_frontier: np.ndarray[np.uint64], memory_size: int) -> None:

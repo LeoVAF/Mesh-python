@@ -32,12 +32,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from utils.particles import *
-from utils.auxiliar import *
+import numpy as np
 
+from utils.particles import Population, Memory
+from utils.auxiliar import Operations, PreAlocated, StoppingAlgorithm
+
+from typing import Literal
 from scipy.stats import truncnorm
 from tqdm import tqdm
-from pygmo import fast_non_dominated_sorting, select_best_N_mo
+from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
 
 # import tracemalloc
 # tracemalloc.start()
@@ -65,6 +68,21 @@ class MeshParameters:
                  max_personal_guides=3, # Maximum number of personal guides (greater than zero)
                  random_state = None): # Numpy random seed to generate random numbers
         
+        self.memory_size: int
+        ''' Maximum size of MESH memory.
+
+        Raises:
+            TypeError: If its type is not :type:`int`.
+            ValueError: If its value is less than 1.
+        '''
+        self.global_best_attribution_type: {0,1,2,3}
+        ''' Global best selection method. The options are:
+
+            - :data:`0`: Applies Sigma method in memory to select the global best.
+            - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+            - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
+            - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory. '''
+
         # Set the number of objectives
         if not isinstance(objective_dim, int) or (objective_dim < 1):
             raise ValueError('The input "objective_dim" must be a positive integer greater than 0!')
@@ -94,13 +112,17 @@ class MeshParameters:
         self.velocity_max_value = self.position_max_value - self.position_min_value
         self.velocity_min_value = -self.velocity_max_value
         # Set the population size
-        if not isinstance(population_size, int) or population_size < 1:
+        if not isinstance(population_size, int):
+            raise TypeError('The input "population_size" must be an integer!')
+        elif population_size < 1:
             raise ValueError('The input "population_size" must be a positive integer greater than 0!')
         self.population_size = population_size
         # Set the memory size
         if memory_size is None:
             self.memory_size = population_size
-        elif not isinstance(memory_size, int) or memory_size < 1:
+        elif not isinstance(memory_size, int):
+            TypeError('The input "memory_size" must be an integer!')
+        elif memory_size < 1:
             raise ValueError('The input "memory_size" must be a positive integer greater than 0!')
         else:
             self.memory_size = memory_size
@@ -181,7 +203,10 @@ class MESH(Operations):
         # Create a random matrix (4 x population_size) for w1 and two random vectors for w2 and w3
         self.weights = np.random.uniform(0.0, 1.0, [4, params.population_size])
         # Store some pre-calculated data
-        self.pre_alocated = PreAlocated(params.objective_dim, params.position_dim, params.population_size)
+        self.pre_alocated = PreAlocated(params.objective_dim,
+                                        params.position_dim,
+                                        params.population_size,
+                                        params.global_best_attribution_type)
         # Variable for logging memory
         if not isinstance(log_memory, str) and log_memory:
             raise TypeError('The input "log_memory" must be either a string or a falsy value!')

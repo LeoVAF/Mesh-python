@@ -344,21 +344,54 @@ class Operations():
             return np.array([]), np.array([])
             
 
-''' Algorithm stop '''
 class StoppingAlgorithm(Exception):
-    ''' Initialize the instance '''
+    ''' Class used to stop the algorithm with an exception. '''
+
     def __init__(self):
         pass
 
-''' Pre-alocated data '''
 class PreAlocated():
-    ''' Initialize the instance '''
+    '''
+    used for data allocation. It stores some data structures to avoid new allocations.
+    
+    Args:
+        objective_dim (:type:`int`): Number of objectives in the problem.
+        position_dim (:type:`int`): Number of variables in the problem.
+        population_size (:type:`int`): Number of particles.
+        global_best_attribution_type (:type:`{0, 1, 2, 3}`): Global best selection method. The options are:
+
+            - :data:`0`: Applies Sigma method in memory to select the global best.
+            - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+            - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
+            - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+    '''
+
     def __init__(self,
-                 objective_dim,
-                 position_dim,
-                 population_size):
+                 objective_dim: int,
+                 position_dim: int,
+                 population_size: int,
+                 global_best_attribution_type: int) -> None:
+        
+        self.np_tril_indices: tuple[np.array[np.uint64], np.array[np.uint64]]
+        ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
+        self.nearest_neighbors: NearestNeighbors
+        ''' Instance of :type:`~sklearn.neighbors.NearestNeighbors` with two neighbors and Euclidean as distance metric. '''
+        self.matrix_for_operations: np.ndarray[np.float64, 2]
+        ''' Numpy matrix for operations. '''
+        self.vector_for_operations: np.ndarray[np.float64]
+        ''' Numpy array for operations. '''
+        self.fitness_selection: np.ndarray[np.float64, 2]
+        ''' Numpy matrix used in :meth:`~mesh.MESH.MESH.population_selection` to store the fitness of the population before and after the particle moviment. '''
+        self.position_copy: np.ndarray[np.float64, 2]
+        ''' Numpy matrix to store the position of the particles before the particle moviment. '''
+        self.velocity_copy: np.ndarray[np.float64, 2]
+        ''' Numpy matrix to store the velocity of the particles before the particle moviment. '''
+        self.fitness_copy: np.ndarray[np.float64, 2]
+        ''' Numpy matrix to store the fitness of the particles before the particle moviment. '''
+
         # Used to calculate the sigma
-        self.np_tril_indices = np.tril_indices(objective_dim, k=-1)
+        if global_best_attribution_type < 2:
+            self.np_tril_indices = np.tril_indices(objective_dim, k=-1)
         # The object to get the nearest neighbors
         self.nearest_neighbors = NearestNeighbors(n_neighbors=2, algorithm='auto', metric='euclidean')
         # Structures used to calculate repetitive operations
