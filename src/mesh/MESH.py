@@ -34,10 +34,10 @@
 
 import numpy as np
 
+from parameters import MeshParameters
 from utils.particles import Population, Memory
 from utils.auxiliar import Operations, PreAlocated, StoppingAlgorithm
 
-from typing import Literal
 from scipy.stats import truncnorm
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
@@ -47,128 +47,12 @@ from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distanc
 # current, peak = tracemalloc.get_traced_memory()
 # print(f"Memória atual: {current / 10**6:.2f} MB; Pico de memória: {peak / 10**6:.2f} MB")
 # tracemalloc.stop()
-
-''' MESH parameters '''
-class MeshParameters:
-    ''' Initialize the instance '''
-    def __init__(self,
-                 objective_dim, # Number of objectives
-                 position_dim, # Design space dimension
-                 position_max_value, # A array with each upper bound of problem
-                 position_min_value, # A array with each lower bound of problem
-                 population_size, # Population size
-                 memory_size=None, # Number of particles in memory
-                 global_best_attribution_type=0, # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4 (E3 and E4 with problem)
-                 dm_pool_type=0, # Sampling vectors 0 -> swarm (V1) | 1 -> memory (V2) | 2 -> both swarm and memory (V3)
-                 de_mutation_type=0, # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
-                 communication_probability=0.7, # Communication probability
-                 mutation_rate=0.9, # Mutation rate
-                 max_gen=0, # Maximum number of generations (not used if it less than one)
-                 max_fit_eval=0, # Maximum number of fitness evaluations (not used if it is less than one)
-                 max_personal_guides=3, # Maximum number of personal guides (greater than zero)
-                 random_state = None): # Numpy random seed to generate random numbers
-        
-        self.memory_size: int
-        ''' Maximum size of MESH memory.
-
-        Raises:
-            TypeError: If its type is not :type:`int`.
-            ValueError: If its value is less than 1.
-        '''
-        self.global_best_attribution_type: {0,1,2,3}
-        ''' Global best selection method. The options are:
-
-            - :data:`0`: Applies Sigma method in memory to select the global best.
-            - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-            - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
-            - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory. '''
-
-        # Set the number of objectives
-        if not isinstance(objective_dim, int) or (objective_dim < 1):
-            raise ValueError('The input "objective_dim" must be a positive integer greater than 0!')
-        self.objective_dim = objective_dim
-        # Set the position dimension and the position boundaries
-        if not isinstance(position_dim, int) or (position_dim < 1):
-            raise ValueError('The input "position_dim" must be a positive integer greater than 0!')
-        self.position_dim = position_dim
-        # Set the maximum and minimum boundaries for positions
-        if not isinstance(position_max_value, np.ndarray):
-            raise TypeError('The input "position_max_value" must be a numpy.ndarray!')
-        if not isinstance(position_min_value, np.ndarray):
-            raise TypeError('The input "position_min_value" must be a numpy.ndarray!')
-        if not np.issubdtype(position_max_value.dtype, np.number) or np.any(np.isnan(position_max_value)):
-            raise TypeError('The input "position_max_value" must be an array of numbers (without NaN values)!')
-        if not np.issubdtype(position_min_value.dtype, np.number) or np.any(np.isnan(position_min_value)):
-            raise TypeError('The input "position_min_value" must be an array of numbers (without NaN values)!')
-        if position_max_value.ndim != 1:
-            raise ValueError('The input "position_max_value" must be a one-dimensional array!')
-        if position_min_value.ndim != 1:
-            raise ValueError('The input "position_min_value" must be a one-dimensional array!')
-        if np.any(position_max_value < position_min_value):
-            raise ValueError('Each element of "position_max_value" must be greater than or equal to "position_min_value"!')
-        self.position_max_value = position_max_value
-        self.position_min_value = position_min_value
-        # Set the maximum and minimum boundaries for velocities
-        self.velocity_max_value = self.position_max_value - self.position_min_value
-        self.velocity_min_value = -self.velocity_max_value
-        # Set the population size
-        if not isinstance(population_size, int):
-            raise TypeError('The input "population_size" must be an integer!')
-        elif population_size < 1:
-            raise ValueError('The input "population_size" must be a positive integer greater than 0!')
-        self.population_size = population_size
-        # Set the memory size
-        if memory_size is None:
-            self.memory_size = population_size
-        elif not isinstance(memory_size, int):
-            TypeError('The input "memory_size" must be an integer!')
-        elif memory_size < 1:
-            raise ValueError('The input "memory_size" must be a positive integer greater than 0!')
-        else:
-            self.memory_size = memory_size
-        # Validate the options of the MESH
-        valid_options = {
-            "global_best_attribution_type": (0, 1, 2, 3),
-            "de_mutation_type": (0, 1, 2, 3, 4),
-            "dm_pool_type": (0, 1, 2),
-        }
-        for param, valid_set in valid_options.items():
-            if locals()[param] not in valid_set:
-                raise ValueError(f'The input "{param}" must be one of these options: {valid_set}!')
-        # Set the global attribution type
-        self.global_best_attribution_type = global_best_attribution_type
-        # Set the differential mutation type
-        self.de_mutation_type = de_mutation_type
-        # Set the differential mutation pool type
-        self.dm_pool_type = dm_pool_type
-        # Set the communication probability
-        if not isinstance(communication_probability, (float, int)) or (not (0 <= communication_probability <= 1)):
-            raise ValueError('Communication probability must be a number between 0 and 1!')
-        self.communication_probability = communication_probability
-        # Set the mutation rate
-        if not isinstance(mutation_rate, (float, int)) or (not (0 <= mutation_rate <= 1)):
-            raise ValueError('Mutation rate must be a number between 0 and 1!')
-        self.mutation_rate = mutation_rate
-        # Set the maximum number of generations
-        if not isinstance(max_gen, int):
-            raise TypeError('The input "max_gen" must be an integer number!')
-        self.max_gen = max(max_gen, 0)
-        # Set the maximum number of fitness evaluations
-        if not isinstance(max_fit_eval, int):
-            raise TypeError('The input "max_fit_eval" must be an integer number!')
-        self.max_fit_eval = max(max_fit_eval, 0)
-        # Set the number of personal guides
-        if not isinstance(max_personal_guides, int) or max_personal_guides < 1:
-            raise ValueError('The input "max_personal_guides" must be a positive integer greater than 0!')
-        self.max_personal_guides = max_personal_guides
-        # Set the random state (if different from None)
-        self.random_state = random_state
         
 ''' Algoritmo MESH inheriting operations from the Operation class '''
 class MESH(Operations):
     ''' Initialize the instance '''
     def __init__(self,
-                 params, # MESH parameters
+                 params: MeshParameters, # MESH parameters
                  fitness_function, # A fitness function that returns a numpy array with each value in the respective component
                  log_memory=False): # A string to log the memory (the name of the files will use this string)
         

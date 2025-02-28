@@ -89,10 +89,10 @@ class Population:
         self.global_best: np.ndarray[np.float64, 2]
         ''' Numpy matrix with the best global position for each particle. '''
         self.personal_best_list_pos: np.ndarray[np.float64, 3]
-        ''' Numpy tensor with a matrix of personal guide positions for each particle. Each matrix has :attr:`~mesh.MESH.MeshParameters.max_personal_guides` positions.
+        ''' Numpy tensor with a matrix of personal guide positions for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` positions.
         Initialized with the respective particle's position repeated for all matrix entries. '''
         self.personal_best_list_fit: np.ndarray[np.float64, 3]
-        ''' Numpy tensor with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.MESH.MeshParameters.max_personal_guides` fitnesses. '''
+        ''' Numpy tensor with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` fitnesses. '''
 
         self.position = np.random.uniform(position_bounds[0], position_bounds[1], (population_size, position_dim))
         self.velocity = np.random.uniform(velocity_bounds[0], velocity_bounds[1], (population_size, position_dim))
@@ -111,7 +111,7 @@ class Memory:
     Args:
         population (:class:`Population`): A :class:`Population` instance that represents the MESH population.
         pareto_frontier (:type:`np.ndarray[np.uint64]`): A numpy array of the particle indices for the population matrices.
-        memory_size (:type:`int`): The maximum size of the memory. See :attr:`~mesh.MESH.MeshParameters.memory_size`.
+        memory_size (:type:`int`): The maximum size of the memory. See :attr:`~mesh.parameters.MeshParameters.memory_size`.
     """
     
     def __init__(self, population: Population, pareto_frontier: np.ndarray[np.uint64], memory_size: int) -> None:
@@ -120,7 +120,7 @@ class Memory:
         self.fitness: np.ndarray[np.float64, 2]
         """ Numpy matrix with the memory fitness. """
         self.sigma: Optional[np.ndarray[np.float64]] = None
-        """ Numpy matrix with the memory sigma values. This attribute is only used when the sigma method is used. """
+        """ Numpy matrix with the memory sigma values. This attribute is only used when the Sigma method is used. """
 
         if(len(pareto_frontier) <= memory_size):
             self.position = population.position[pareto_frontier]

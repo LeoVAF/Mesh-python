@@ -32,10 +32,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-import numpy as np
 import pickle
 
 from MESH import *
+from parameters import MeshParameters
 
 from pathlib import Path
 from microgrid.techno_ka import *
