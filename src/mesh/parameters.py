@@ -1,30 +1,82 @@
 import numpy as np
 
 from typing import Optional
+from utils.validations import is_greater
 
 class MeshParameters:
     ''' MESH parameters.
     
     Args:
         objective_dim (:type:`int`): Number of problem objectives.
+        position_dim (:type:`int`): Number of problem variables.
+        position_max_value (:class:`numpy.ndarray`): A array with each upper bound of problem.
+        position_min_value (:class:`numpy.ndarray`): A array with each lower bound of problem.
+        population_size (:type:`int`): Population size.
+        memory_size (:type:`int`, optional): Number of particles in memory. Default is None.
+        global_best_attribution_type (:type:`{0,1,2,3}`): Global best selection method. The options are:
+
+            - :data:`0`: Applies Sigma method in memory to select the global best.
+            - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+            - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
+            - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+
+            Raises:
+                ValueError: If its value is not one of the options.
+        dm_pool_type (:type:`{0,1,2}`): Differential mutation pool where the particles will be sampled for the differential mutation operation. The options are:
+        
+            - :data:`0`: Population.
+            - :data:`1`: Memory.
+            - :data:`2`: Both population and memory.
+
+        Raises:
+            ValueError: If its value is not one of the options.
+        de_mutation_type (:type:`{0,1,2,3,4}`): Differential mutation operation. The options are:
+
+            - :data:`0`: DE/rand/1/Bin.
+            - :data:`1`: DE/rand/2/Bin.
+            - :data:`2`: DE/best/1/Bin.
+            - :data:`3`: DE/current-to-best/1/Bin.
+            - :data:`4`: DE/current-to-rand/1/Bin.
+
+        Raises:
+            ValueError: If its value is not one of the options.
+        communication_probability (:type:`float` | :type:`int`): Communication probability.
+        mutation_rate (:type:`float` | :type:`int`): Mutation rate.
+        max_gen (:type:`int`): Maximum number of generations.
+
+            Raises:
+                TypeError: If its type is not :type:`int`.
+        max_fit_eval (:type:`int`): Maximum number of fitness evaluations.
+
+            Raises:
+               TypeError: If its type is not :type:`int`.
+        max_personal_guides (:type:`int`): Maximum number of personal guides.
+
+            Raises:
+                TypeError: If its type is not :type:`int`.
+                ValueError: If its value is less than 1.
+        random_state (:type:`int`, optional): Numpy random seed to generate random numbers.
+
+            Raises:
+                TypeError: If its type is not :type:`int` or :data:`None`.
     '''
 
     def __init__(self,
                  objective_dim: int,
-                 position_dim: int, # Design space dimension
-                 position_max_value: np.ndarray[np.float64], # A array with each upper bound of problem
-                 position_min_value: np.ndarray[np.float64], # A array with each lower bound of problem
-                 population_size: int, # Population size
-                 memory_size: Optional[int] = None, # Number of particles in memory
-                 global_best_attribution_type: {0,1,2,3} = 0, # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4 (E3 and E4 with problem)
-                 dm_pool_type: {0,1,2} = 0, # Sampling vectors 0 -> swarm (V1) | 1 -> memory (V2) | 2 -> both swarm and memory (V3)
-                 de_mutation_type: {0,1,2,3,4} = 0, # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
-                 communication_probability: float | int = 0.7, # Communication probability
-                 mutation_rate: float | int = 0.9, # Mutation rate
-                 max_gen: int = 0, # Maximum number of generations (not used if it less than one)
-                 max_fit_eval: int = 0, # Maximum number of fitness evaluations (not used if it is less than one)
-                 max_personal_guides: int = 3, # Maximum number of personal guides (greater than zero)
-                 random_state: Optional[int] = None): # Numpy random seed to generate random numbers
+                 position_dim: int,
+                 position_max_value: np.ndarray[np.float64],
+                 position_min_value: np.ndarray[np.float64],
+                 population_size: int,
+                 memory_size: Optional[int] = None,
+                 global_best_attribution_type: {0,1,2,3} = 0,
+                 dm_pool_type: {0,1,2} = 0,
+                 de_mutation_type: {0,1,2,3,4} = 0,
+                 communication_probability: float | int = 0.7,
+                 mutation_rate: float | int = 0.9,
+                 max_gen: int = 0,
+                 max_fit_eval: int = 0,
+                 max_personal_guides: int = 3,
+                 random_state: Optional[int] = None):
         
         self.objective_dim: int
         ''' Number of problem objectives.
@@ -91,15 +143,54 @@ class MeshParameters:
             - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
             - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
             - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+        
+        Raises:
+            ValueError: If its value is not one of the options
         '''
         self.dm_pool_type: {0,1,2}
+        ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. The options are:
+        
+            - :data:`0`: Population.
+            - :data:`1`: Memory.
+            - :data:`2`: Both population and memory.
+
+        Raises:
+            ValueError: If its value is not one of the options.
+        '''
         self.de_mutation_type: {0,1,2,3,4}
-        communication_probability: float | int
-        mutation_rate: float | int
-        max_gen: int
-        max_fit_eval: int
-        max_personal_guides: int
-        random_state: Optional[int]
+        ''' Differential mutation operation. The options are:
+        
+            - :data:`0`: DE/rand/1/Bin.
+            - :data:`1`: DE/rand/2/Bin.
+            - :data:`2`: DE/best/1/Bin.
+            - :data:`3`: DE/current-to-best/1/Bin.
+            - :data:`4`: DE/current-to-rand/1/Bin.
+
+        Raises:
+            ValueError: If its value is not one of the options.
+        '''
+        self.communication_probability: float | int
+        ''' Communication probability. It must be a number between 0 and 1.
+        
+        Raises:
+            TypeError: If its type is not :type:`float` or :type:`int`.
+            ValueError: If it is not a number between 0 and 1.
+        '''
+        self.mutation_rate: float | int
+        ''' Mutation rate. It must be a number between 0 and 1.
+        
+        Raises:
+            TypeError: If its type is not :type:`float` or :type:`int`.
+            ValueError: If it is not a number between 0 and 1.
+        '''
+        self.max_gen: int
+        ''' Maximum number of generations. If `max_gen` it is negative, so it will be equal to 0. '''
+        self.max_fit_eval: int
+        ''' Maximum number of fitness evaluations. If `max_fit_eval` is negative, so it will be equal to 0. '''
+        self.max_personal_guides: int
+        ''' Maximum number of personal guides. '''
+        self.random_state: Optional[int]
+        ''' Seed to generate random numbers. '''
 
         # Set the number of objectives
         if not isinstance(objective_dim, int):
@@ -141,7 +232,7 @@ class MeshParameters:
         if not isinstance(population_size, int):
             raise TypeError('The input "population_size" must be an integer.')
         if population_size < 1:
-            raise ValueError('The input "population_size" must be a positive integer greater than 0.')
+            raise ValueError('The input "population_size" must be greater than 0.')
         self.population_size = population_size
         # Set the memory size
         if memory_size is None:
@@ -149,7 +240,7 @@ class MeshParameters:
         if not isinstance(memory_size, int):
             raise TypeError('The input "memory_size" must be an integer.')
         elif memory_size < 1:
-            raise ValueError('The input "memory_size" must be a positive integer greater than 0.')
+            raise ValueError('The input "memory_size" must be greater than 0.')
         else:
             self.memory_size = memory_size
         # Validate the options of the MESH
@@ -168,24 +259,32 @@ class MeshParameters:
         # Set the differential mutation pool type
         self.dm_pool_type = dm_pool_type
         # Set the communication probability
-        if not isinstance(communication_probability, (float, int)) or (not (0 <= communication_probability <= 1)):
-            raise ValueError('Communication probability must be a number between 0 and 1.')
+        if not isinstance(communication_probability, (float, int)):
+           raise TypeError('The input "communication_probability" must be a float or int.') 
+        if not (0 <= communication_probability <= 1):
+            raise ValueError('Communication probability must be between 0 and 1.')
         self.communication_probability = communication_probability
         # Set the mutation rate
-        if not isinstance(mutation_rate, (float, int)) or (not (0 <= mutation_rate <= 1)):
-            raise ValueError('Mutation rate must be a number between 0 and 1.')
+        if not isinstance(mutation_rate, (float, int)):
+            raise TypeError('The input "mutation_rate" must be a float or int.')
+        if not (0 <= mutation_rate <= 1):
+            raise ValueError('Mutation rate must be between 0 and 1.')
         self.mutation_rate = mutation_rate
         # Set the maximum number of generations
         if not isinstance(max_gen, int):
-            raise TypeError('The input "max_gen" must be an integer number.')
+            raise TypeError('The input "max_gen" must be an integer.')
         self.max_gen = max(max_gen, 0)
         # Set the maximum number of fitness evaluations
         if not isinstance(max_fit_eval, int):
-            raise TypeError('The input "max_fit_eval" must be an integer number.')
+            raise TypeError('The input "max_fit_eval" must be an integer.')
         self.max_fit_eval = max(max_fit_eval, 0)
         # Set the number of personal guides
-        if not isinstance(max_personal_guides, int) or max_personal_guides < 1:
-            raise ValueError('The input "max_personal_guides" must be a positive integer greater than 0.')
+        if not isinstance(max_personal_guides, int):
+            raise TypeError('The input "max_personal_guides" must be a integer.')
+        if max_personal_guides < 1:
+            raise ValueError('The input "max_personal_guides" must be greater than 0.')
         self.max_personal_guides = max_personal_guides
         # Set the random state (if different from None)
+        if random_state is not None and not isinstance(random_state, int):
+            raise TypeError('The input "random_state" must be a integer or None.')
         self.random_state = random_state
