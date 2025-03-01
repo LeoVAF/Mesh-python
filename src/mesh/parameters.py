@@ -8,11 +8,46 @@ class MeshParameters:
     
     Args:
         objective_dim (:type:`int`): Number of problem objectives.
+
+            Raises:
+                TypeError: If its type is not :type:`int`.
+                ValueError: If its value is less than 1.
+
         position_dim (:type:`int`): Number of problem variables.
-        position_max_value (:class:`numpy.ndarray`): A array with each upper bound of problem.
-        position_min_value (:class:`numpy.ndarray`): A array with each lower bound of problem.
+            Raises:
+                TypeError: If its type is not :type:`int`.
+                ValueError: If its value is less than 1.
+
+        position_max_value (:type:`numpy.ndarray`): A array with each upper bound of problem.
+            
+            Raises:
+                TypeError: If it is not a numpy array of numbers (without NaN values).
+                ValueError:
+                    - If it is not an one-dimensional array.
+                    - If it doesn't have the size equal to :attr:`position_dim`.
+                    - If it has any element greater than the respective element from :attr:`position_min_value`.
+            
+        position_min_value (:type:`numpy.ndarray`): A array with each lower bound of problem.
+
+            Raises:
+                TypeError: If it is not a numpy array of numbers (without NaN values).
+                ValueError:
+                    - If it is not an one-dimensional array.
+                    - If it doesn't have the size equal to :attr:`position_dim`.
+                    - If it has any element greater than the respective element from :attr:`position_max_value`.
+            
         population_size (:type:`int`): Population size.
+
+            Raises:
+                TypeError: If its type is not :type:`int`.
+                ValueError: If its value is less than 1.
+        
         memory_size (:type:`int`, optional): Number of particles in memory. Default is None.
+            
+            Raises:
+                TypeError: If its type is not :type:`int` or :data:`None`.
+                ValueError: If its value is less than 1, when its type is :type:`int`.
+        
         global_best_attribution_type (:type:`{0,1,2,3}`): Global best selection method. The options are:
 
             - :data:`0`: Applies Sigma method in memory to select the global best.
@@ -22,6 +57,7 @@ class MeshParameters:
 
             Raises:
                 ValueError: If its value is not one of the options.
+        
         dm_pool_type (:type:`{0,1,2}`): Differential mutation pool where the particles will be sampled for the differential mutation operation. The options are:
         
             - :data:`0`: Population.
@@ -30,6 +66,7 @@ class MeshParameters:
 
         Raises:
             ValueError: If its value is not one of the options.
+    
         de_mutation_type (:type:`{0,1,2,3,4}`): Differential mutation operation. The options are:
 
             - :data:`0`: DE/rand/1/Bin.
@@ -40,21 +77,35 @@ class MeshParameters:
 
         Raises:
             ValueError: If its value is not one of the options.
+    
         communication_probability (:type:`float` | :type:`int`): Communication probability.
+
+            Raises:
+                TypeError: If its type is not :type:`float` or :type:`int`.
+                ValueError: If it is not a number between 0 and 1, inclusive.
+        
         mutation_rate (:type:`float` | :type:`int`): Mutation rate.
+
+            Raises:
+                TypeError: If its type is not :type:`float` or :type:`int`.
+                ValueError: If it is not a number between 0 and 1, inclusive.
+        
         max_gen (:type:`int`): Maximum number of generations.
 
             Raises:
                 TypeError: If its type is not :type:`int`.
+        
         max_fit_eval (:type:`int`): Maximum number of fitness evaluations.
 
             Raises:
                TypeError: If its type is not :type:`int`.
+        
         max_personal_guides (:type:`int`): Maximum number of personal guides.
 
             Raises:
                 TypeError: If its type is not :type:`int`.
                 ValueError: If its value is less than 1.
+        
         random_state (:type:`int`, optional): Numpy random seed to generate random numbers.
 
             Raises:
@@ -79,39 +130,13 @@ class MeshParameters:
                  random_state: Optional[int] = None):
         
         self.objective_dim: int
-        ''' Number of problem objectives.
-
-        Raises:
-            TypeError: If its type is not :type:`int`.
-            ValueError: If its value is less than 1.
-        '''
+        ''' Number of problem objectives. '''
         self.position_dim: int
-        ''' Number of problem variables.
-
-        Raises:
-            TypeError: If its type is not :type:`int`.
-            ValueError: If its value is less than 1.
-        '''
+        ''' Number of problem variables. '''
         self.position_max_value: np.ndarray[np.float64]
-        ''' Numpy array with the upper bound of the problem for each variable.
-        
-        Raises:
-            TypeError: If it is not a numpy array of numbers (without NaN values).
-            ValueError:
-                - If it is not an one-dimensional array.
-                - If it doesn't have the size equal to :attr:`position_dim`.
-                - If it has any element greater than the respective element from :attr:`position_min_value`.
-        '''
+        ''' Numpy array with the upper bound of the problem for each variable. '''
         self.position_min_value: np.ndarray[np.float64]
-        ''' Numpy array with the lower bound of the problem for each variable.
-        
-        Raises:
-            TypeError: If it is not a numpy array of numbers (without NaN values).
-            ValueError:
-                - If it is not an one-dimensional array.
-                - If it doesn't have the size equal to :attr:`position_dim`.
-                - If it has any element greater than the respective element from :attr:`position_max_value`.
-        '''
+        ''' Numpy array with the lower bound of the problem for each variable. '''
         self.velocity_max_value: np.ndarray[np.float64]
         ''' Numpy array with the upper bound of the velocity calculated by:
 
@@ -123,66 +148,19 @@ class MeshParameters:
         .. math::
             V_{min} = X_{min} - X_{max}. '''
         self.population_size: int
-        ''' Number of particles.
-
-        Raises:
-            TypeError: If its type is not :type:`int`.
-            ValueError: If its value is less than 1.
-        '''
+        ''' Number of particles. '''
         self.memory_size: Optional[int]
-        ''' Maximum size of MESH memory. If it is :data:`None`, so the memory size will be equal to :attr:`population_size`.
-
-        Raises:
-            TypeError: If its type is not :type:`int` or :data:`None`.
-            ValueError: If its value is less than 1, when its type is :type:`int`.
-        '''
+        ''' Maximum size of MESH memory. If it is :data:`None`, so the memory size will be equal to :param:`population_size`. '''
         self.global_best_attribution_type: {0,1,2,3}
-        ''' Global best selection method. The options are:
-
-            - :data:`0`: Applies Sigma method in memory to select the global best.
-            - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-            - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
-            - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-        
-        Raises:
-            ValueError: If its value is not one of the options
-        '''
+        ''' Global best selection method. '''
         self.dm_pool_type: {0,1,2}
-        ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. The options are:
-        
-            - :data:`0`: Population.
-            - :data:`1`: Memory.
-            - :data:`2`: Both population and memory.
-
-        Raises:
-            ValueError: If its value is not one of the options.
-        '''
+        ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. '''
         self.de_mutation_type: {0,1,2,3,4}
-        ''' Differential mutation operation. The options are:
-        
-            - :data:`0`: DE/rand/1/Bin.
-            - :data:`1`: DE/rand/2/Bin.
-            - :data:`2`: DE/best/1/Bin.
-            - :data:`3`: DE/current-to-best/1/Bin.
-            - :data:`4`: DE/current-to-rand/1/Bin.
-
-        Raises:
-            ValueError: If its value is not one of the options.
-        '''
+        ''' Differential mutation operation. '''
         self.communication_probability: float | int
-        ''' Communication probability. It must be a number between 0 and 1.
-        
-        Raises:
-            TypeError: If its type is not :type:`float` or :type:`int`.
-            ValueError: If it is not a number between 0 and 1.
-        '''
+        ''' Communication probability. It must be a number between 0 and 1. '''
         self.mutation_rate: float | int
-        ''' Mutation rate. It must be a number between 0 and 1.
-        
-        Raises:
-            TypeError: If its type is not :type:`float` or :type:`int`.
-            ValueError: If it is not a number between 0 and 1.
-        '''
+        ''' Mutation rate. '''
         self.max_gen: int
         ''' Maximum number of generations. If `max_gen` it is negative, so it will be equal to 0. '''
         self.max_fit_eval: int

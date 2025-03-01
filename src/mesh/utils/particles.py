@@ -35,47 +35,24 @@ import numpy as np
 
 from pygmo import crowding_distance
 from math import comb
-from typing import Optional, Literal
-
-# class PBest:
-#     """
-#     Represents the MESH particle personal best.
-    
-#     Attributes:
-#         position (np.ndarray): An numpy matrix with the personal best position.
-#         fitness (np.ndarray): An numpy matrix with the personal best fitness.
-#     """
-#     def __init__(self, position: np.ndarray, fitness: np.ndarray):
-#         self.position = position.copy()
-#         self.fitness = fitness.copy()
+from typing import Optional
+from parameters import MeshParameters
+from utils.validations import assert_type, assert_index_np_array
 
 class Population:
     """
     Represents the MESH population.
 
     Args:
-        objective_dim (:type:`int`): Number of objectives in the problem.
-        position_dim (:type:`int`): Number of variables in the problem.
-        position_bounds (:type:`tuple[np.ndarray[np.float64], np.ndarray[np.float64]]`): The lower and upper bounds of the positions, respectively.
-        velocity_bounds (:type:`tuple[np.ndarray[np.float64], np.ndarray[np.float64]]`): The lower and upper bounds of the fitnesses, respectively.
-        population_size (:type:`int`): Number of particles.
-        global_best_attribution_type (:type:`{0, 1, 2, 3}`): Global best selection method. The options are:
-
-            - :data:`0`: Applies Sigma method in memory to select the global best.
-            - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-            - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
-            - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-        max_personal_guides (:type:`int`): Number of maximum personal guides.
+        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_max_value`, :attr:`~mesh.parameters.MeshParameters.position_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.max_personal_guides`, and :attr:`~mesh.parameters.MeshParameters.global_best_attribution_type` are used to initialize the population.
+    
+    Raises:
+        TypeError: If the input is not an instance of :class:`~mesh.parameters.MeshParameters`.
     """
 
-    def __init__(self,
-                 objective_dim: int,
-                 position_dim: int,
-                 position_bounds: tuple[np.ndarray[np.float64], np.ndarray[np.float64]],
-                 velocity_bounds: tuple[np.ndarray[np.float64], np.ndarray[np.float64]],
-                 population_size: int,
-                 global_best_attribution_type: Literal[0, 1, 2, 3],
-                 max_personal_guides: int) -> None:
+    def __init__(self, params: MeshParameters) -> None:
+        assert_type(params, 'params', MeshParameters)
+
         self.position: np.ndarray[np.float64, 2]
         ''' Numpy matrix with the particle's positions initialized randomly under uniform distribution. '''
         self.velocity: np.ndarray[np.float64, 2]
@@ -94,27 +71,36 @@ class Population:
         self.personal_best_list_fit: np.ndarray[np.float64, 3]
         ''' Numpy tensor with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` fitnesses. '''
 
-        self.position = np.random.uniform(position_bounds[0], position_bounds[1], (population_size, position_dim))
-        self.velocity = np.random.uniform(velocity_bounds[0], velocity_bounds[1], (population_size, position_dim))
-        self.fitness = np.full((population_size, objective_dim), np.inf)
-        self.rank= np.empty(population_size, dtype=int)
-        if global_best_attribution_type < 2:
-            self.sigma = np.full((population_size, comb(objective_dim, 2)), np.inf)
-        self.global_best = np.empty((population_size, position_dim))
-        self.personal_best_list_pos = np.repeat(self.position[:, np.newaxis, :], max_personal_guides, axis=1)
-        self.personal_best_list_fit = np.empty((population_size, max_personal_guides, objective_dim))
+        self.position = np.random.uniform(params.position_min_value, params.position_max_value, (params.population_size, params.position_dim))
+        self.velocity = np.random.uniform(params.velocity_min_value, params.velocity_max_value, (params.population_size, params.position_dim))
+        self.fitness = np.full((params.population_size, params.objective_dim), np.inf)
+        self.rank= np.empty(params.population_size, dtype=int)
+        if params.global_best_attribution_type < 2:
+            self.sigma = np.full((params.population_size, comb(params.objective_dim, 2)), np.inf)
+        self.global_best = np.empty((params.population_size, params.position_dim))
+        self.personal_best_list_pos = np.repeat(self.position[:, np.newaxis, :], params.max_personal_guides, axis=1)
+        self.personal_best_list_fit = np.empty((params.population_size, params.max_personal_guides, params.objective_dim))
 
 class Memory:
     """
     Represents the MESH memory.
 
     Args:
-        population (:class:`Population`): A :class:`Population` instance that represents the MESH population.
-        pareto_frontier (:type:`np.ndarray[np.uint64]`): A numpy array of the particle indices for the population matrices.
-        memory_size (:type:`int`): The maximum size of the memory. See :attr:`~mesh.parameters.MeshParameters.memory_size`.
+        population (:class:`Population`): The attributes :attr:`~Population.position` and :attr:`~Population.fitness` are used to set the memory position and fitness.
+        pareto_frontier (:type:`np.ndarray[np.uint64]`): A numpy array of the particle indices for the population position and fitness matrices.
+        params (:class:`~mesh.parameters.MeshParameters`): The attribute :attr:`~mesh.parameters.MeshParameters.memory_size` is used to limit the memory size.
+
+    Raises:
+        TypeError: If the input is not of the expected type.
     """
     
-    def __init__(self, population: Population, pareto_frontier: np.ndarray[np.uint64], memory_size: int) -> None:
+    def __init__(self, population: Population, pareto_frontier: np.ndarray[np.uint64], params: MeshParameters) -> None:
+        assert_type(population, 'population', Population)
+        assert_index_np_array(pareto_frontier, 'pareto_frontier', population.position.shape[0])
+        assert_index_np_array(pareto_frontier, 'pareto_frontier', population.fitness.shape[0])
+        assert_type(params, 'params', MeshParameters)
+
+        # Set the class attributes
         self.position: np.ndarray[np.float64, 2] 
         """ Numpy matrix with the memory position. """
         self.fitness: np.ndarray[np.float64, 2]
@@ -122,14 +108,14 @@ class Memory:
         self.sigma: Optional[np.ndarray[np.float64]] = None
         """ Numpy matrix with the memory sigma values. This attribute is only used when the Sigma method is used. """
 
-        if(len(pareto_frontier) <= memory_size):
+        if(len(pareto_frontier) <= params.memory_size):
             self.position = population.position[pareto_frontier]
             self.fitness = population.fitness[pareto_frontier]
         else:
             # Calculate the crowd distance
             crowd_distances = crowding_distance(population.fitness[pareto_frontier])
             # Sort the Pareto frontier by the crowding distance
-            idx = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
+            idx = np.argpartition(crowd_distances, -params.memory_size)[-params.memory_size:]
             # Initialize the memory with the best solutions
             self.position = population.position[pareto_frontier[idx]]
             self.fitness = population.fitness[pareto_frontier[idx]]

@@ -68,13 +68,7 @@ class MESH(Operations):
         if(params.random_state):
             np.random.seed(params.random_state)
         # Particles
-        self.population = Population(params.objective_dim,
-                                    params.position_dim,
-                                    (params.position_min_value, params.position_max_value),
-                                    (params.velocity_min_value, params.velocity_max_value),
-                                    params.population_size,
-                                    params.global_best_attribution_type,
-                                    params.max_personal_guides)
+        self.population = Population(params)
         # Memory particles (and the final result after run MESH)
         self.memory = None
         # Frontiers (a list of numpy arrays with index of each particle in the respective frontier)
@@ -330,7 +324,7 @@ class MESH(Operations):
                 # get the population frontiers and ranks
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                 # Initialize the memory
-                self.memory = Memory(self.population, self.fronts[0], self.params.memory_size)
+                self.memory = Memory(self.population, self.fronts[0], self.params)
                 # Main loop
                 while True:
                     # Count generations if it is a stopping criterion
