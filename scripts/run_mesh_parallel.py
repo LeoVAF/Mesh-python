@@ -38,7 +38,7 @@ def run_mesh(experiment_name,
 	combined_P = None
 	for i in tqdm(range(num_runs)):
 		params = MeshParameters(objective_dim,
-							position_dim, position_max_value, position_min_value, 
+							position_dim, position_min_value, position_max_value, 
 							population_size, memory_size=memory_size,
 							global_best_attribution_type=global_best_attribution_type,
 							dm_pool_type=dm_pool_type,
