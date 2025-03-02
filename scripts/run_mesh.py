@@ -104,7 +104,7 @@ def main():
                                 random_state=random_state)
         
         log = f"result/{config}_run{i+1}"
-        mesh = MESH(params, func, log_memory=log)
+        mesh = Mesh(params, func, log_memory=log)
         mesh.run()
         Pos, Fit = mesh.get_results()
         result[i+1] = {"F":Fit, "P":Pos}

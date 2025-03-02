@@ -48,7 +48,7 @@ def run_mesh(experiment_name,
 							max_personal_guides=personal_guide_array_size,
 							random_state=random_state)
 		log = False
-		mesh = MESH(params, func, log_memory=log)
+		mesh = Mesh(params, func, log_memory=log)
 		mesh.run()
 		Pos, Fit = mesh.get_results()
 		result[i+1] = {"F":Fit, "P":Pos}

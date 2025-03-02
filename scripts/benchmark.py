@@ -65,7 +65,7 @@ def run_new():
     #experiment_name = 'zdt2'
     #func = get_problem(experiment_name, n_var=position_dim).evaluate
     ##########################################################
-    new_mesh = MESH(params, func)
+    new_mesh = Mesh(params, func)
     new_mesh.run()
 
 def run_old():
