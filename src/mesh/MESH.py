@@ -36,7 +36,7 @@ import numpy as np
 
 from parameters import MeshParameters
 from utils.particles import Population, Memory
-from utils.auxiliar import Operations, PreAlocated, StoppingAlgorithm
+from utils.auxiliar import Operations, PreAllocated, StoppingAlgorithm
 
 from scipy.stats import truncnorm
 from tqdm import tqdm
@@ -52,9 +52,9 @@ from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distanc
 class MESH(Operations):
     ''' Initialize the instance '''
     def __init__(self,
-                 params: MeshParameters, # MESH parameters
-                 fitness_function, # A fitness function that returns a numpy array with each value in the respective component
-                 log_memory=False): # A string to log the memory (the name of the files will use this string)
+                params: MeshParameters, # MESH parameters
+                fitness_function, # A fitness function that returns a numpy array with each value in the respective component
+                log_memory=False): # A string to log the memory (the name of the files will use this string)
         
         # Receive the algorithm parameters
         self.params = params
@@ -80,10 +80,7 @@ class MESH(Operations):
         # Create a random matrix (4 x population_size) for w1 and two random vectors for w2 and w3
         self.weights = np.random.uniform(0.0, 1.0, [4, params.population_size])
         # Store some pre-calculated data
-        self.pre_alocated = PreAlocated(params.objective_dim,
-                                        params.position_dim,
-                                        params.population_size,
-                                        params.global_best_attribution_type)
+        self.pre_allocated = PreAllocated(params)
         # Variable for logging memory
         if not isinstance(log_memory, str) and log_memory:
             raise TypeError('The input "log_memory" must be either a string or a falsy value!')
@@ -175,12 +172,12 @@ class MESH(Operations):
         # Calculate the inertia term and accumulate it in the velocities
         np.multiply(velocities, weights[0][:, np.newaxis], out=velocities)
         # Calculate the memory term and accumulate it in the velocities
-        matrix_for_operations = self.pre_alocated.matrix_for_operations
+        matrix_for_operations = self.pre_allocated.matrix_for_operations
         np.subtract(pb_positions, positions, out=matrix_for_operations)
         np.multiply(matrix_for_operations, weights[1][:, np.newaxis], out=matrix_for_operations)
         np.add(velocities, matrix_for_operations, out=velocities)
         # Calculate the cooperation term
-        vector_for_operations = self.pre_alocated.vector_for_operations
+        vector_for_operations = self.pre_allocated.vector_for_operations
         vector_for_operations[:] = np.random.normal(0, 1, population_size)
         np.multiply(vector_for_operations, weights[3], out=vector_for_operations)
         np.add(vector_for_operations, 1, out=vector_for_operations)
@@ -204,12 +201,12 @@ class MESH(Operations):
     ''' Make the selection of the population between the previous and current population '''
     def population_selection(self):
         population_size = self.params.population_size
-        pre_alocated = self.pre_alocated
+        pre_allocated = self.pre_allocated
         # Get the fitness matrix with the previous and the current population
-        pre_alocated.fitness_selection[:population_size] = pre_alocated.fitness_copy
-        pre_alocated.fitness_selection[population_size:] = self.population.fitness
+        pre_allocated.fitness_selection[:population_size] = pre_allocated.fitness_copy
+        pre_allocated.fitness_selection[population_size:] = self.population.fitness
         # Find the best N indices
-        best_N_idxs = select_best_N_mo(pre_alocated.fitness_selection, population_size)
+        best_N_idxs = select_best_N_mo(pre_allocated.fitness_selection, population_size)
         # Separate the previous and current population indices from best_N_idxs
         mask = best_N_idxs < population_size
         prev_idxs = best_N_idxs[mask]
@@ -219,9 +216,9 @@ class MESH(Operations):
         # Get the previous and the current size of indices
         prev_idx_size = len(prev_idxs)
         # Select the best previous particles
-        self.population.position[:prev_idx_size] = pre_alocated.position_copy[prev_idxs]
-        self.population.velocity[:prev_idx_size] = pre_alocated.velocity_copy[prev_idxs]
-        self.population.fitness[:prev_idx_size] = pre_alocated.fitness_copy[prev_idxs]
+        self.population.position[:prev_idx_size] = pre_allocated.position_copy[prev_idxs]
+        self.population.velocity[:prev_idx_size] = pre_allocated.velocity_copy[prev_idxs]
+        self.population.fitness[:prev_idx_size] = pre_allocated.fitness_copy[prev_idxs]
         # Select the best current particles
         self.population.position[prev_idx_size:] = self.population.position[current_idxs]
         self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
@@ -335,9 +332,9 @@ class MESH(Operations):
                     # Update global best
                     self.global_best_attribution()
                     # Store some data of the population before the movement
-                    self.pre_alocated.position_copy[:] = self.population.position.copy()
-                    self.pre_alocated.velocity_copy[:] = self.population.velocity.copy()
-                    self.pre_alocated.fitness_copy[:] = self.population.fitness.copy()
+                    self.pre_allocated.position_copy[:] = self.population.position.copy()
+                    self.pre_allocated.velocity_copy[:] = self.population.velocity.copy()
+                    self.pre_allocated.fitness_copy[:] = self.population.fitness.copy()
                     # Apply the movviment to the particles
                     self.move_population()
                     # Select the best particles from those before and after movement

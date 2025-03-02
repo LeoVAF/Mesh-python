@@ -33,19 +33,19 @@
 
 import numpy as np
 
-from pygmo import crowding_distance
-from math import comb
-from typing import Optional
 from parameters import MeshParameters
 from validations.python import assert_type
 from validations.numpy import assert_np_vector_index
 
+from pygmo import crowding_distance
+from math import comb
+from typing import Optional
+
 class Population:
-    """
-    Represents the MESH population.
+    """ Represents the MESH population.
 
     Args:
-        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_max_value`, :attr:`~mesh.parameters.MeshParameters.position_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.max_personal_guides`, and :attr:`~mesh.parameters.MeshParameters.global_best_attribution_type` are used to initialize the population.
+        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.position_min_value`, :attr:`~mesh.parameters.MeshParameters.position_max_value`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.global_best_attribution_type` and :attr:`~mesh.parameters.MeshParameters.max_personal_guides` are used to initialize the population.
     
     Raises:
         TypeError: If the input is not an instance of :class:`~mesh.parameters.MeshParameters`.

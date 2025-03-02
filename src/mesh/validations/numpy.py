@@ -17,7 +17,7 @@ def assert_no_nan_in_np_array(arr: np.ndarray, arr_name: str) -> None:
 
   # Check the array values
   if np.any(np.isnan(arr)):
-      raise ValueError(f'The input "{arr_name}" has NaN values.')
+    raise ValueError(f'The input "{arr_name}" has NaN values.')
 
 def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> None:
   ''' Check if the ``arr`` is a numpy array with the expected subtype.
@@ -40,16 +40,16 @@ def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> No
       raise TypeError(f'The input "{arr_name}" has dtype "{arr.dtype}", but expected {subtype}.')
 
 def assert_np_vector_for_operations(vec: np.ndarray[np.number], vec_name: str, size: int | np.integer) -> None:
-  ''' Check if the ``arr`` is a numpy array with the expected subtype for operations.
+  ''' Check if the ``vec`` is a numpy vector with the expected subtype for operations.
   
   Args:
-	vec (:type:`np.ndarray[np.number]`): The input to be checked.
-	vec_name (:type:`str`): The name of the input.
-	size (:type:`int | np.integer`): The expected size of the vector.
+    vec (:type:`np.ndarray[np.number]`): The input to be checked.
+    vec_name (:type:`str`): The name of the input.
+    size (:type:`int | np.integer`): The expected size of the vector.
 
   Raises:
-	TypeError: If the input does not have the expected subtype.
-	ValueError: If the numpy vector has a size different from the expected.
+    TypeError: If the input does not have the expected subtype.
+    ValueError: If the numpy vector has a size different from the expected.
   '''
 
   # Check the input types
@@ -59,7 +59,7 @@ def assert_np_vector_for_operations(vec: np.ndarray[np.number], vec_name: str, s
 
   # Check the vector size
   if vec.ndim != 1:
-      raise ValueError(f'The input "{vec_name}" must be one-dimensional.')
+    raise ValueError(f'The input "{vec_name}" must be one-dimensional.')
   if vec.size != size:
 	  raise ValueError(f'The input "{vec_name}" must have size {size}.')
 
@@ -67,15 +67,15 @@ def assert_np_vectors_for_boundary(lower: np.ndarray[np.number], lower_name: str
   ''' Check if the ``lower`` and ``upper`` are boundary numpy vectors.
   
   Args:
-	lower (:type:`np.ndarray[np.number]`): The lower boundary numpy vector.
-	lower_name (:type:`str`): The name of the lower boundary numpy vector.
-	upper (:type:`np.ndarray[np.number]`): The upper boundary numpyvector.
-	upper_name (:type:`str`): The name of the upper boundary numpyvector.
-	size (:type:`int | np.integer`): The expected size of the boundary numpy vectors.
+    lower (:type:`np.ndarray[np.number]`): The lower boundary numpy vector.
+    lower_name (:type:`str`): The name of the lower boundary numpy vector.
+    upper (:type:`np.ndarray[np.number]`): The upper boundary numpyvector.
+    upper_name (:type:`str`): The name of the upper boundary numpyvector.
+    size (:type:`int | np.integer`): The expected size of the boundary numpy vectors.
 
   Raises:
-	TypeError: If the input does not have the expected subtype.
-	ValueError: If the lower boundary vector has an element greater than the respective element in the upper boundary numpy vector or the size are not the expected.
+    TypeError: If the input does not have the expected subtype.
+    ValueError: If the lower boundary vector has an element greater than the respective element in the upper boundary numpy vector.
   '''
 
   # Check the input types
@@ -105,12 +105,12 @@ def assert_np_vector_index(idx_vec: np.ndarray, idx_vec_name: str, max_index: in
 
   # Check the vector subtype
   if not np.issubdtype(idx_vec.dtype, int) and not np.issubdtype(idx_vec.dtype, np.integer):
-      raise TypeError(f'The input "{idx_vec_name}" has dtype "{idx_vec.dtype}", but expected an type of integer.')
+    raise TypeError(f'The input "{idx_vec_name}" has dtype "{idx_vec.dtype}", but expected an type of integer.')
 
   # Check the vector values
   if idx_vec.ndim != 1:
-      raise ValueError(f'The input "{idx_vec_name}" must be one-dimensional.')
+    raise ValueError(f'The input "{idx_vec_name}" must be one-dimensional.')
   if np.any(np.isnan(idx_vec)):
-      raise ValueError(f'The input "{idx_vec_name}" has NaN values.')
+    raise ValueError(f'The input "{idx_vec_name}" has NaN values.')
   if np.any(idx_vec >= max_index) or np.any(idx_vec < -max_index):
-      raise ValueError(f'The input "{idx_vec_name}" has indices out of bounds. The maximum index is {max_index}.')
+    raise ValueError(f'The input "{idx_vec_name}" has indices out of bounds. The maximum index is {max_index}.')

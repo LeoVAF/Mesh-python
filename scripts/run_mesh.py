@@ -93,15 +93,15 @@ def main():
     combined_P = None
     for i in tqdm(range(num_runs)):
         params = MeshParameters(objective_dim,
-                                 position_dim, position_min_value, position_max_value, 
-                                 population_size, memory_size=memory_size,
-                                 global_best_attribution_type=global_best_attribution_type,
-                                 dm_pool_type=dm_pool_type,
-                                 de_mutation_type=de_mutation_type,
-                                 communication_probability=communication_probability, mutation_rate=mutation_rate,
-                                 max_gen=max_iterations, max_fit_eval=max_fitness_eval,
-                                 max_personal_guides=personal_guide_array_size,
-                                 random_state=random_state)
+                                position_dim, position_min_value, position_max_value, 
+                                population_size, memory_size=memory_size,
+                                global_best_attribution_type=global_best_attribution_type,
+                                dm_pool_type=dm_pool_type,
+                                de_mutation_type=de_mutation_type,
+                                communication_probability=communication_probability, mutation_rate=mutation_rate,
+                                max_gen=max_iterations, max_fit_eval=max_fitness_eval,
+                                max_personal_guides=personal_guide_array_size,
+                                random_state=random_state)
         
         log = f"result/{config}_run{i+1}"
         mesh = MESH(params, func, log_memory=log)

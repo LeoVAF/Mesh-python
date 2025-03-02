@@ -1,5 +1,8 @@
 import numpy as np
 
+from parameters import MeshParameters
+from validations.python import assert_type
+
 from sklearn.neighbors import NearestNeighbors
 from scipy.stats import truncnorm
 
@@ -40,7 +43,7 @@ class Operations():
         # Get the sum of each line in the fitness matrix
         sum_squared_fitnesses = np.sum(squared_fitnesses, axis=1, keepdims=True)
         # Take the indexes to make the combination of differences (simulate a lower triangular matrix per vector to make the differences efficiently)
-        row_indexes, col_indexes = self.pre_alocated.np_tril_indices
+        row_indexes, col_indexes = self.pre_allocated.np_tril_indices
         # Get the fitness differences
         differences = squared_fitnesses[:, row_indexes] - squared_fitnesses[:, col_indexes]
         # Calculate the sigma values for each particle
@@ -55,7 +58,7 @@ class Operations():
             return np.zeros(num_particles, dtype=int)
         else:
             # Get the nearest neighbor distances and indices
-            distances, indices = self.pre_alocated.nearest_neighbors.fit(memory_sigma).kneighbors(self.population.sigma[particle_idxs])
+            distances, indices = self.pre_allocated.nearest_neighbors.fit(memory_sigma).kneighbors(self.population.sigma[particle_idxs])
             # The nearest neighbor must be different from itself
             zero_distances_mask = distances[:, 0] == 0
             first_valid_idxs = np.where(zero_distances_mask, 1, 0)
@@ -71,7 +74,7 @@ class Operations():
             return np.zeros(num_particles, dtype=int)
         else:
             # Get the nearest neighbor distances and indices
-            distances, indices = self.pre_alocated.nearest_neighbors.fit(population_sigma[search_idxs]).kneighbors(population_sigma[particle_idxs])
+            distances, indices = self.pre_allocated.nearest_neighbors.fit(population_sigma[search_idxs]).kneighbors(population_sigma[particle_idxs])
             # The nearest neighbor must be different from itself
             non_zero_distances_mask = distances[:, 0] == 0
             first_valid_idxs = np.where(non_zero_distances_mask, 1, 0)
@@ -350,28 +353,19 @@ class StoppingAlgorithm(Exception):
     def __init__(self):
         pass
 
-class PreAlocated():
-    '''
-    used for data allocation. It stores some data structures to avoid new allocations.
+class PreAllocated():
+    ''' Used for data allocation. It stores some data structures to avoid new allocations.
     
     Args:
-        objective_dim (:type:`int`): Number of objectives in the problem.
-        position_dim (:type:`int`): Number of variables in the problem.
-        population_size (:type:`int`): Number of particles.
-        global_best_attribution_type (:type:`{0, 1, 2, 3}`): Global best selection method. The options are:
+        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.population_size` and :attr:`~mesh.parameters.MeshParameters.global_best_attribution_type` are used to initialize the pre-allocations.
 
-            - :data:`0`: Applies Sigma method in memory to select the global best.
-            - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-            - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
-            - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+    Raises:
+        TypeError: If the ```params`` is not an instance of :class:`~mesh.parameters.MeshParameters`.
     '''
 
-    def __init__(self,
-                 objective_dim: int,
-                 position_dim: int,
-                 population_size: int,
-                 global_best_attribution_type: int) -> None:
-        
+    def __init__(self, params: MeshParameters) -> None:
+        assert_type(params, 'params', MeshParameters)
+
         self.np_tril_indices: tuple[np.array[np.uint64], np.array[np.uint64]]
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
         self.nearest_neighbors: NearestNeighbors
@@ -390,16 +384,16 @@ class PreAlocated():
         ''' Numpy matrix to store the fitness of the particles before the particle moviment. '''
 
         # Used to calculate the sigma
-        if global_best_attribution_type < 2:
-            self.np_tril_indices = np.tril_indices(objective_dim, k=-1)
+        if params.global_best_attribution_type < 2:
+            self.np_tril_indices = np.tril_indices(params.objective_dim, k=-1)
         # The object to get the nearest neighbors
         self.nearest_neighbors = NearestNeighbors(n_neighbors=2, algorithm='auto', metric='euclidean')
         # Structures used to calculate repetitive operations
-        self.matrix_for_operations = np.empty((population_size, position_dim))
-        self.vector_for_operations = np.empty(population_size)
+        self.matrix_for_operations = np.empty((params.population_size, params.position_dim))
+        self.vector_for_operations = np.empty(params.population_size)
         # Fitness matrix for the population selection
-        self.fitness_selection = np.empty((2*population_size, objective_dim))
+        self.fitness_selection = np.empty((2*params.population_size, params.objective_dim))
         # Copies for the population
-        self.position_copy = np.empty((population_size, position_dim))
-        self.velocity_copy = np.empty((population_size, position_dim))
-        self.fitness_copy = np.empty((population_size, objective_dim))
+        self.position_copy = np.empty((params.population_size, params.position_dim))
+        self.velocity_copy = np.empty((params.population_size, params.position_dim))
+        self.fitness_copy = np.empty((params.population_size, params.objective_dim))

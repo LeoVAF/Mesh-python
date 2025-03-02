@@ -1,8 +1,9 @@
 import numpy as np
 
-from typing import Optional
 from validations.python import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
 from validations.numpy import assert_np_vectors_for_boundary
+
+from typing import Optional
 
 class MeshParameters:
     ''' MESH parameters.
