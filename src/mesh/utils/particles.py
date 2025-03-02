@@ -37,7 +37,8 @@ from pygmo import crowding_distance
 from math import comb
 from typing import Optional
 from parameters import MeshParameters
-from utils.validations import assert_type, assert_index_np_array
+from validations.python import assert_type
+from validations.numpy import assert_np_vector_index
 
 class Population:
     """
@@ -96,8 +97,8 @@ class Memory:
     
     def __init__(self, population: Population, pareto_frontier: np.ndarray[np.integer], params: MeshParameters) -> None:
         assert_type(population, 'population', Population)
-        assert_index_np_array(pareto_frontier, 'pareto_frontier', population.position.shape[0])
-        assert_index_np_array(pareto_frontier, 'pareto_frontier', population.fitness.shape[0])
+        assert_np_vector_index(pareto_frontier, 'pareto_frontier', population.position.shape[0])
+        assert_np_vector_index(pareto_frontier, 'pareto_frontier', population.fitness.shape[0])
         assert_type(params, 'params', MeshParameters)
 
         # Set the class attributes

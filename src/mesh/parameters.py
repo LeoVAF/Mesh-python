@@ -1,7 +1,8 @@
 import numpy as np
 
 from typing import Optional
-from utils.validations import assert_type, assert_type_optional, is_greater_in_type, is_greater_in_type_optional, is_between_inclusive
+from validations.python import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
+from validations.numpy import assert_np_vectors_for_boundary
 
 class MeshParameters:
     ''' MESH parameters.
@@ -40,9 +41,9 @@ class MeshParameters:
             - :data:`3`: DE/current-to-best/1/Bin.
             - :data:`4`: DE/current-to-rand/1/Bin.
     
-        communication_probability (:type:`int | float`): Communication probability. Must be a number between 0 and 1, inclusive.
+        communication_probability (:type:`int | float | np.number`): Communication probability. Must be a number between 0 and 1, inclusive.
         
-        mutation_rate (:type:`int | float`): Mutation rate. Must be a number between 0 and 1, inclusive.
+        mutation_rate (:type:`int | float | np.number`): Mutation rate. Must be a number between 0 and 1, inclusive.
         
         max_gen (:type:`int`): Maximum number of generations. Must be an integer.
         
@@ -60,15 +61,15 @@ class MeshParameters:
     def __init__(self,
                  objective_dim: int,
                  position_dim: int,
-                 position_max_value: np.ndarray[np.number],
                  position_min_value: np.ndarray[np.number],
+                 position_max_value: np.ndarray[np.number],
                  population_size: int,
                  memory_size: Optional[int] = None,
                  global_best_attribution_type: {0,1,2,3} = 0,
                  dm_pool_type: {0,1,2} = 0,
                  de_mutation_type: {0,1,2,3,4} = 0,
-                 communication_probability: int | float = 0.7,
-                 mutation_rate: int | float = 0.9,
+                 communication_probability: int | float | np.number = 0.7,
+                 mutation_rate: int | float | np.number = 0.9,
                  max_gen: int = 0,
                  max_fit_eval: int = 0,
                  max_personal_guides: int = 3,
@@ -78,10 +79,10 @@ class MeshParameters:
         ''' Number of problem objectives. '''
         self.position_dim: int
         ''' Number of problem variables. '''
-        self.position_max_value: np.ndarray[np.number]
-        ''' Numpy array with the upper bound of the problem for each variable. '''
         self.position_min_value: np.ndarray[np.number]
         ''' Numpy array with the lower bound of the problem for each variable. '''
+        self.position_max_value: np.ndarray[np.number]
+        ''' Numpy array with the upper bound of the problem for each variable. '''
         self.velocity_max_value: np.ndarray[np.float64]
         ''' Numpy array with the upper bound of the velocity calculated by:
 
@@ -121,53 +122,30 @@ class MeshParameters:
         # Set the position dimension
         is_greater_in_type(position_dim, 'position_dim', int, 0)
         self.position_dim = position_dim
-        # Set the maximum and minimum boundaries for positions
-        if not isinstance(position_max_value, np.ndarray):
-            raise TypeError('The input "position_max_value" must be a numpy.ndarray.')
-        if not isinstance(position_min_value, np.ndarray):
-            raise TypeError('The input "position_min_value" must be a numpy.ndarray.')
-        if not np.issubdtype(position_max_value.dtype, np.number) or np.any(np.isnan(position_max_value)):
-            raise TypeError('The input "position_max_value" must be an array of numbers (without NaN values).')
-        if not np.issubdtype(position_min_value.dtype, np.number) or np.any(np.isnan(position_min_value)):
-            raise TypeError('The input "position_min_value" must be an array of numbers (without NaN values).')
-        if position_max_value.ndim != 1:
-            raise ValueError('The input "position_max_value" must be a one-dimensional array.')
-        if position_min_value.ndim != 1:
-            raise ValueError('The input "position_min_value" must be a one-dimensional array.')
-        if len(position_max_value) != position_dim:
-            raise ValueError('The input "position_max_value" must be size equal to "position_dim".')
-        if len(position_min_value) != position_dim:
-            raise ValueError('The input "position_min_value" must be size equal to "position_dim".')
-        if np.any(position_max_value < position_min_value):
-            raise ValueError('Each element of "position_max_value" must be greater than or equal to "position_min_value".')
-        self.position_max_value = position_max_value
+        # Set the maximum and the minimum boundaries for positions
+        assert_np_vectors_for_boundary(position_min_value, 'position_min_value', position_max_value, 'position_max_value', position_dim)
         self.position_min_value = position_min_value
+        self.position_max_value = position_max_value
         # Set the maximum and minimum boundaries for velocities
-        self.velocity_max_value = self.position_max_value - self.position_min_value
-        self.velocity_min_value = -self.velocity_max_value
+        self.velocity_min_value =  self.position_min_value - self.position_max_value
+        self.velocity_max_value = - self.velocity_min_value
         # Set the population size
         is_greater_in_type(population_size, 'population_size', int, 0)
         self.population_size = population_size
         # Set the memory size
-        is_greater_in_type_optional(memory_size, 'memory_size', int, 0)
+        is_greater_in_type(memory_size, 'memory_size', int, 0, is_optional=True)
         if memory_size is None:
             self.memory_size = population_size
         else:
             self.memory_size = memory_size
-        # Validate the options of the MESH
-        valid_options = {
-            "global_best_attribution_type": (0, 1, 2, 3),
-            "de_mutation_type": (0, 1, 2, 3, 4),
-            "dm_pool_type": (0, 1, 2),
-        }
-        for param, valid_set in valid_options.items():
-            if locals()[param] not in valid_set:
-                raise ValueError(f'The input "{param}" must be one of these options: {valid_set}.')
         # Set the global attribution type
+        is_in_options(global_best_attribution_type, 'global_best_attribution_type', (0, 1, 2, 3))
         self.global_best_attribution_type = global_best_attribution_type
         # Set the differential mutation type
+        is_in_options(de_mutation_type, 'de_mutation_type', (0, 1, 2, 3, 4))
         self.de_mutation_type = de_mutation_type
         # Set the differential mutation pool type
+        is_in_options(dm_pool_type, 'dm_pool_type', (0, 1, 2))
         self.dm_pool_type = dm_pool_type
         # Set the communication probability
         is_between_inclusive(communication_probability, 'communication_probability', 0, 1)
@@ -185,5 +163,5 @@ class MeshParameters:
         is_greater_in_type(max_personal_guides, 'max_personal_guides', int, 0)
         self.max_personal_guides = max_personal_guides
         # Set the random state
-        assert_type_optional(random_state, 'random_state', int)
+        assert_type(random_state, 'random_state', int, is_optional=True)
         self.random_state = random_state
