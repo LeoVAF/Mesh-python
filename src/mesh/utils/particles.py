@@ -58,11 +58,11 @@ class Population:
         self.velocity: np.ndarray[np.float64, 2]
         ''' Numpy matrix with the particle's velocities initialized randomly under uniform distribution. '''
         self.fitness: np.ndarray[np.float64, 2]
-        ''' Numpy matrix with the particle's fitnesses initialized with :data:`np.inf` values. '''
+        ''' Numpy matrix with the particle's fitnesses initialized with ``np.inf`` values. '''
         self.rank: np.ndarray[np.float64]
         ''' Numpy array with the particle's rank. '''
         self.sigma: Optional[np.ndarray[np.float64, 2]] = None
-        ''' Numpy matrix for the sigma values. Initialized with :data:`np.inf` values. Used only if the Sigma method is used. '''
+        ''' Numpy matrix for the sigma values. Initialized with ``np.inf`` values. Used only if the Sigma method is used. '''
         self.global_best: np.ndarray[np.float64, 2]
         ''' Numpy matrix with the best global position for each particle. '''
         self.personal_best_list_pos: np.ndarray[np.float64, 3]
@@ -87,14 +87,14 @@ class Memory:
 
     Args:
         population (:class:`Population`): The attributes :attr:`~Population.position` and :attr:`~Population.fitness` are used to set the memory position and fitness.
-        pareto_frontier (:type:`np.ndarray[np.uint64]`): A numpy array of the particle indices for the population position and fitness matrices.
+        pareto_frontier (:type:`np.ndarray[np.integer]`): A numpy array of the particle indices for the population position and fitness matrices.
         params (:class:`~mesh.parameters.MeshParameters`): The attribute :attr:`~mesh.parameters.MeshParameters.memory_size` is used to limit the memory size.
 
     Raises:
         TypeError: If the input is not of the expected type.
     """
     
-    def __init__(self, population: Population, pareto_frontier: np.ndarray[np.uint64], params: MeshParameters) -> None:
+    def __init__(self, population: Population, pareto_frontier: np.ndarray[np.integer], params: MeshParameters) -> None:
         assert_type(population, 'population', Population)
         assert_index_np_array(pareto_frontier, 'pareto_frontier', population.position.shape[0])
         assert_index_np_array(pareto_frontier, 'pareto_frontier', population.fitness.shape[0])

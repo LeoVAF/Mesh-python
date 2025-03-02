@@ -65,8 +65,7 @@ class MESH(Operations):
         self.differential_mutation_pool = super().get_differential_mutation_pool(params.dm_pool_type)
         self.differential_mutation_strategy = super().get_differential_mutation_strategy(params.de_mutation_type)
         # Use a random seed if there is
-        if(params.random_state):
-            np.random.seed(params.random_state)
+        np.random.seed(params.random_state)
         # Particles
         self.population = Population(params)
         # Memory particles (and the final result after run MESH)
