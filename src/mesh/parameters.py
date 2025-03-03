@@ -2,6 +2,9 @@ import numpy as np
 
 from validations.python import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
 from validations.numpy import assert_np_vectors_for_boundary
+from operations.global_best_attribution import global_best_attribution_options
+from operations.differential_mutation_pool import differential_mutation_pool_options
+from operations.differential_mutation_strategy import differential_mutation_strategy_options
 
 from typing import Optional
 
@@ -140,13 +143,13 @@ class MeshParameters:
         else:
             self.memory_size = memory_size
         # Set the global attribution type
-        is_in_options(global_best_attribution_type, 'global_best_attribution_type', (0, 1, 2, 3))
+        is_in_options(global_best_attribution_type, 'global_best_attribution_type', global_best_attribution_options.keys())
         self.global_best_attribution_type = global_best_attribution_type
         # Set the differential mutation type
-        is_in_options(de_mutation_type, 'de_mutation_type', (0, 1, 2, 3, 4))
+        is_in_options(de_mutation_type, 'de_mutation_type', differential_mutation_strategy_options.keys())
         self.de_mutation_type = de_mutation_type
         # Set the differential mutation pool type
-        is_in_options(dm_pool_type, 'dm_pool_type', (0, 1, 2))
+        is_in_options(dm_pool_type, 'dm_pool_type', differential_mutation_pool_options.keys())
         self.dm_pool_type = dm_pool_type
         # Set the communication probability
         is_between_inclusive(communication_probability, 'communication_probability', 0, 1)

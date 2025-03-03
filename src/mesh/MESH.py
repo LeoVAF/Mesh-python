@@ -36,11 +36,15 @@ import numpy as np
 
 from parameters import MeshParameters
 from utils.particles import Population, Memory
-from utils.auxiliar import Operations, PreAllocated, StoppingAlgorithm
+from utils.auxiliar import PreAllocated, StoppingAlgorithm
+from operations.global_best_attribution import get_global_best_attribution
+from operations.differential_mutation_pool import get_differential_mutation_pool
+from operations.differential_mutation_strategy import get_differential_mutation_strategy
 
 from scipy.stats import truncnorm
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
+from types import MethodType
 
 # import tracemalloc
 # tracemalloc.start()
@@ -49,7 +53,7 @@ from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distanc
 # tracemalloc.stop()
         
 ''' Algoritmo MESH inheriting operations from the Operation class '''
-class MESH(Operations):
+class Mesh():
     ''' Initialize the instance '''
     def __init__(self,
                 params: MeshParameters, # MESH parameters
@@ -58,12 +62,10 @@ class MESH(Operations):
         
         # Receive the algorithm parameters
         self.params = params
-        # Initizaling Operation class with some operations of MESH
-        super().__init__()
         # Chosing the operations just one time
-        self.global_best_attribution = super().get_global_best_attribution(params.global_best_attribution_type)
-        self.differential_mutation_pool = super().get_differential_mutation_pool(params.dm_pool_type)
-        self.differential_mutation_strategy = super().get_differential_mutation_strategy(params.de_mutation_type)
+        self.global_best_attribution = MethodType(get_global_best_attribution(params.global_best_attribution_type), self)
+        self.differential_mutation_pool = MethodType(get_differential_mutation_pool(params.dm_pool_type), self)
+        self.differential_mutation_strategy = MethodType(get_differential_mutation_strategy(params.de_mutation_type), self)
         # Use a random seed if there is
         np.random.seed(params.random_state)
         # Particles
