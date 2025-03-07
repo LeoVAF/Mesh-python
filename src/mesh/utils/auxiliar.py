@@ -1,9 +1,9 @@
-import numpy as np
-
 from parameters import MeshParameters
 from validations.python import assert_type
 
 from sklearn.neighbors import NearestNeighbors
+
+import numpy as np
 
 class StoppingAlgorithm(Exception):
     ''' Class used to stop the algorithm with an exception. '''

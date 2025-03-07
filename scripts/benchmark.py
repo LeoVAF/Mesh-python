@@ -1,13 +1,13 @@
+from MESH import *
+from MESH_old import *
+
+from pymoo.problems import get_problem
+
 import numpy as np
 import timeit
 import statistics
 import cProfile
 import pstats
-
-from MESH import *
-from MESH_old import *
-
-from pymoo.problems import get_problem
 
 
 objective_dim = 5

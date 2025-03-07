@@ -1,5 +1,6 @@
-import numpy as np
 from typing import Iterable, Iterator
+
+import numpy as np
 
 def assert_type(var: any, var_name: str, expected_types: type | tuple, is_optional: bool = False) -> None:
   ''' Check if the ``var`` is one of the expected types.

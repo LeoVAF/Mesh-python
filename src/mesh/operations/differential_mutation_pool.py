@@ -1,7 +1,21 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import numpy as np
 
-''' Return a pool tensor of particles from population '''
-def differential_mutation_pool_from_population(self: object):
+if TYPE_CHECKING:
+    from MESH import Mesh
+
+def pool_from_population(self: Mesh) -> np.ndarray[np.float64, 3]:
+  ''' Return a pool tensor of particles from population according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
+  
+  Args:
+    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+
+  Returns:
+    :type:`np.ndarray[np.float64, 3]`: The pool tensor of particles from population.
+  '''
+
   # Get the positions
   positions = self.population.position
   # A array with each position as a matrix with just one row vector
@@ -15,8 +29,16 @@ def differential_mutation_pool_from_population(self: object):
   # Return the pool
   return np.split(positions[col_indices], split_indices)
 
-''' Return a pool of particles from memory '''
-def differential_mutation_pool_from_memory(self: object):
+def pool_from_memory(self: Mesh) -> np.ndarray[np.float64, 3]:
+  ''' Return a pool tensor of particles from memory according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
+  
+  Args:
+    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+
+  Returns:
+    :type:`np.ndarray[np.float64, 3]`: The pool tensor of particles from memory.
+  '''
+
   # Get the positions
   positions = self.population.position
   # A array with each position as a matrix with just one row vector
@@ -32,8 +54,16 @@ def differential_mutation_pool_from_memory(self: object):
   # Return the pool
   return np.split(mem_positions[col_indices], split_indices)
 
-''' Return a pool of particles from population and memory '''
-def differential_mutation_pool_from_population_and_memory(self: object):
+def pool_from_population_and_memory(self: Mesh) -> np.ndarray[np.float64, 3]:
+  ''' Return a pool tensor of particles from population and memory according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
+  
+  Args:
+    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+
+  Returns:
+    :type:`np.ndarray[np.float64, 3]`: The pool tensor of particles from population and memory.
+  '''
+
   # Get the positions
   positions = self.population.position
   # A array with each position as a matrix with just one row vector
@@ -51,11 +81,24 @@ def differential_mutation_pool_from_population_and_memory(self: object):
 
 # The options of Differential Mutation pool
 differential_mutation_pool_options = {
-    0: differential_mutation_pool_from_population,
-    1: differential_mutation_pool_from_memory,
-    2: differential_mutation_pool_from_population_and_memory
+    0: pool_from_population,
+    1: pool_from_memory,
+    2: pool_from_population_and_memory
 }
+''' The options of Differential Mutation pool. They are:
 
-''' Choose the differential mutation pool type'''
-def get_differential_mutation_pool(type: {0, 1, 2}):
+  - :data:`0`: Pool from population.
+  - :data:`1`: Pool from memory.
+  - :data:`2`: Pool from population and memory.
+'''
+
+def get_differential_mutation_pool(type: {0, 1, 2}) -> function:
+  ''' Choose the Differential Mutation pool type.
+  
+  Args:
+    type (:type:`{0, 1, 2}`): The type of Differential Mutation pool.
+  
+  Returns:
+    :type:`function`: The respective function to get the differential mutation pool.
+  '''
   return differential_mutation_pool_options[type]

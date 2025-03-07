@@ -31,15 +31,17 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
-import pickle
-
-from MESH import *
+from MESH import Mesh
 from parameters import MeshParameters
+from microgrid.techno_ka import techno_ka
 
 from pathlib import Path
-from microgrid.techno_ka import *
 from pymoo.problems import get_problem
+from tqdm import tqdm
+from pygmo import fast_non_dominated_sorting, select_best_N_mo
+from pickle import dump
+
+import numpy as np
 
 def main():
     Path("result").mkdir(parents=False, exist_ok=True)
@@ -126,7 +128,7 @@ def main():
     best_idx = select_best_N_mo(combined_F, n)
     result['combined'] = (combined_P[best_idx], combined_F[best_idx])
     with open(f'result/{config}.pkl', 'wb') as file:
-        pickle.dump(result, file)
+        dump(result, file)
 
 if __name__ == '__main__':
     main()

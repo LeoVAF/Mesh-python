@@ -1,5 +1,11 @@
-import numpy as np
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from scipy.stats import truncnorm
+
+import numpy as np
+
+if TYPE_CHECKING:
+    from MESH import Mesh
 
 ''' Make the mutation mask to apply the binomial mutation '''
 def binomial_mutation_operator(self, idx_size):

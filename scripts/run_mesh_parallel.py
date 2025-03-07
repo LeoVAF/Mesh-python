@@ -1,12 +1,12 @@
-import numpy as np
-import pickle
-
 from MESH import *
 from parameters import MeshParameters
 
 from pymoo.problems import get_problem
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+from pickle import dump
+
+import numpy as np
 
 Path("result").mkdir(parents=False, exist_ok=True)
 
@@ -71,7 +71,7 @@ def run_mesh(experiment_name,
 	result['combined'] = (combined_P[best_idx], combined_F[best_idx])
 	########################### Possible critical section ###########################
 	with open(f'result/{config}.pkl', 'wb') as file:
-		pickle.dump(result, file)
+		dump(result, file)
 	#################################################################################
 	return None
 

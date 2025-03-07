@@ -1,5 +1,3 @@
-import numpy as np
-
 from validations.python import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
 from validations.numpy import assert_np_vectors_for_boundary
 from operations.global_best_attribution import global_best_attribution_options
@@ -7,6 +5,8 @@ from operations.differential_mutation_pool import differential_mutation_pool_opt
 from operations.differential_mutation_strategy import differential_mutation_strategy_options
 
 from typing import Optional
+
+import numpy as np
 
 class MeshParameters:
     ''' MESH parameters.
@@ -31,11 +31,7 @@ class MeshParameters:
             - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
             - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
         
-        dm_pool_type (:type:`{0,1,2}`): Differential mutation pool where the particles will be sampled for the differential mutation operation. Must be one of the below options:
-        
-            - :data:`0`: Population.
-            - :data:`1`: Memory.
-            - :data:`2`: Both population and memory.
+        dm_pool_type (:type:`{0, 1, 2}`): Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
     
         de_mutation_type (:type:`{0,1,2,3,4}`): Differential mutation operation. Must be one of the below options:
 

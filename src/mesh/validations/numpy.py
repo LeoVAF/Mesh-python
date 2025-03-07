@@ -1,5 +1,6 @@
-import numpy as np
 from validations.python import assert_type
+
+import numpy as np
 
 def assert_no_nan_in_np_array(arr: np.ndarray, arr_name: str) -> None:
   ''' Check if the ``arr`` does not have NaN values.

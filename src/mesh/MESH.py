@@ -32,8 +32,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-import numpy as np
-
 from parameters import MeshParameters
 from utils.particles import Population, Memory
 from utils.auxiliar import PreAllocated, StoppingAlgorithm
@@ -45,6 +43,8 @@ from scipy.stats import truncnorm
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
 from types import MethodType
+
+import numpy as np
 
 # import tracemalloc
 # tracemalloc.start()

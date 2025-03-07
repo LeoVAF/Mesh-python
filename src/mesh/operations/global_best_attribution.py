@@ -1,4 +1,10 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from MESH import Mesh
 
 """ Calculate the sigma value for the particle set """
 def sigma_evaluation(self, fitness_matrix):
