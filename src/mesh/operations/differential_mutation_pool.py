@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from MESH import Mesh
 
 def pool_from_population(self: Mesh) -> np.ndarray[np.float64, 3]:
-  ''' Return a pool tensor of particles from population according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
+  ''' Returns a pool tensor of particles from population according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
   
   Args:
     self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
@@ -30,7 +30,7 @@ def pool_from_population(self: Mesh) -> np.ndarray[np.float64, 3]:
   return np.split(positions[col_indices], split_indices)
 
 def pool_from_memory(self: Mesh) -> np.ndarray[np.float64, 3]:
-  ''' Return a pool tensor of particles from memory according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
+  ''' Returns a pool tensor of particles from memory according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
   
   Args:
     self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
@@ -55,7 +55,7 @@ def pool_from_memory(self: Mesh) -> np.ndarray[np.float64, 3]:
   return np.split(mem_positions[col_indices], split_indices)
 
 def pool_from_population_and_memory(self: Mesh) -> np.ndarray[np.float64, 3]:
-  ''' Return a pool tensor of particles from population and memory according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
+  ''' Returns a pool tensor of particles from population and memory according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
   
   Args:
     self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
@@ -87,13 +87,13 @@ differential_mutation_pool_options = {
 }
 ''' The options of Differential Mutation pool. They are:
 
-  - :data:`0`: Pool from population.
-  - :data:`1`: Pool from memory.
-  - :data:`2`: Pool from population and memory.
+  - :type:`0`: Pool from population.
+  - :type:`1`: Pool from memory.
+  - :type:`2`: Pool from population and memory.
 '''
 
 def get_differential_mutation_pool(type: {0, 1, 2}) -> function:
-  ''' Choose the Differential Mutation pool type.
+  ''' Chooses the Differential Mutation pool type.
   
   Args:
     type (:type:`{0, 1, 2}`): The type of Differential Mutation pool.

@@ -2,7 +2,7 @@ from validations.python import assert_type, is_greater_in_type, is_between_inclu
 from validations.numpy import assert_np_vectors_for_boundary
 from operations.global_best_attribution import global_best_attribution_options
 from operations.differential_mutation_pool import differential_mutation_pool_options
-from operations.differential_mutation_strategy import differential_mutation_strategy_options
+from operations.differential_mutation_operation import differential_mutation_operation_options
 
 from typing import Optional
 
@@ -24,22 +24,11 @@ class MeshParameters:
         
         memory_size (:type:`int`, optional): Number of particles in memory. Default is None. Must be a positive integer (> 0) or ``None``.
         
-        global_best_attribution_type (:type:`{0,1,2,3}`): Global best selection method. Must be one of the below options:
-
-            - :data:`0`: Applies Sigma method in memory to select the global best.
-            - :data:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-            - :data:`2`: Chooses randomly under uniform distribution a particle from memory.
-            - :data:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+        global_best_attribution_type (:type:`{0, 1, 2, 3}`): Global best attribution operation type. See :attr:`~mesh.operations.global_best_attribution.global_best_attribution_options`.
         
         dm_pool_type (:type:`{0, 1, 2}`): Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
     
-        de_mutation_type (:type:`{0,1,2,3,4}`): Differential mutation operation. Must be one of the below options:
-
-            - :data:`0`: DE/rand/1/Bin.
-            - :data:`1`: DE/rand/2/Bin.
-            - :data:`2`: DE/best/1/Bin.
-            - :data:`3`: DE/current-to-best/1/Bin.
-            - :data:`4`: DE/current-to-rand/1/Bin.
+        dm_operation_type (:type:`{0, 1, 2, 3, 4}`): Differential mutation operation type. See :attr:`~mesh.operations.differential_mutation_operation.differential_mutation_operation_options`.
     
         communication_probability (:type:`int | float | np.number`): Communication probability. Must be a number between 0 and 1, inclusive.
         
@@ -67,7 +56,7 @@ class MeshParameters:
                  memory_size: Optional[int] = None,
                  global_best_attribution_type: {0,1,2,3} = 0,
                  dm_pool_type: {0,1,2} = 0,
-                 de_mutation_type: {0,1,2,3,4} = 0,
+                 dm_operation_type: {0,1,2,3,4} = 0,
                  communication_probability: int | float | np.number = 0.7,
                  mutation_rate: int | float | np.number = 0.9,
                  max_gen: int = 0,
@@ -87,12 +76,14 @@ class MeshParameters:
         ''' Numpy array with the upper bound of the velocity calculated by:
 
         .. math::
-            V_{max} = X_{max} - X_{min}. '''
+            V_{max} = X_{max} - X_{min}.
+        '''
         self.velocity_min_value: np.ndarray[np.float64]
         ''' Numpy array with the upper bound of the velocity calculated by:
 
         .. math::
-            V_{min} = X_{min} - X_{max}. '''
+            V_{min} = X_{min} - X_{max}.
+        '''
         self.population_size: int
         ''' Number of particles. '''
         self.memory_size: Optional[int]
@@ -101,7 +92,7 @@ class MeshParameters:
         ''' Global best selection method. '''
         self.dm_pool_type: {0,1,2}
         ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. '''
-        self.de_mutation_type: {0,1,2,3,4}
+        self.dm_operation_type: {0,1,2,3,4}
         ''' Differential mutation operation. '''
         self.communication_probability: int | float
         ''' Communication probability. It must be a number between 0 and 1. '''
@@ -142,8 +133,8 @@ class MeshParameters:
         is_in_options(global_best_attribution_type, 'global_best_attribution_type', global_best_attribution_options.keys())
         self.global_best_attribution_type = global_best_attribution_type
         # Set the differential mutation type
-        is_in_options(de_mutation_type, 'de_mutation_type', differential_mutation_strategy_options.keys())
-        self.de_mutation_type = de_mutation_type
+        is_in_options(dm_operation_type, 'dm_operation_type', differential_mutation_operation_options.keys())
+        self.dm_operation_type = dm_operation_type
         # Set the differential mutation pool type
         is_in_options(dm_pool_type, 'dm_pool_type', differential_mutation_pool_options.keys())
         self.dm_pool_type = dm_pool_type

@@ -3,7 +3,7 @@ from validations.python import assert_type
 import numpy as np
 
 def assert_no_nan_in_np_array(arr: np.ndarray, arr_name: str) -> None:
-  ''' Check if the ``arr`` does not have NaN values.
+  ''' Checks if the ``arr`` does not have NaN values.
   
   Args:
     arr (:type:`np.ndarray`): The input to be checked.
@@ -21,7 +21,7 @@ def assert_no_nan_in_np_array(arr: np.ndarray, arr_name: str) -> None:
     raise ValueError(f'The input "{arr_name}" has NaN values.')
 
 def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> None:
-  ''' Check if the ``arr`` is a numpy array with the expected subtype.
+  ''' Checks if the ``arr`` is a numpy array with the expected subtype.
   
   Args:
     arr (:type:`np.ndarray`): The input to be checked.
@@ -41,7 +41,7 @@ def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> No
       raise TypeError(f'The input "{arr_name}" has dtype "{arr.dtype}", but expected {subtype}.')
 
 def assert_np_vector_for_operations(vec: np.ndarray[np.number], vec_name: str, size: int | np.integer) -> None:
-  ''' Check if the ``vec`` is a numpy vector with the expected subtype for operations.
+  ''' Checks if the ``vec`` is a numpy vector with the expected subtype for operations.
   
   Args:
     vec (:type:`np.ndarray[np.number]`): The input to be checked.
@@ -65,7 +65,7 @@ def assert_np_vector_for_operations(vec: np.ndarray[np.number], vec_name: str, s
 	  raise ValueError(f'The input "{vec_name}" must have size {size}.')
 
 def assert_np_vectors_for_boundary(lower: np.ndarray[np.number], lower_name: str, upper: np.ndarray[np.number], upper_name: str, size: int | np.integer) -> None:
-  ''' Check if the ``lower`` and ``upper`` are boundary numpy vectors.
+  ''' Checks if the ``lower`` and ``upper`` are boundary numpy vectors.
   
   Args:
     lower (:type:`np.ndarray[np.number]`): The lower boundary numpy vector.
@@ -88,7 +88,7 @@ def assert_np_vectors_for_boundary(lower: np.ndarray[np.number], lower_name: str
 	  raise ValueError(f'The input "{lower_name}" must be less than "{upper_name}".')
 
 def assert_np_vector_index(idx_vec: np.ndarray, idx_vec_name: str, max_index: int) -> None:
-  ''' Check if the ``idx_arr`` is an index numpy vector.
+  ''' Checks if the ``idx_arr`` is an index numpy vector.
   
   Args:
     idx_vec (:type:`np.ndarray`): The numpy vector to be checked.

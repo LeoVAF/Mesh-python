@@ -27,7 +27,7 @@ mutation_rate = 0.9
 personal_guide_array_size = 3
 global_best_attribution_type = 0
 dm_pool_type = 0
-de_mutation_type = 0
+dm_operation_type = 0
 crowding_distance_type = 0
 optimization_type = [False]*objective_dim
 def generate_objective_function(objective_dim):
@@ -56,7 +56,7 @@ def run_new():
     params = MeshParameters(objective_dim,
                              position_dim, position_min_value, position_max_value, 
                              population_size, memory_size,
-                             global_best_attribution_type, dm_pool_type, de_mutation_type,
+                             global_best_attribution_type, dm_pool_type, dm_operation_type,
                              communication_probability, mutation_rate,
                              max_gen=max_iterations, max_fit_eval=max_fitness_eval,
                              max_personal_guides=personal_guide_array_size,
@@ -78,7 +78,7 @@ def run_old():
                                 population_size,memory_size,
                                 0,
                                 global_best_attribution_type,
-                                de_mutation_type,
+                                dm_operation_type,
                                 dm_pool_type,
                                 crowding_distance_type,
                                 communication_probability,

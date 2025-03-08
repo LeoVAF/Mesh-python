@@ -3,7 +3,7 @@ from typing import Iterable, Iterator
 import numpy as np
 
 def assert_type(var: any, var_name: str, expected_types: type | tuple, is_optional: bool = False) -> None:
-  ''' Check if the ``var`` is one of the expected types.
+  ''' Checks if the ``var`` is one of the expected types.
   
   Args:
     var (:type:`any`): The input to be checked.
@@ -31,7 +31,7 @@ def assert_type(var: any, var_name: str, expected_types: type | tuple, is_option
     raise TypeError(f'The input "{var_name}" has type "{type(var)}", but expected {expected_types}.')
 
 def is_greater_in_type(number: int | float | np.number, number_name: str, number_type: int | float | np.number, value: int | float | np.number, is_optional: bool = False) -> None:
-  ''' Check if the ``number`` is of a respective type and if it is greater than ``value``.
+  ''' Checks if the ``number`` is of a respective type and if it is greater than ``value``.
   
   Args:
     number (:type:`int | float | np.number`): The input to be checked.
@@ -60,7 +60,7 @@ def is_greater_in_type(number: int | float | np.number, number_name: str, number
     raise ValueError(f'The input "{number_name}" must be greater than {value}.')
 
 def is_between_inclusive(number: int | float | np.number, number_name: str, lower: int | float | np.number, upper: int | float | np.number, is_optional: bool = False) -> None:
-  ''' Check if the ``number`` is between ``lower`` and ``upper``, inclusive.
+  ''' Checks if the ``number`` is between ``lower`` and ``upper``, inclusive.
   
   Args:
     number (:type:`int | float | np.number`): The input to be checked.
@@ -87,7 +87,7 @@ def is_between_inclusive(number: int | float | np.number, number_name: str, lowe
     
 
 def is_in_options(option: any, option_name: str, options: Iterable | Iterator) -> None:
-  ''' Check if the ``option`` is in the ``options``.
+  ''' Checks if the ``option`` is in the ``options``.
   
   Args:
     option (:type:`any`): The input to be checked.

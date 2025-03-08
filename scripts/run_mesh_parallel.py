@@ -16,7 +16,7 @@ def run_mesh(experiment_name,
 						func, # Fitness Function
 						global_best_attribution_type,
 						dm_pool_type,
-						de_mutation_type):
+						dm_operation_type):
 
 	position_min_value = np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
 	position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
@@ -30,8 +30,8 @@ def run_mesh(experiment_name,
 	personal_guide_array_size = 3 # Number of personal guides
 	random_state = None # Defines a seed for random numbers (not used if it is None)
 
-	config = f"E{global_best_attribution_type+1}V{dm_pool_type+1}D{de_mutation_type+1}_{experiment_name}"
-	print(f"Running E{global_best_attribution_type+1}V{dm_pool_type+1}D{de_mutation_type+1}-{experiment_name} on MG")
+	config = f"E{global_best_attribution_type+1}V{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
+	print(f"Running E{global_best_attribution_type+1}V{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name} on MG")
 
 	result = {}
 	combined_F = None
@@ -42,7 +42,7 @@ def run_mesh(experiment_name,
 							population_size, memory_size=memory_size,
 							global_best_attribution_type=global_best_attribution_type,
 							dm_pool_type=dm_pool_type,
-							de_mutation_type=de_mutation_type,
+							dm_operation_type=dm_operation_type,
 							communication_probability=communication_probability, mutation_rate=mutation_rate,
 							max_gen=max_iterations, max_fit_eval=max_fitness_eval,
 							max_personal_guides=personal_guide_array_size,

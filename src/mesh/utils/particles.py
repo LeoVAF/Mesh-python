@@ -88,17 +88,17 @@ class Memory:
 
     Args:
         population (:class:`Population`): The attributes :attr:`~Population.position` and :attr:`~Population.fitness` are used to set the memory position and fitness.
-        pareto_frontier (:type:`np.ndarray[np.integer]`): A numpy array of the particle indices for the population position and fitness matrices.
+        pareto_front (:type:`np.ndarray[np.integer]`): A numpy array of the particle indices for the population position and fitness matrices.
         params (:class:`~mesh.parameters.MeshParameters`): The attribute :attr:`~mesh.parameters.MeshParameters.memory_size` is used to limit the memory size.
 
     Raises:
         TypeError: If the input is not of the expected type.
     """
     
-    def __init__(self, population: Population, pareto_frontier: np.ndarray[np.integer], params: MeshParameters) -> None:
+    def __init__(self, population: Population, pareto_front: np.ndarray[np.integer], params: MeshParameters) -> None:
         assert_type(population, 'population', Population)
-        assert_np_vector_index(pareto_frontier, 'pareto_frontier', population.position.shape[0])
-        assert_np_vector_index(pareto_frontier, 'pareto_frontier', population.fitness.shape[0])
+        assert_np_vector_index(pareto_front, 'pareto_front', population.position.shape[0])
+        assert_np_vector_index(pareto_front, 'pareto_front', population.fitness.shape[0])
         assert_type(params, 'params', MeshParameters)
 
         # Set the class attributes
@@ -109,14 +109,14 @@ class Memory:
         self.sigma: Optional[np.ndarray[np.float64]] = None
         """ Numpy matrix with the memory sigma values. This attribute is only used when the Sigma method is used. """
 
-        if(len(pareto_frontier) <= params.memory_size):
-            self.position = population.position[pareto_frontier]
-            self.fitness = population.fitness[pareto_frontier]
+        if(len(pareto_front) <= params.memory_size):
+            self.position = population.position[pareto_front]
+            self.fitness = population.fitness[pareto_front]
         else:
             # Calculate the crowd distance
-            crowd_distances = crowding_distance(population.fitness[pareto_frontier])
-            # Sort the Pareto frontier by the crowding distance
+            crowd_distances = crowding_distance(population.fitness[pareto_front])
+            # Sort the Pareto front by the crowding distance
             idx = np.argpartition(crowd_distances, -params.memory_size)[-params.memory_size:]
             # Initialize the memory with the best solutions
-            self.position = population.position[pareto_frontier[idx]]
-            self.fitness = population.fitness[pareto_frontier[idx]]
+            self.position = population.position[pareto_front[idx]]
+            self.fitness = population.fitness[pareto_front[idx]]

@@ -37,7 +37,7 @@ from utils.particles import Population, Memory
 from utils.auxiliar import PreAllocated, StoppingAlgorithm
 from operations.global_best_attribution import get_global_best_attribution
 from operations.differential_mutation_pool import get_differential_mutation_pool
-from operations.differential_mutation_strategy import get_differential_mutation_strategy
+from operations.differential_mutation_operation import get_differential_mutation_operation
 
 from scipy.stats import truncnorm
 from tqdm import tqdm
@@ -52,7 +52,7 @@ import numpy as np
 # print(f"Memória atual: {current / 10**6:.2f} MB; Pico de memória: {peak / 10**6:.2f} MB")
 # tracemalloc.stop()
         
-''' Algoritmo MESH inheriting operations from the Operation class '''
+''' Algorithm MESH inheriting operations from the Operation class '''
 class Mesh():
     ''' Initialize the instance '''
     def __init__(self,
@@ -65,14 +65,14 @@ class Mesh():
         # Chosing the operations just one time
         self.global_best_attribution = MethodType(get_global_best_attribution(params.global_best_attribution_type), self)
         self.differential_mutation_pool = MethodType(get_differential_mutation_pool(params.dm_pool_type), self)
-        self.differential_mutation_strategy = MethodType(get_differential_mutation_strategy(params.de_mutation_type), self)
+        self.differential_mutation_operation = MethodType(get_differential_mutation_operation(params.dm_operation_type), self)
         # Use a random seed if there is
         np.random.seed(params.random_state)
         # Particles
         self.population = Population(params)
         # Memory particles (and the final result after run MESH)
         self.memory = None
-        # Frontiers (a list of numpy arrays with index of each particle in the respective frontier)
+        # fronts (a list of numpy arrays with index of each particle in the respective front)
         self.fronts = []
         # Estabilish the fitness function and start the fitness counter
         self.fitness_function = fitness_function
@@ -134,9 +134,9 @@ class Mesh():
                 dominates = True
         return dominates
 
-    ''' Update the population frontiers '''
+    ''' Update the population fronts '''
     def get_domination_fronts(self, fitness_matrix):
-        # If there is only one particle in the particle list, then it is the Pareto frontier by itself
+        # If there is only one particle in the particle list, then it is the Pareto front by itself
         if(len(fitness_matrix) == 1):
             return np.array([np.array([0])]), np.array([0])
         # Do the Fast Non-dominated Sorting from Pygmo
@@ -240,7 +240,7 @@ class Mesh():
         # A array of a matrix pool in each row
         xr_pool_tensor = self.differential_mutation_pool()
         # Apply a strategy
-        xst, valid_idxs = self.differential_mutation_strategy(xr_pool_tensor)
+        xst, valid_idxs = self.differential_mutation_operation(xr_pool_tensor)
         if len(xst):
             # Update the current particle if the new particle from the strategy is better
             st_fitnesses, min_evaluations = self.count_fitness_eval(xst)
@@ -259,21 +259,21 @@ class Mesh():
 
     ''' Update the memory '''
     def update_memory(self):
-        # Get the indices of the Pareto frontier
-        Pareto_idxs = self.fronts[0]
-        # Get the unique positions from the Pareto frontier and the memory
-        position_matrix = np.concatenate((self.population.position[Pareto_idxs], self.memory.position), axis=0)
+        # Get the indices of the Pareto front
+        pareto_idxs = self.fronts[0]
+        # Get the unique positions from the Pareto front and the memory
+        position_matrix = np.concatenate((self.population.position[pareto_idxs], self.memory.position), axis=0)
         position_matrix, unique_idxs = np.unique(position_matrix, axis=0, return_index=True)
-        # Get the unique fitnesses from the Pareto frontier and the memory
-        fitness_matrix = np.concatenate((self.population.fitness[Pareto_idxs], self.memory.fitness), axis=0)[unique_idxs]
-        # Get the Pareto frontier indices from the memory candidates
+        # Get the unique fitnesses from the Pareto front and the memory
+        fitness_matrix = np.concatenate((self.population.fitness[pareto_idxs], self.memory.fitness), axis=0)[unique_idxs]
+        # Get the Pareto front indices from the memory candidates
         memory_pareto_front_idxs = self.get_domination_fronts(fitness_matrix)[0][0]
-        # If the new memory Pareto frontier has size less or equal than the memory size, then set the new memory
+        # If the new memory Pareto front has size less or equal than the memory size, then set the new memory
         memory_size = self.params.memory_size
         if(len(memory_pareto_front_idxs) <= memory_size):
             self.memory.position = position_matrix[memory_pareto_front_idxs]
             self.memory.fitness = fitness_matrix[memory_pareto_front_idxs]
-        # Else get the particles with the highest crowd distance in the new memory Pareto frontier
+        # Else get the particles with the highest crowd distance in the new memory Pareto front
         else:
             # Select the particles with the highest crowd distance
             selected_fitness = fitness_matrix[memory_pareto_front_idxs]
@@ -319,7 +319,7 @@ class Mesh():
                 prev_bar_value = 0
                 # Initialize population
                 self.init_population_randomly()
-                # get the population frontiers and ranks
+                # Get the population fronts and ranks
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                 # Initialize the memory
                 self.memory = Memory(self.population, self.fronts[0], self.params)

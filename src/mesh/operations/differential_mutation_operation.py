@@ -161,16 +161,22 @@ def current_to_rand_1_bin(self, xr_pool_tensor):
   else:
     return np.array([]), np.array([])
 
-
-# The options of Differential Evolution strategy
-differential_mutation_strategy_options = {
+differential_mutation_operation_options = {
   0: rand_1_bin,
   1: rand_2_bin,
   2: best_1_bin,
   3: current_to_best_1_bin,
   4: current_to_rand_1_bin
 }
+''' The options of Differential Evolution strategy. They are:
+
+  - :type:`0`: Applies the DE/rand/1/bin strategy.
+  - :type:`1`: Applies the DE/rand/2/bin strategy.
+  - :type:`2`: Applies the DE/best/1/bin strategy.
+  - :type:`3`: Applies the DE/current-to-best/1/bin strategy.
+  - :type:`4`: Applies the DE/current-to-rand/1/bin strategy.
+'''
 
 ''' Choose the Differential Evolution strategy'''
-def get_differential_mutation_strategy(type: {0, 1, 2, 3, 4}):
-  return differential_mutation_strategy_options[type]
+def get_differential_mutation_operation(type: {0, 1, 2, 3, 4}) -> function:
+  return differential_mutation_operation_options[type]

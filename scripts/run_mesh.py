@@ -86,10 +86,10 @@ def main():
 
     global_best_attribution_type = 0 # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
     dm_pool_type = 0 # 0 -> V1 | 1 -> V2 | 2 -> V3
-    de_mutation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
+    dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
-    config = f"E{global_best_attribution_type+1}V{dm_pool_type+1}D{de_mutation_type+1}_{experiment_name}"
-    print(f"Running E{global_best_attribution_type+1}V{dm_pool_type+1}D{de_mutation_type+1}-{experiment_name} on MG")
+    config = f"E{global_best_attribution_type+1}V{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
+    print(f"Running E{global_best_attribution_type+1}V{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name} on MG")
     result = {}
     combined_F = None
     combined_P = None
@@ -99,7 +99,7 @@ def main():
                                 population_size, memory_size=memory_size,
                                 global_best_attribution_type=global_best_attribution_type,
                                 dm_pool_type=dm_pool_type,
-                                de_mutation_type=de_mutation_type,
+                                dm_operation_type=dm_operation_type,
                                 communication_probability=communication_probability, mutation_rate=mutation_rate,
                                 max_gen=max_iterations, max_fit_eval=max_fitness_eval,
                                 max_personal_guides=personal_guide_array_size,
