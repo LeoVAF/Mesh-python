@@ -80,13 +80,11 @@ def nearest_sigma_in_fronts(self: Mesh, particle_idxs: np.ndarray[np.integer], s
     return np.zeros(num_particles, dtype=np.uint64)
   else:
     # Get the nearest neighbor distances and indices
-    #######################################################################################################################
     distances, indices = self.pre_allocated.nearest_neighbors.fit(population_sigma[search_idxs]).kneighbors(population_sigma[particle_idxs])
     # The nearest neighbor must be different from itself
     non_zero_distances_mask = distances[:, 0] == 0
     first_valid_idxs = np.where(non_zero_distances_mask, 1, 0)
-    return indices[np.arange(num_particles), first_valid_idxs]
-    #######################################################################################################################
+    return search_idxs[indices[np.arange(num_particles), first_valid_idxs]]
 
 def sigma_method_in_memory(self: Mesh) -> None:
   ''' Global best attribution with sigma method in memory. The global best for each particle in the population will be the nearest particle different from itself in memory using the sigma value.
