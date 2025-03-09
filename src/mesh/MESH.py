@@ -238,9 +238,9 @@ class Mesh():
     ''' Apply a strategy from differential evolution '''
     def differential_mutation(self):
         # A array of a matrix pool in each row
-        xr_pool_tensor = self.differential_mutation_pool()
+        xr_pool_list = self.differential_mutation_pool()
         # Apply a strategy
-        xst, valid_idxs = self.differential_mutation_operation(xr_pool_tensor)
+        xst, valid_idxs = self.differential_mutation_operation(xr_pool_list)
         if len(xst):
             # Update the current particle if the new particle from the strategy is better
             st_fitnesses, min_evaluations = self.count_fitness_eval(xst)

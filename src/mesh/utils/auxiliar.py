@@ -18,7 +18,7 @@ class PreAllocated():
         params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.population_size` and :attr:`~mesh.parameters.MeshParameters.global_best_attribution_type` are used to initialize the pre-allocations.
 
     Raises:
-        TypeError: If the ```params`` is not an instance of :class:`~mesh.parameters.MeshParameters`.
+        TypeError: If the ``params`` is not an instance of :class:`~mesh.parameters.MeshParameters`.
     '''
 
     def __init__(self, params: MeshParameters) -> None:

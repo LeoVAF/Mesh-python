@@ -6,14 +6,14 @@ import numpy as np
 if TYPE_CHECKING:
     from MESH import Mesh
 
-def pool_from_population(self: Mesh) -> np.ndarray[np.float64, 3]:
-  ''' Returns a pool tensor of particles from population according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
+def pool_from_population(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
+  ''' Makes a pool list of particle position from population according to differential mutation operations. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
   Args:
     self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
 
   Returns:
-    :type:`np.ndarray[np.float64, 3]`: The pool tensor of particles from population.
+    :type:`list[np.ndarray[np.float64, 2]]`: The pool list of particles from population.
   '''
 
   # Get the positions
@@ -26,17 +26,17 @@ def pool_from_population(self: Mesh) -> np.ndarray[np.float64, 3]:
   split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
   # Get the indices of the positions for each row of pool masks
   _, col_indices = np.where(pool_masks)
-  # Return the pool
+  # Return the pool list of particle position
   return np.split(positions[col_indices], split_indices)
 
-def pool_from_memory(self: Mesh) -> np.ndarray[np.float64, 3]:
-  ''' Returns a pool tensor of particles from memory according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
+def pool_from_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
+  ''' Returns a pool list of particle position from memory according to differential mutation operations. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
   Args:
     self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
 
   Returns:
-    :type:`np.ndarray[np.float64, 3]`: The pool tensor of particles from memory.
+    :type:`list[np.ndarray[np.float64, 2]]`: The pool list of particles from memory.
   '''
 
   # Get the positions
@@ -51,17 +51,17 @@ def pool_from_memory(self: Mesh) -> np.ndarray[np.float64, 3]:
   split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
   # Get the indices of the positions for each row of pool masks
   _, col_indices = np.where(pool_masks)
-  # Return the pool
+  # Return the pool list of particle position
   return np.split(mem_positions[col_indices], split_indices)
 
-def pool_from_population_and_memory(self: Mesh) -> np.ndarray[np.float64, 3]:
-  ''' Returns a pool tensor of particles from population and memory according to differential mutation operations. The pool tensor is a list of matrices with the respective pool for each particle.
+def pool_from_population_and_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
+  ''' Makes a pool list of particle position from population and memory according to differential mutation operations. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
   Args:
     self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
 
   Returns:
-    :type:`np.ndarray[np.float64, 3]`: The pool tensor of particles from population and memory.
+    :type:`list[np.ndarray[np.float64, 2]]`: The pool list of particles from population and memory.
   '''
 
   # Get the positions
@@ -76,7 +76,7 @@ def pool_from_population_and_memory(self: Mesh) -> np.ndarray[np.float64, 3]:
   split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
   # Get the indices of the positions for each row of pool masks
   _, col_indices = np.where(pool_masks)
-  # Return the pool
+  # Return the pool list of particle position
   return np.split(pop_and_mem_positions[col_indices], split_indices)
 
 # The options of Differential Mutation pool
@@ -99,6 +99,7 @@ def get_differential_mutation_pool(type: {0, 1, 2}) -> function:
     type (:type:`{0, 1, 2}`): The type of Differential Mutation pool.
   
   Returns:
-    :type:`function`: The respective function to get the differential mutation pool.
+    :type:`function`: The respective function to make the differential mutation pool.
   '''
+
   return differential_mutation_pool_options[type]
