@@ -38,11 +38,13 @@ from utils.auxiliar import PreAllocated, StoppingAlgorithm
 from operations.global_best_attribution import get_global_best_attribution
 from operations.differential_mutation_pool import get_differential_mutation_pool
 from operations.differential_mutation_operation import get_differential_mutation_operation
+from validations.python import assert_type, assert_type_or_falsy, is_fitness_function
 
 from scipy.stats import truncnorm
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
 from types import MethodType
+from typing import Callable
 
 import numpy as np
 
@@ -51,16 +53,62 @@ import numpy as np
 # current, peak = tracemalloc.get_traced_memory()
 # print(f"Memória atual: {current / 10**6:.2f} MB; Pico de memória: {peak / 10**6:.2f} MB")
 # tracemalloc.stop()
-        
-''' Algorithm MESH inheriting operations from the Operation class '''
+
 class Mesh():
-    ''' Initialize the instance '''
+    ''' MESH algorithm.
+    
+    Args:
+        params (:class:`~mesh.parameters.MeshParameters`): MESH parameters.
+        fitness_function (:type:`Callable[..., np.ndarray[np.number]]`): A fitness function that returns a numpy array with each objective value in the respective component.
+        log_memory (:type:`str | False`): A string to log the memory. The file name will use this string. It must be a string or a falsy value. Default is False.
+    
+    Raises:
+        TypeError: If the input is not the expected type.
+        ValueError: If the input is not the allowed value.
+    '''
+
     def __init__(self,
                 params: MeshParameters, # MESH parameters
-                fitness_function, # A fitness function that returns a numpy array with each value in the respective component
-                log_memory=False): # A string to log the memory (the name of the files will use this string)
+                fitness_function: Callable[..., np.ndarray[np.number]], # A fitness function that returns a numpy array with each objective value in the respective component
+                log_memory=False): # A string to log the memory (the file name will use this string)
         
+        self.params: MeshParameters
+        ''' Mesh parameters. '''
+        self.global_best_attribution: MethodType[Callable[[Mesh], None]]
+        ''' Function to attribute the global best to the particles. '''
+        self.differential_mutation_pool: MethodType[Callable[[Mesh], list[np.ndarray[np.float64, 2]]]]
+        ''' Function to make the differential mutation pool. '''
+        self.differential_mutation_operation: MethodType[Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
+        ''' Function to do the differential mutation operation. '''
+        self.population: Population
+        ''' Population of particles. '''
+        self.memory: Memory
+        ''' Memory of particles. '''
+        self.fronts: list[np.ndarray[np.integer]]
+        ''' List of numpy arrays with index of each particle in the respective front. '''
+        self.fitness_function: Callable[..., np.ndarray[np.number]]
+        ''' Fitness function. '''
+        self.generation_counter: int
+        ''' Generation counter. Used to stop the algorithm if its value is greater than 0. '''
+        self.fitness_eval_counter: int
+        ''' Fitness evaluation counter. Used to stop the algorithm if its value is greater than 0. '''
+        self.weights: np.ndarray[np.float64, 2]
+        ''' Weights for the algorithm operations moving the population. '''
+        self.pre_allocated: PreAllocated
+        ''' Pre-allocated data for the algorithm. '''
+        self.log_memory: str | False
+        ''' A string to log the memory. '''
+        self.count_fitness_eval: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 1], int]]
+        ''' Function to count fitness evaluations. Only used if :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is greater than 0. '''
+        self.count_generation: Callable[[], None]
+        ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is greater than 0. '''
+        self.update_progress_bar: Callable[[tqdm, int], int]
+        ''' Function to update the progress bar. '''
+        self.total_bar: int
+        ''' Total value of the progress bar. '''
+
         # Receive the algorithm parameters
+        assert_type(params, 'params', MeshParameters)
         self.params = params
         # Chosing the operations just one time
         self.global_best_attribution = MethodType(get_global_best_attribution(params.global_best_attribution_type), self)
@@ -72,20 +120,21 @@ class Mesh():
         self.population = Population(params)
         # Memory particles (and the final result after run MESH)
         self.memory = None
-        # fronts (a list of numpy arrays with index of each particle in the respective front)
+        # Fronts (a list of numpy arrays with index of each particle in the respective front)
         self.fronts = []
-        # Estabilish the fitness function and start the fitness counter
+        # Estabilish the fitness function
+        is_fitness_function(fitness_function, 'fitness_function', params.position_dim, params.objective_dim)
         self.fitness_function = fitness_function
-        self.fitness_eval_counter = 0
         # Start the generation counter
         self.generation_counter = 0
+        # Start the fitness evaluation counter
+        self.fitness_eval_counter = 0
         # Create a random matrix (4 x population_size) for w1 and two random vectors for w2 and w3
         self.weights = np.random.uniform(0.0, 1.0, [4, params.population_size])
         # Store some pre-calculated data
         self.pre_allocated = PreAllocated(params)
         # Variable for logging memory
-        if not isinstance(log_memory, str) and log_memory:
-            raise TypeError('The input "log_memory" must be either a string or a falsy value!')
+        assert_type_or_falsy(log_memory, 'log_memory', str)
         self.log_memory = log_memory
         # Check if generation is a stopping criterion
         if self.params.max_gen > 0:

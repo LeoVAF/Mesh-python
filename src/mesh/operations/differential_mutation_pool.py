@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
@@ -92,14 +92,14 @@ differential_mutation_pool_options = {
   - :type:`2`: Pool from population and memory.
 '''
 
-def get_differential_mutation_pool(type: {0, 1, 2}) -> function:
+def get_differential_mutation_pool(type: {0, 1, 2}) -> Callable[[Mesh], list[np.ndarray[np.float64, 2]]]:
   ''' Chooses the Differential Mutation pool type.
   
   Args:
     type (:type:`{0, 1, 2}`): The type of Differential Mutation pool.
   
   Returns:
-    :type:`function`: The respective function to make the differential mutation pool.
+    :type:`Callable[[Mesh], list[np.ndarray[np.float64, 2]]]`: The respective function to make the differential mutation pool.
   '''
 
   return differential_mutation_pool_options[type]

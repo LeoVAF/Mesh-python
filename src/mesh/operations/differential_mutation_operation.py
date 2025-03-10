@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 from scipy.stats import truncnorm
 
 import numpy as np
@@ -174,7 +174,7 @@ def best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   else:
     return np.array([]), np.array([])
 
-def current_to_best_1_bin(self, xr_pool_list):
+def current_to_best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/current-to-best/1/bin. The strategy is defined as follows:
   
   .. math::
@@ -228,7 +228,7 @@ def current_to_best_1_bin(self, xr_pool_list):
     return np.array([]), np.array([])
 
 ''' Applies the DE/current-to-rand/1/bin '''
-def current_to_rand_1_bin(self, xr_pool_list):
+def current_to_rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/current-to-rand/1/bin. The strategy is defined as follows:
 
   .. math::
@@ -295,14 +295,14 @@ differential_mutation_operation_options = {
   - :type:`4`: Applies the DE/current-to-rand/1/bin strategy.
 '''
 
-def get_differential_mutation_operation(type: {0, 1, 2, 3, 4}) -> function:
+def get_differential_mutation_operation(type: {0, 1, 2, 3, 4}) -> Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]:
   ''' Chooses the Differential Mutation operation. 
   
   Args:
     type (:type:`{0, 1, 2, 3, 4}`): The type of Differential Mutation operation.
 
   Returns:
-    :type:`function`: The Differential Mutation operation function.
+    :type:`Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]`: The Differential Mutation operation function.
   '''
 
   return differential_mutation_operation_options[type]

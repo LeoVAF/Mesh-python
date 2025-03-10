@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
@@ -180,14 +180,14 @@ global_best_attribution_options = {
   - :type:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
 '''
 
-def get_global_best_attribution(type: {0, 1, 2, 3}) -> function:
+def get_global_best_attribution(type: {0, 1, 2, 3}) -> Callable[[Mesh], None]:
   ''' Chooses the global best attribution operation.
   
   Args:
     type (:type:`{0, 1, 2, 3}`): The type of global best attribution operation.
 
   Returns:
-    :type:`function`: The respective function to select the global best.
+    :type:`Callable[[Mesh], None]`: The respective function to select the global best.
   '''
 
   return global_best_attribution_options[type]
