@@ -60,7 +60,7 @@ class Mesh():
     
     Args:
         params (:class:`~mesh.parameters.MeshParameters`): MESH parameters.
-        fitness_function (:type:`Callable[..., np.ndarray[np.number]]`): A fitness function that returns a numpy array with each objective value in the respective component.
+        fitness_function (:type:`Callable[[np.ndarray[np.number]], np.ndarray[np.number]]`): A fitness function that returns a numpy array with each objective value in the respective component.
         log_memory (:type:`str | False`): A string to log the memory. The file name will use this string. It must be a string or a falsy value. Default is False.
     
     Raises:
@@ -70,7 +70,7 @@ class Mesh():
 
     def __init__(self,
                 params: MeshParameters, # MESH parameters
-                fitness_function: Callable[..., np.ndarray[np.number]], # A fitness function that returns a numpy array with each objective value in the respective component
+                fitness_function: Callable[[np.ndarray[np.number]], np.ndarray[np.number]], # A fitness function that returns a numpy array with each objective value in the respective component
                 log_memory=False): # A string to log the memory (the file name will use this string)
         
         self.params: MeshParameters
@@ -102,7 +102,7 @@ class Mesh():
         self.fitness_eval: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 1], int]]
         ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is greater than 0, so the fitness evaluations will be counted. '''
         self.count_generation: Callable[[], None]
-        ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is greater than 0. '''
+        ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is 0. '''
         self.update_progress_bar: Callable[[tqdm, int], int]
         ''' Function to update the progress bar. '''
         self.total_bar: int
@@ -258,7 +258,11 @@ class Mesh():
                 self.update_memory()
 
     def mutate_weights(self) -> None:
-        ''' Calculates the weights by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 1, and then multiplies by :attr:`~mesh.parameters.MeshParameters.mutation_rate`. '''
+        ''' Calculates the weights by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 1, and then multiplies by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+        
+        Warning:
+            The weights don't follow exactly the equation in the article.
+        '''
         
         
         # Get the values from truncated normal distribution
@@ -281,20 +285,26 @@ class Mesh():
         - :math:`w_I` is the inertia weight;
         - :math:`w_A` is the assimilation weight;
         - :math:`w_C` is the cooperation weight;
+        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`U(0,\ 1)` a number sampled under a uniform distribution between 0 and 1 and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
+
+        .. math::
+
+            C_{ij} = \begin{cases} 1,\ \text{if } i = j \land U(0,\ 1) < \tau_{com} \\ 0,\ \text{otherwise} \end{cases}.
+
         - :math:`x_{pb}` is the personal best vector of the particle;
         - :math:`x_{gb}` is the global best vector o the particle.
         
         Note:
-            In this implementation, the weights are calculated every generation by :meth:`mutate_weight`. The mutation of :math:`x_{gb}` is done by:
+            In this implementation, the weights are calculated every generation by :meth:`mutate_weights`. The mutation of :math:`x_{gb}` is done by:
             
             .. math::
                 
-                x^*_{gb} = x_{gb}(1 + \tau\mathcal{N}(0, 1)).
+                x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot \mathcal{N}(0, 1)).
             
-            where :math:`\tau` is the mutation rate and :math:`\mathcal{N}(0, 1)` is a number sampled from the standard Gaussian Distribution.
+            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\mathcal{N}(0, 1)` is a number sampled from the standard Gaussian Distribution.
         
         Warning:
-            :math:`\tau` is not used in the equation of motion directly. It is used together with a weight.
+            :math:`\tau_{mut}` is not used in the equation of motion directly. It is used together with a weight.
         '''
 
         # Get the parameters
@@ -304,7 +314,7 @@ class Mesh():
         # Generating random indices for each sublist
         random_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
         # Get matrix of personal best list positions
-        pb_positions = self.population.personal_best_list_pos[np.arange(population_size), random_indices, :]
+        pb_positions = self.population.personal_best_pos[np.arange(population_size), random_indices, :]
         # Get the global best positions
         gb_positions = self.population.global_best
         # Get the positions
@@ -370,36 +380,49 @@ class Mesh():
         self.population.fitness[prev_idx_size:] = self.population.fitness[current_idxs]
         # Select the best N personal best
         pb_idxs = np.concatenate((prev_idxs, current_idxs), axis=0)
-        self.population.personal_best_list_fit[:] = self.population.personal_best_list_fit[pb_idxs]
-        self.population.personal_best_list_pos[:] = self.population.personal_best_list_pos[pb_idxs]
+        self.population.personal_best_fit[:] = self.population.personal_best_fit[pb_idxs]
+        self.population.personal_best_pos[:] = self.population.personal_best_pos[pb_idxs]
 
-    ''' Update the list of particle's personal best '''
-    def update_personal_best(self, indices):
+    def update_personal_best(self, pop_indices: np.ndarray[np.integer]) -> None:
+        ''' Updates the personal guides of the particles by the population index.
+
+        Note:
+            There is three cases to update the personal guides:
+
+            - When the current particle is dominated by any of its personal guide, the current particle is ignored;
+            - When the current particle dominates a personal guide, the current particle replaces the dominated personal guide. This replacement is done for all dominated personal guides, so the more the current particle dominates its personal guides, the more chance it has of being sampled in :meth:`move_population`;
+            - When the current particle don't dominate and is not dominated by any personal guide, the current particle is added to the personal guide matrix. The oldest personal guide is removed when the current particle is only added.
+        
+        Args:
+            pop_indices (:type:`np.ndarray[np.integer]`): A numpy array with the indices of the population particles to update the personal guides.
+        '''
+
         # Get the population fitness as a tensor
-        fitness_tensor = self.population.fitness[indices, np.newaxis]
-        # Get the personal best fitness and position
-        pb_fitness = self.population.personal_best_list_fit[indices]
+        fitness_tensor = self.population.fitness[pop_indices, np.newaxis]
+        # Get the personal best fitness
+        pb_fitness = self.population.personal_best_fit[pop_indices]
         # Get the mask to update the personal best
         update_mask = ~np.any(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
-        update_idxs = indices[update_mask]
+        update_idxs = pop_indices[update_mask]
         # Get the mask to replace the personal best dominated by the current particle
         replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
         # Replace the dominated personal best by the current particle
         replace_row, replace_col = np.nonzero(replace_mask)
         particle_to_replace_pb = update_idxs[replace_row]
-        self.population.personal_best_list_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
-        self.population.personal_best_list_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
+        self.population.personal_best_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_best_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
         # Get the mask to add the current to the personal best list
         add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
         # Delete the oldest personal best and include the current particle as a new personal best
-        self.population.personal_best_list_fit[add_idxs, 1:, :] = self.population.personal_best_list_fit[add_idxs, :-1, :]
-        self.population.personal_best_list_pos[add_idxs, 1:, :] = self.population.personal_best_list_pos[add_idxs, :-1, :]
+        self.population.personal_best_fit[add_idxs, 1:, :] = self.population.personal_best_fit[add_idxs, :-1, :]
+        self.population.personal_best_pos[add_idxs, 1:, :] = self.population.personal_best_pos[add_idxs, :-1, :]
         # Update the personal best list by adding the current particle as a new personal best
-        self.population.personal_best_list_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
-        self.population.personal_best_list_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
+        self.population.personal_best_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
+        self.population.personal_best_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
-    ''' Update the memory '''
     def update_memory(self):
+        ''' Updates the memory position and fitness using the Pareto front formed by the particles from previous memory particles and the current Pareto front. '''
+        
         # Get the indices of the Pareto front
         pareto_idxs = self.fronts[0]
         # Get the unique positions from the Pareto front and the memory
@@ -438,7 +461,7 @@ class Mesh():
                 fitnesses, min_evaluations = self.fitness_eval(self.population.position)
                 self.population.fitness[:min_evaluations] = fitnesses
                 # Repeat the population fitness for all personal best input
-                self.population.personal_best_list_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
+                self.population.personal_best_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
                 # Get the population fronts and ranks
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                 # Initialize the memory
@@ -482,13 +505,31 @@ class Mesh():
             if self.log_memory:
                 self.logging()
 
-    ''' Update the progress bar by fitness evaluations '''
-    def update_progress_bar_by_fitness_evaluation(self, pbar, prev_bar_value):
+    def update_progress_bar_by_fitness_evaluation(self, pbar: tqdm, prev_bar_value: int) -> int:
+        ''' Updates the progress bar by fitness evaluations. It is used when the stopping criterion is fitness evaluation or both generation and fitness evaluation.
+        
+        Args:
+            pbar (:type:`tqdm`): A :type:`tqdm` object.
+            prev_bar_value (:type:`int`): The previous value of the progress bar.
+
+        Returns:
+            :type:`int`: The current value of the progress bar.
+        '''
+
         pbar.update(self.fitness_eval_counter - prev_bar_value)
         return self.fitness_eval_counter
     
-    ''' Update the progress bar by generations '''
     def update_progress_bar_by_generation(self, pbar, prev_bar_value):
+        ''' Updates the progress bar by generations. It is used when the stopping criterion is generation counter.
+        
+        Args:
+            pbar (:type:`tqdm`): A :type:`tqdm` object.
+            prev_bar_value (:type:`int`): The previous value of the progress bar.
+
+        Returns:
+            :type:`int`: The current value of the progress bar.
+        '''
+
         pbar.update(self.generation_counter - prev_bar_value)
         return self.generation_counter
 
@@ -503,8 +544,19 @@ class Mesh():
         if self.generation_counter > self.params.max_gen:
             raise StoppingAlgorithm()
     
-    ''' Count fitness evaluations if it is a stopping criterion '''
-    def stopping_by_fitness_eval(self, X):
+    def stopping_by_fitness_eval(self, X: np.ndarray[np.float64, 2]) -> tuple[np.ndarray[np.float64, 2], int]:
+        ''' Evaluates the position matrix ``X`` and counts the fitness evaluations. This method is used when the stopping criterion is by fitness evaluations.
+        
+        Args:
+            X (:type:`np.ndarray[np.float64, 2]`): A numpy matrix with the particle positions.
+            
+        Returns:
+            :type:`tuple[np.ndarray[np.float64, 2], int]`: A tuple with the fitness matrix and the minimum number of evaluations that doesn't stop the algorithm.
+        
+        Raises:
+            :class:`~mesh.utils.auxiliar.StoppingAlgorithm`: If the number of fitness evaluations is greater than the maximum number of fitness evaluations.    
+        '''
+
         # Check if the stopping criterion reached
         if self.fitness_eval_counter >= self.params.max_fit_eval:
             raise StoppingAlgorithm()

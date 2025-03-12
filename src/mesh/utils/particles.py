@@ -66,10 +66,10 @@ class Population:
         ''' Numpy matrix for the sigma values. Initialized with ``np.inf`` values. Used only if the Sigma method is used. '''
         self.global_best: np.ndarray[np.float64, 2]
         ''' Numpy matrix with the best global position for each particle. '''
-        self.personal_best_list_pos: np.ndarray[np.float64, 3]
+        self.personal_best_pos: np.ndarray[np.float64, 3]
         ''' Numpy tensor with a matrix of personal guide positions for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` positions.
         Initialized with the respective particle's position repeated for all matrix entries. '''
-        self.personal_best_list_fit: np.ndarray[np.float64, 3]
+        self.personal_best_fit: np.ndarray[np.float64, 3]
         ''' Numpy tensor with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` fitnesses. '''
 
         self.position = np.random.uniform(params.position_min_value, params.position_max_value, (params.population_size, params.position_dim))
@@ -79,8 +79,8 @@ class Population:
         if params.global_best_attribution_type < 2:
             self.sigma = np.full((params.population_size, comb(params.objective_dim, 2)), np.inf)
         self.global_best = np.empty((params.population_size, params.position_dim))
-        self.personal_best_list_pos = np.repeat(self.position[:, np.newaxis, :], params.max_personal_guides, axis=1)
-        self.personal_best_list_fit = np.empty((params.population_size, params.max_personal_guides, params.objective_dim))
+        self.personal_best_pos = np.repeat(self.position[:, np.newaxis, :], params.max_personal_guides, axis=1)
+        self.personal_best_fit = np.empty((params.population_size, params.max_personal_guides, params.objective_dim))
 
 class Memory:
     """
