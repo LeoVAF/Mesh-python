@@ -1,7 +1,6 @@
-from typing import Iterable, Iterator, Callable
+from typing import Iterable, Iterator
 
 import numpy as np
-import inspect
 
 def assert_type(var: any, var_name: str, expected_types: type | tuple, is_optional: bool = False) -> None:
   ''' Checks if the ``var`` is one of the expected types.
@@ -128,46 +127,3 @@ def is_in_options(option: any, option_name: str, options: Iterable | Iterator) -
   # Check if the option is in the options
   if option not in options:
     raise ValueError(f'The input "{option_name}" must be one of the following options: {options}.')
-  
-def is_fitness_function(fit_func: Callable[[np.ndarray[np.number]], np.ndarray[np.number]], fit_func_name: str, position_dim: int | np.integer, objective_dim: int | np.integer) -> None:
-  ''' Checks if the fitness function is correctly annotated.
-  
-  Args:
-    fit_func (:type:`Callable[[np.ndarray[np.number]], np.ndarray[np.number]]`): The fitness function to be checked.
-    fit_func_name (:type:`str`): The name of the fitness function.
-    position_dim (:type:`int | np.integer`): The design space dimension.
-    objective_dim (:type:`int | np.integer`): The number of objectives.
-    
-    Raises:
-    TypeError: If the input is not of the expected type.
-    ValueError: If the input is not a fitness function.
-  '''
-
-  # Check the input types
-  if not callable(fit_func):
-    raise TypeError(f'The input "{fit_func_name}" must be a callable, but it is of type "{type(fit_func)}".')
-  assert_type(fit_func_name, 'fit_func_name', str)
-  is_greater_in_type(position_dim, 'position_dim', (int, np.integer), 0)
-  is_greater_in_type(objective_dim, 'objective_dim', (int, np.integer), 0)
-
-  # Get the fitness function annotation
-  annotation = inspect.signature(fit_func)
-  fit_func_args = list(annotation.parameters.values())
-
-  # Check the number of arguments without default values
-  arg_non_default_list = [arg.default != inspect.Parameter.empty for arg in fit_func_args]
-  
-  # Check the fitness function arguments
-  if not arg_non_default_list:
-    raise ValueError('The fitness function must have at least one argument without default values.')
-  else:
-    mandatory_args = arg_non_default_list.count(True)
-    # Check fitness function possibilities
-    class_method = fit_func_args[0].name == 'cls' and isinstance(fit_func, classmethod) and mandatory_args == 2
-    static_method = isinstance(fit_func, staticmethod) and mandatory_args == 1
-    instance_method = fit_func_args[0].name == 'self' and mandatory_args == 2
-    pure_function = mandatory_args == 1
-    if class_method or static_method or instance_method or pure_function:
-      raise ValueError(f'The fitness function must have only one argument without default values, but it has "{arg_non_default_list.count(True)}".')
-
-  # Check the type of the arguments

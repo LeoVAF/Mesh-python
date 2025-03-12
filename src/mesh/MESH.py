@@ -38,7 +38,8 @@ from utils.auxiliar import PreAllocated, StoppingAlgorithm
 from operations.global_best_attribution import get_global_best_attribution
 from operations.differential_mutation_pool import get_differential_mutation_pool
 from operations.differential_mutation_operation import get_differential_mutation_operation
-from validations.python import assert_type, assert_type_or_falsy, is_fitness_function
+from validations.python import assert_type, assert_type_or_falsy
+from validations.numpy import is_fitness_function
 
 from scipy.stats import truncnorm
 from tqdm import tqdm
