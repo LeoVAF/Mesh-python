@@ -289,7 +289,7 @@ class Mesh():
 
         .. math::
 
-            C_{ij} = \begin{cases} 1,\ \text{if } i = j \land U(0,\ 1) < \tau_{com} \\ 0,\ \text{otherwise} \end{cases}.
+            C_{ij} = \begin{cases} 1,\ \text{if } (i = j) \land (U(0,\ 1) \leq \tau_{com}) \\ 0,\ \text{otherwise} \end{cases}.
 
         - :math:`x_{pb}` is the personal best vector of the particle;
         - :math:`x_{gb}` is the global best vector o the particle.
@@ -494,9 +494,6 @@ class Mesh():
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
         # The end of the algorithm
         except StoppingAlgorithm:
-            ''' ############################################################################### '''
-            # Population_selection() here?
-            ''' ############################################################################### '''
             # Get the fronts
             self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
             # Update memory
