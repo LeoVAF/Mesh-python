@@ -150,6 +150,8 @@ class MeshParameters:
         # Set the maximum number of fitness evaluations
         assert_type(max_fit_eval, 'max_fit_eval', (int, np.integer))
         self.max_fit_eval = max(max_fit_eval, 0)
+        if self.max_gen == 0 and self.max_fit_eval == 0:
+            raise ValueError('At least one of the parameters max_gen and max_fit_eval must be greater than zero.')
         # Set the number of personal guides
         is_greater_in_type(max_personal_guides, 'max_personal_guides', (int, np.integer), 0)
         self.max_personal_guides = max_personal_guides

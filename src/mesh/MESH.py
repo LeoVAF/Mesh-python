@@ -99,8 +99,8 @@ class Mesh():
         ''' Pre-allocated data for the algorithm. '''
         self.log_memory: str | False
         ''' A string to log the memory. '''
-        self.count_fitness_eval: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 1], int]]
-        ''' Function to count fitness evaluations. Only used if :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is greater than 0. '''
+        self.fitness_eval: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 1], int]]
+        ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is greater than 0, so the fitness evaluations will be counted. '''
         self.count_generation: Callable[[], None]
         ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is greater than 0. '''
         self.update_progress_bar: Callable[[tqdm, int], int]
@@ -130,7 +130,7 @@ class Mesh():
         self.generation_counter = 0
         # Start the fitness evaluation counter
         self.fitness_eval_counter = 0
-        # Create a random matrix (4 x population_size) for w1 and two random vectors for w2 and w3
+        # Create a random matrix (4 x population_size) with weights for the algorithm operations
         self.weights = np.random.uniform(0.0, 1.0, [4, params.population_size])
         # Store some pre-calculated data
         self.pre_allocated = PreAllocated(params)
@@ -138,54 +138,76 @@ class Mesh():
         assert_type_or_falsy(log_memory, 'log_memory', str)
         self.log_memory = log_memory
         # Check if generation is a stopping criterion
-        if self.params.max_gen > 0:
+        if params.max_gen > 0:
             self.count_generation = self.stopping_by_generation
         else:
             self.count_generation = lambda : None
         # Check if the fitness evaluation is a stopping criterion
-        if self.params.max_fit_eval > 0:
-            self.count_fitness_eval = self.stopping_by_fitness_eval
+        if params.max_fit_eval > 0:
+            self.fitness_eval = self.stopping_by_fitness_eval
         else:
-            self.count_fitness_eval = self.fitness_evaluations
+            self.fitness_eval = self.fitness_evaluations
         # Choose the way to update the algorithm progress bar
-        if self.params.max_gen == 0:
+        if params.max_gen == 0:
             self.total_bar = params.max_fit_eval
             self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
-        elif self.params.max_fit_eval == 0:
+        elif params.max_fit_eval == 0:
             self.total_bar = params.max_gen
             self.update_progress_bar = self.update_progress_bar_by_generation
         else:
             self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
             self.total_bar = min(params.population_size*(2*params.max_gen+1), params.max_fit_eval)
-
-    ''' Initialize the population randomly '''
-    def init_population_randomly(self):
-        # Evaluate the initial population
-        fitnesses, min_evaluations = self.count_fitness_eval(self.population.position)
-        self.population.fitness[:min_evaluations] = fitnesses
-        # Repeat the population fitness for all personal best input
-        self.population.personal_best_list_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
     
-    ''' Evaluate the fitness given a particle position matrix '''
-    def fitness_evaluations(self, X):
+    def fitness_evaluations(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
+        ''' Evaluates the fitness given a particle position matrix.
+        
+        Args:
+            X (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
+
+        Returns:
+            :type:`tuple[np.ndarray[np.number, 2], int]`: A tuple with the fitness matrix and the number of evaluations.
+        '''
+
         return np.array([self.fitness_function(x) for x in X]), len(X)
     
-    ''' Check if an array x dominates an array or matrix (axis=1) y (vectorized) '''
-    def np_dominate(self, x, y, axis=0):
-        return np.all(x <= y, axis=axis) & np.any(x < y, axis=axis)
-    
-    ''' Check if an array x dominates an array y '''
-    def dominates(self, x, y):
-        dominates = False
-        for xi, yi in zip(x, y):
-            if xi > yi:
-                return False
-            elif xi < yi:
-                dominates = True
-        return dominates
+    def dominates(self, x: np.ndarray[np.number, ], y: np.ndarray[np.number, ], axis: int | np.integer = 0) -> np.ndarray[np.bool, ]:
+        r''' Checks if an numpy array x dominates an numpy array y on the respective axis. Given two arrays :math:`x \in \mathbb{R}^n` and :math:`y \in \mathbb{R}^n`, :math:`x` dominates :math:`y` if and only if the following condition are satisfied:
 
-    ''' Update the population fronts '''
-    def get_domination_fronts(self, fitness_matrix):
+        .. math::
+        
+            x \neq y\ \land\ x \preceq y,
+        
+        where:
+
+        .. math::
+
+            x \neq y &\iff \exists i \in \{1,\ \ldots,\ n\}\ (\ x_i \neq y_i), \\
+            x \preceq y &\iff \forall i \in \{1,\ \ldots,\ n\}\ (x_i \leq y_i).
+            
+        Args:
+            x (:type:`np.ndarray[np.number, n]`): A n-dimensional numpy array.
+            y (:type:`np.ndarray[np.number, n]`): A n-dimensional numpy array.
+            axis (:type:`int | np.integer`): The axis to compare the arrays. Default is 0.
+        
+        Returns:
+            :type:`np.ndarray[np.bool, n-1]`: A (n-1)-dimensional numpy array with the result of the comparison.
+        '''
+
+        return np.all(x <= y, axis=axis) & np.any(x < y, axis=axis)
+
+    def get_domination_fronts(self, fitness_matrix: np.ndarray[np.number, 2]) -> tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]:
+        ''' Gets the fronts and the ranks of the particles given a fitness matrix.
+        
+        Note:
+            The fronts are a list of numpy arrays. Each numpy array in the list represents a front, starting with the Pareto front. Each particle has its own index.
+
+        Args:
+            fitness_matrix (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the fitness values of the particles.
+
+        Returns:
+            :type:`tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]`: A tuple with the fronts and the ranks of the particles, respectively.
+        '''
+
         # If there is only one particle in the particle list, then it is the Pareto front by itself
         if(len(fitness_matrix) == 1):
             return np.array([np.array([0])]), np.array([0])
@@ -194,8 +216,17 @@ class Mesh():
         return non_dominated_fronts, ranks
     
     ''' ################################################################################################################################################## '''
-    ''' Reverses the direction of each component of the velocity that took the particle out of its respective limits (applied after the movement) '''
-    def reflect_velocity_at_bounds(self, velocity_input, position_input):
+    def reflect_velocity_at_bounds(self, velocity_input: np.ndarray[np.number, 2], position_input: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
+        ''' Reverses the direction of each component of the velocity that took the particle out of its respective boundaries.
+        
+        Args:
+            velocity_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle velocities.
+            position_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
+        
+        Returns:
+            :type:`np.ndarray[np.number, 2]`: A numpy matrix with the velocities reflected at the boundaries.
+        '''
+
         neg_velocity = (velocity_input < 0)
         return np.where(((position_input == self.params.position_min_value) & neg_velocity) |
                         ((position_input == self.params.position_max_value) & (~ neg_velocity)),
@@ -203,8 +234,69 @@ class Mesh():
                         velocity_input)
     ''' ################################################################################################################################################## '''
 
-    ''' Apply the equation of motion to the particles '''
-    def move_population(self):
+    def differential_mutation(self) -> None:
+        ''' Applies a differential mutation operation decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type` in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`. '''
+        
+        # A array of a matrix pool in each row
+        xr_pool_list = self.differential_mutation_pool()
+        # Apply a strategy
+        xst, valid_idxs = self.differential_mutation_operation(xr_pool_list)
+        if len(xst):
+            # Update the current particle if the new particle from the strategy is better
+            st_fitnesses, min_evaluations = self.fitness_eval(xst)
+            min_valid_idxs = valid_idxs[:min_evaluations]
+            valid_pop_fitnesses = self.population.fitness[min_valid_idxs]
+            domination_mask = self.dominates(st_fitnesses, valid_pop_fitnesses, axis=1)
+            update_idxs = min_valid_idxs[domination_mask]
+            # Update the positions and the fitnesses
+            self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
+            self.population.fitness[update_idxs] = st_fitnesses[domination_mask]
+            # If a particle was replaced for a particle from a strategy update some information
+            if len(update_idxs):
+                self.update_personal_best(update_idxs)
+                self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
+                self.update_memory()
+
+    def mutate_weights(self) -> None:
+        ''' Calculates the weights by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 1, and then multiplies by :attr:`~mesh.parameters.MeshParameters.mutation_rate`. '''
+        
+        
+        # Get the values from truncated normal distribution
+        self.weights[:, :] = truncnorm.rvs(0, 1, size=(4, self.params.population_size)) * self.params.mutation_rate
+    
+    def move_population(self) -> None:
+        r''' Applies the equation of motion to the particles. The MESH equation of motion is given by:
+        
+        .. math::
+
+            \begin{cases}
+                v^{(t+1)} = w^*_Iv^{(t)} + w^*_A(x_{pb} - x^{(t)}) + w^*_CC \times (x^*_{gb} - x^{(t)}) \\
+                x^{(t+1)} = x^{(t)} + v^{(t+1)}
+            \end{cases},
+        
+        where:
+
+        - :math:`v^{(t)}` is the velocity vector at time t;
+        - :math:`x^{(t)}` is the position vector at time t;
+        - :math:`w_I` is the inertia weight;
+        - :math:`w_A` is the assimilation weight;
+        - :math:`w_C` is the cooperation weight;
+        - :math:`x_{pb}` is the personal best vector of the particle;
+        - :math:`x_{gb}` is the global best vector o the particle.
+        
+        Note:
+            In this implementation, the weights are calculated every generation by :meth:`mutate_weight`. The mutation of :math:`x_{gb}` is done by:
+            
+            .. math::
+                
+                x^*_{gb} = x_{gb}(1 + \tau\mathcal{N}(0, 1)).
+            
+            where :math:`\tau` is the mutation rate and :math:`\mathcal{N}(0, 1)` is a number sampled from the standard Gaussian Distribution.
+        
+        Warning:
+            :math:`\tau` is not used in the equation of motion directly. It is used together with a weight.
+        '''
+
         # Get the parameters
         params = self.params
         # Get the population size and the position dimension
@@ -228,7 +320,7 @@ class Mesh():
         np.subtract(pb_positions, positions, out=matrix_for_operations)
         np.multiply(matrix_for_operations, weights[1][:, np.newaxis], out=matrix_for_operations)
         np.add(velocities, matrix_for_operations, out=velocities)
-        # Calculate the cooperation term
+        # Calculate the cooperation term and accumulate it in the velocities
         vector_for_operations = self.pre_allocated.vector_for_operations
         vector_for_operations[:] = np.random.normal(0, 1, population_size)
         np.multiply(vector_for_operations, weights[3], out=vector_for_operations)
@@ -247,11 +339,12 @@ class Mesh():
         # self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
         ''' ################################################################################################################################################## '''
         # Evaluate the fitness function
-        fitnesses, min_evaluations = self.count_fitness_eval(self.population.position)
+        fitnesses, min_evaluations = self.fitness_eval(self.population.position)
         self.population.fitness[:min_evaluations] = fitnesses
+    
+    def population_selection(self) -> None:
+        ''' Selects the best particles from the previous (before applying the equation of motion) and current populations. The top :attr:~mesh.parameters.MeshParameters.population_size particles, i.e., those with the lowest rank, are chosen. In case of a tie, particles with the largest crowding distance are selected. '''
 
-    ''' Make the selection of the population between the previous and current population '''
-    def population_selection(self):
         population_size = self.params.population_size
         pre_allocated = self.pre_allocated
         # Get the fitness matrix with the previous and the current population
@@ -280,32 +373,30 @@ class Mesh():
         self.population.personal_best_list_fit[:] = self.population.personal_best_list_fit[pb_idxs]
         self.population.personal_best_list_pos[:] = self.population.personal_best_list_pos[pb_idxs]
 
-    ''' Mutate the weights by a truncated normal distribution '''
-    def mutate_weights(self):
-        # Get the values from truncated normal distribution
-        self.weights[:, :] = truncnorm.rvs(0, 1, size=(4, self.params.population_size)) * self.params.mutation_rate
-    
-    ''' Apply a strategy from differential evolution '''
-    def differential_mutation(self):
-        # A array of a matrix pool in each row
-        xr_pool_list = self.differential_mutation_pool()
-        # Apply a strategy
-        xst, valid_idxs = self.differential_mutation_operation(xr_pool_list)
-        if len(xst):
-            # Update the current particle if the new particle from the strategy is better
-            st_fitnesses, min_evaluations = self.count_fitness_eval(xst)
-            min_valid_idxs = valid_idxs[:min_evaluations]
-            valid_pop_fitnesses = self.population.fitness[min_valid_idxs]
-            domination_mask = self.np_dominate(st_fitnesses, valid_pop_fitnesses, axis=1)
-            update_idxs = min_valid_idxs[domination_mask]
-            # Update the positions and the fitnesses
-            self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
-            self.population.fitness[update_idxs] = st_fitnesses[domination_mask]
-            # If a particle was replaced for a particle from a strategy update some information
-            if len(update_idxs):
-                self.update_personal_best(update_idxs)
-                self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-                self.update_memory()
+    ''' Update the list of particle's personal best '''
+    def update_personal_best(self, indices):
+        # Get the population fitness as a tensor
+        fitness_tensor = self.population.fitness[indices, np.newaxis]
+        # Get the personal best fitness and position
+        pb_fitness = self.population.personal_best_list_fit[indices]
+        # Get the mask to update the personal best
+        update_mask = ~np.any(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
+        update_idxs = indices[update_mask]
+        # Get the mask to replace the personal best dominated by the current particle
+        replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
+        # Replace the dominated personal best by the current particle
+        replace_row, replace_col = np.nonzero(replace_mask)
+        particle_to_replace_pb = update_idxs[replace_row]
+        self.population.personal_best_list_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_best_list_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
+        # Get the mask to add the current to the personal best list
+        add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
+        # Delete the oldest personal best and include the current particle as a new personal best
+        self.population.personal_best_list_fit[add_idxs, 1:, :] = self.population.personal_best_list_fit[add_idxs, :-1, :]
+        self.population.personal_best_list_pos[add_idxs, 1:, :] = self.population.personal_best_list_pos[add_idxs, :-1, :]
+        # Update the personal best list by adding the current particle as a new personal best
+        self.population.personal_best_list_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
+        self.population.personal_best_list_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
     ''' Update the memory '''
     def update_memory(self):
@@ -335,40 +426,19 @@ class Mesh():
             self.memory.position = position_matrix[memory_pareto_front_idxs[idxs]]
             self.memory.fitness = selected_fitness[idxs]
 
-    ''' Update the list of particle's personal best '''
-    def update_personal_best(self, indices):
-        # Get the population fitness as a tensor
-        fitness_tensor = self.population.fitness[indices, np.newaxis]
-        # Get the personal best fitness and position
-        pb_fitness = self.population.personal_best_list_fit[indices]
-        # Get the mask to update the personal best
-        update_mask = ~np.any(self.np_dominate(pb_fitness, fitness_tensor, axis=2), axis=1)
-        update_idxs = indices[update_mask]
-        # Get the mask to replace the personal best dominated by the current particle
-        replace_mask = self.np_dominate(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
-        # Replace the dominated personal best by the current particle
-        replace_row, replace_col = np.nonzero(replace_mask)
-        particle_to_replace_pb = update_idxs[replace_row]
-        self.population.personal_best_list_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
-        self.population.personal_best_list_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
-        # Get the mask to add the current to the personal best list
-        add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
-        # Delete the oldest personal best and include the current particle as a new personal best
-        self.population.personal_best_list_fit[add_idxs, 1:, :] = self.population.personal_best_list_fit[add_idxs, :-1, :]
-        self.population.personal_best_list_pos[add_idxs, 1:, :] = self.population.personal_best_list_pos[add_idxs, :-1, :]
-        # Update the personal best list by adding the current particle as a new personal best
-        self.population.personal_best_list_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
-        self.population.personal_best_list_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
-
-    ''' Run the MESH '''
     def run(self):
+        ''' This method runs the MESH algorithm. It stops when the maximum number of generations and/or fitness evaluations is reached. '''
+
         try:
             # Start the progress bars
             with tqdm(total=self.total_bar, leave=False) as pbar:
                 # A variable to update the tqdm bar
                 prev_bar_value = 0
-                # Initialize population
-                self.init_population_randomly()
+                # Evaluate the initial population
+                fitnesses, min_evaluations = self.fitness_eval(self.population.position)
+                self.population.fitness[:min_evaluations] = fitnesses
+                # Repeat the population fitness for all personal best input
+                self.population.personal_best_list_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
                 # Get the population fronts and ranks
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                 # Initialize the memory
@@ -422,8 +492,13 @@ class Mesh():
         pbar.update(self.generation_counter - prev_bar_value)
         return self.generation_counter
 
-    ''' Count generations if it is a stopping criterion '''
-    def stopping_by_generation(self):
+    def stopping_by_generation(self) -> None:
+        ''' Counts generations if it is a stopping criterion.
+        
+        Raises:
+            :class:`~mesh.utils.auxiliar.StoppingAlgorithm`: If the number of generations is greater than the maximum number of generations.    
+        '''
+
         self.generation_counter += 1
         if self.generation_counter > self.params.max_gen:
             raise StoppingAlgorithm()
@@ -441,12 +516,22 @@ class Mesh():
         X_min = X[:min_evaluations]
         return self.fitness_evaluations(X_min)
 
-    ''' Return the algorithm results '''
-    def get_results(self):
+    def get_results(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
+        ''' Returns a tuple with the memory position and fitness, respectively.
+        
+        Note:
+            This method must be used at the end of the algorithm.
+        
+        Returns:
+            :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]`: A tuple with the memory position and fitness, respectively.
+        '''
+
         return self.memory.position, self.memory.fitness
 
-    ''' Log the memory '''
-    def logging(self):
+    def logging(self) -> None:
+        ''' Logs memory position and fitness at the end of the algorithm in two .txt files if :attr:`log_memory` is a string. Then this method uses the string value :attr:`log_memory` at the beginning of both files as the name of the fitness and position logs.
+        '''
+
         # Log the fitness
         file = open(self.log_memory+"-fit.txt","a+")
         memory_fitness = ""

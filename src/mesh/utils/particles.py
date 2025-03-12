@@ -51,7 +51,7 @@ class Population:
         TypeError: If the input is not an instance of :class:`~mesh.parameters.MeshParameters`.
     """
 
-    def __init__(self, params: MeshParameters) -> None:
+    def __init__(self, params: MeshParameters):
         assert_type(params, 'params', MeshParameters)
 
         self.position: np.ndarray[np.float64, 2]

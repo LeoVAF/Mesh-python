@@ -21,7 +21,7 @@ class PreAllocated():
         TypeError: If the ``params`` is not an instance of :class:`~mesh.parameters.MeshParameters`.
     '''
 
-    def __init__(self, params: MeshParameters) -> None:
+    def __init__(self, params: MeshParameters):
         assert_type(params, 'params', MeshParameters)
 
         self.np_tril_indices: tuple[np.array[np.uint64], np.array[np.uint64]]

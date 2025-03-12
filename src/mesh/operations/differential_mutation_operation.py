@@ -30,7 +30,6 @@ def binomial_mutation_mask(params: MeshParameters, idx_size: int) -> np.ndarray[
   mutation_mask[np.arange(idx_size), mutation_index] = True
   return mutation_mask
 
-''' Applies the DE/rand/1/bin '''
 def rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/rand/1/bin strategy. The strategy is defined as follows:
   
@@ -39,8 +38,8 @@ def rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   
   where:
 
-    - :math:`x_{r1}`, :math:`x_{r2}` and :math:`x_{r3}` are three random particle positions chosen from the pool under uniform distribution;
-    - :math:`\alpha` is the scaling factor.
+  - :math:`x_{r1}`, :math:`x_{r2}` and :math:`x_{r3}` are three random particle positions chosen from the pool under uniform distribution;
+  - :math:`\alpha` is the scaling factor.
 
   Note:
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
@@ -85,8 +84,8 @@ def rand_2_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
 
   where:
   
-    - :math:`x_{r1}`, :math:`x_{r2}`, :math:`x_{r3}`, :math:`x_{r4}` and :math:`x_{r5}` are five random particle positions chosen from the pool under uniform distribution;
-    - :math:`\alpha` is the scaling factor.
+  - :math:`x_{r1}`, :math:`x_{r2}`, :math:`x_{r3}`, :math:`x_{r4}` and :math:`x_{r5}` are five random particle positions chosen from the pool under uniform distribution;
+  - :math:`\alpha` is the scaling factor.
 
   Note:
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
@@ -133,9 +132,9 @@ def best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   
   where:
 
-    - :math:`x_{gb}` is the global best position;
-    - :math:`x_{r1}` and :math:`x_{r2}` are two random particle positions chosen from the pool under uniform distribution;
-    - :math:`\alpha` is the scaling factor.
+  - :math:`x_{gb}` is the global best position;
+  - :math:`x_{r1}` and :math:`x_{r2}` are two random particle positions chosen from the pool under uniform distribution;
+  - :math:`\alpha` is the scaling factor.
 
   Note:
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
@@ -182,10 +181,10 @@ def current_to_best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
   
   where:
 
-    - :math:`x` is the current particle position;
-    - :math:`x_{r1}` and :math:`x_{r2}` are two random particle positions chosen from the pool under uniform distribution;
-    - :math:`x_{gb}` is the global best position;
-    - :math:`\alpha` is the scaling factor.
+  - :math:`x` is the current particle position;
+  - :math:`x_{r1}` and :math:`x_{r2}` are two random particle positions chosen from the pool under uniform distribution;
+  - :math:`x_{gb}` is the global best position;
+  - :math:`\alpha` is the scaling factor.
 
   Note:
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
@@ -227,7 +226,6 @@ def current_to_best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
   else:
     return np.array([]), np.array([])
 
-''' Applies the DE/current-to-rand/1/bin '''
 def current_to_rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/current-to-rand/1/bin. The strategy is defined as follows:
 
@@ -237,9 +235,9 @@ def current_to_rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
 
   where:
 
-    - :math:`x` is the current particle position;
-    - :math:`x_{r1}`, :math:`x_{r2}` and :math:`x_{r3}` are four random particle positions chosen from the pool under uniform distribution;
-    - :math:`\alpha` is the scaling factor.
+  - :math:`x` is the current particle position;
+  - :math:`x_{r1}`, :math:`x_{r2}` and :math:`x_{r3}` are four random particle positions chosen from the pool under uniform distribution;
+  - :math:`\alpha` is the scaling factor.
 
   Note:
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
