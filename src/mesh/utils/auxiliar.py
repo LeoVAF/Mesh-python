@@ -24,7 +24,7 @@ class PreAllocated():
     def __init__(self, params: MeshParameters):
         assert_type(params, 'params', MeshParameters)
 
-        self.np_tril_indices: tuple[np.array[np.uint64], np.array[np.uint64]]
+        self.np_tril_indices: tuple[np.ndarray[np.uint64], np.ndarray[np.uint64]]
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
         self.nearest_neighbors: NearestNeighbors
         ''' Instance of :type:`sklearn.neighbors.NearestNeighbors` with two neighbors and Euclidean as distance metric. '''
