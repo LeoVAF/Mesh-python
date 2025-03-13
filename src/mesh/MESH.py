@@ -300,7 +300,7 @@ class Mesh():
                 
                 x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot \mathcal{N}(0, 1)).
             
-            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\mathcal{N}(0, 1)` is a number sampled from the standard Gaussian Distribution.
+            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution.
         '''
 
         # Get the parameters
