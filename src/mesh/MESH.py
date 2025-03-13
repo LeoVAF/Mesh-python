@@ -130,8 +130,8 @@ class Mesh():
         self.generation_counter = 0
         # Start the fitness evaluation counter
         self.fitness_eval_counter = 0
-        # Create a random matrix (4 x population_size) with weights for the algorithm operations
-        self.weights = np.random.uniform(0.0, 1.0, [4, params.population_size])
+        # Create a random matrix (3 x population_size) with weights for the algorithm operations
+        self.weights = np.random.uniform(0.0, 1.0, (3, params.population_size))
         # Store some pre-calculated data
         self.pre_allocated = PreAllocated(params)
         # Variable for logging memory
@@ -215,7 +215,6 @@ class Mesh():
         non_dominated_fronts, _, _, ranks = fast_non_dominated_sorting(points=fitness_matrix)
         return non_dominated_fronts, ranks
     
-    ''' ################################################################################################################################################## '''
     def reflect_velocity_at_bounds(self, velocity_input: np.ndarray[np.number, 2], position_input: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
         ''' Reverses the direction of each component of the velocity that took the particle out of its respective boundaries.
         
@@ -232,7 +231,6 @@ class Mesh():
                         ((position_input == self.params.position_max_value) & (~ neg_velocity)),
                         -velocity_input,
                         velocity_input)
-    ''' ################################################################################################################################################## '''
 
     def differential_mutation(self) -> None:
         ''' Applies a differential mutation operation decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type` in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`. '''
@@ -258,16 +256,17 @@ class Mesh():
                 self.update_memory()
 
     def mutate_weights(self) -> None:
-        ''' Calculates the weights by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 1, and then multiplies by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+        r''' Calculates the weights by the following equation:
+
+        .. math::
+            w^* = w + \tau_{mut} \cdot \mathcal{N}(0, 1),
         
-        Warning:
-            The weights don't follow exactly the equation in the article.
+        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\mathcal{N}(0, 1)` is a number sampled from the standard Gaussian Distribution.
         '''
         
-        
-        # Get the values from truncated normal distribution
-        self.weights[:, :] = truncnorm.rvs(0, 1, size=(4, self.params.population_size)) * self.params.mutation_rate
-    
+        # Mutate the weights using a number sampled under the Standard Gaussian Distribution
+        self.weights += np.random.normal(0, 1, (3, self.params.population_size)) * self.params.mutation_rate
+
     def move_population(self) -> None:
         r''' Applies the equation of motion to the particles. The MESH equation of motion is given by:
         
@@ -295,16 +294,13 @@ class Mesh():
         - :math:`x_{gb}` is the global best vector o the particle.
         
         Note:
-            In this implementation, the weights are calculated every generation by :meth:`mutate_weights`. The mutation of :math:`x_{gb}` is done by:
+            In this implementation, the weights are calculated every generation by :meth:`mutate_weights` and each particle has its own weight. The mutation of :math:`x_{gb}` is done by:
             
             .. math::
                 
                 x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot \mathcal{N}(0, 1)).
             
             where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\mathcal{N}(0, 1)` is a number sampled from the standard Gaussian Distribution.
-        
-        Warning:
-            :math:`\tau_{mut}` is not used in the equation of motion directly. It is used together with a weight.
         '''
 
         # Get the parameters
@@ -332,10 +328,12 @@ class Mesh():
         np.add(velocities, matrix_for_operations, out=velocities)
         # Calculate the cooperation term and accumulate it in the velocities
         vector_for_operations = self.pre_allocated.vector_for_operations
+        ################## Mutation of the global best positions ##################
         vector_for_operations[:] = np.random.normal(0, 1, population_size)
-        np.multiply(vector_for_operations, weights[3], out=vector_for_operations)
+        np.multiply(vector_for_operations, params.mutation_rate, out=vector_for_operations)
         np.add(vector_for_operations, 1, out=vector_for_operations)
         np.multiply(vector_for_operations[:, np.newaxis], gb_positions, out=matrix_for_operations)
+        ################## Mutation of the global best positions ##################
         np.subtract(matrix_for_operations, positions, out=matrix_for_operations)
         np.multiply(matrix_for_operations, weights[2][:, np.newaxis], out=matrix_for_operations)
         np.multiply(matrix_for_operations, np.random.uniform(0.0, 1.0, (population_size, params.position_dim)) < params.communication_probability, out=matrix_for_operations)
@@ -345,9 +343,8 @@ class Mesh():
         # Calculate the new position (clipped)
         np.add(positions, velocities, out=positions)
         np.clip(positions, params.position_min_value, params.position_max_value, out=positions)
-        ''' ################################################################################################################################################## '''
-        # self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
-        ''' ################################################################################################################################################## '''
+        # Reflect the velocity at the bounds
+        self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
         # Evaluate the fitness function
         fitnesses, min_evaluations = self.fitness_eval(self.population.position)
         self.population.fitness[:min_evaluations] = fitnesses

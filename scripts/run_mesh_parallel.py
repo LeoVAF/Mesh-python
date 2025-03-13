@@ -21,7 +21,7 @@ def run_mesh(experiment_name,
 	position_min_value = np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
 	position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
 	max_iterations = 0 # Maximum number of iterations (not used if it less than one)
-	max_fitness_eval = 5000 # Maximum fitness evaluations (not used if it is less than one)
+	max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
 	population_size = 100 # Population size
 	num_final_solutions = population_size # Number of final solutions
 	memory_size = population_size # Maximum number of particles in memory
@@ -94,7 +94,7 @@ def execute_with_parallelism(func, params_list, max_workers=4):
 
 def list_of_funcs(func_name, position_dim, objective_dim):
 	set1 = {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}
-	set2 = {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6'}
+	set2 = {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'}
 	if func_name.lower() in set1:
 		return get_problem(func_name.lower(), n_var=position_dim).evaluate
 	elif func_name.lower() in set2:
@@ -103,14 +103,14 @@ def list_of_funcs(func_name, position_dim, objective_dim):
 		raise ValueError
 
 if __name__ == "__main__":
-	# Parameters list
-	mesh_exp = ['zdt2'] # ['zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
-	mesh_runs = [1]
+	# Parameter list
+	mesh_exp = ['dtlz1', 'dtlz2', 'dtlz4', 'dtlz7'] # ['zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
+	mesh_runs = [30]
 	mesh_pos_dim = [10]
 	mesh_obj_dim = [2]
-	mesh_global_best_type = [0,1,2,3] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
-	mesh_dm_pool_type = [0,1,2] # 0 -> V1 | 1 -> V2 | 2 -> V3
-	mesh_differential_evolution_type = [0,1,2,3,4] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
+	mesh_global_best_type = [0] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
+	mesh_dm_pool_type = [0] # 0 -> V1 | 1 -> V2 | 2 -> V3
+	mesh_differential_evolution_type = [0] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 	params_list = [
 		[mf, runs, p_dim, obj_dim, list_of_funcs(mf, p_dim, obj_dim), gb_type, pool_type, de_type]
 		for mf in mesh_exp

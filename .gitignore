@@ -17,3 +17,4 @@ result/*
 
 # Files generated during the documentation building
 docs/_build/*
+.rst
