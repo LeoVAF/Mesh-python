@@ -104,7 +104,7 @@ def sigma_method_in_fronts(self: Mesh) -> None:
   ''' Global best attribution with sigma method in fronts. The global best for each particle in the population will be the nearest particle different from itself in the previous front using the sigma value. Particles in the Pareto front will choose the global best from memory.
   
   Note:
-    The previous front is the front with rank immediately lower than the rank of the current front.
+    The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
 
   Args:
     self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
@@ -143,7 +143,7 @@ def random_in_fronts(self: Mesh) -> None:
   ''' Global best attribution with random choice in fronts under an uniform distribution. The global best for each particle in the population will be a random particle in the previous front. Particles in the Pareto front will choose the global best from memory.
 
   Note:
-    The previous front is the front with rank immediately lower than the rank of the current front.
+    The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
   
   Args:
     self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
@@ -155,12 +155,12 @@ def random_in_fronts(self: Mesh) -> None:
   # Set the global best from memory
   num_rank_zero = np.sum(rank_zero_mask)
   self.population.global_best[rank_zero_mask] = self.memory.position[np.random.randint(0, len(self.memory.position), size=num_rank_zero)]
-  # Get the particles indices which have rank greater than zero
+  # Get the particles indices which have domination rank greater than zero
   search_front_idxs = self.population.rank[rank_non_zero_mask] - 1
   if(len(search_front_idxs)):
     # Get the fronts and the front sizes
     fronts = self.fronts
-    # Generate the random indices for ranks greater than zero
+    # Generate the random indices for domination ranks greater than zero
     random_indices = np.random.randint(0, [len(fronts[r]) for r in search_front_idxs])
     rank_non_zero_idxs = np.array([fronts[idx][random_indices[i]] for i, idx in enumerate(search_front_idxs)])
     # Set the global best from previous front

@@ -27,7 +27,7 @@ class PreAllocated():
         self.np_tril_indices: tuple[np.array[np.uint64], np.array[np.uint64]]
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
         self.nearest_neighbors: NearestNeighbors
-        ''' Instance of :type:`~sklearn.neighbors.NearestNeighbors` with two neighbors and Euclidean as distance metric. '''
+        ''' Instance of :type:`sklearn.neighbors.NearestNeighbors` with two neighbors and Euclidean as distance metric. '''
         self.matrix_for_operations: np.ndarray[np.float64, 2]
         ''' Numpy matrix for operations. '''
         self.vector_for_operations: np.ndarray[np.float64]

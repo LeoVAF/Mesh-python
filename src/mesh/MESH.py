@@ -196,7 +196,7 @@ class Mesh():
         return np.all(x <= y, axis=axis) & np.any(x < y, axis=axis)
 
     def get_domination_fronts(self, fitness_matrix: np.ndarray[np.number, 2]) -> tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]:
-        ''' Gets the fronts and the ranks of the particles given a fitness matrix.
+        ''' Gets the fronts and the domination ranks of the particles given a fitness matrix.
         
         Note:
             The fronts are a list of numpy arrays. Each numpy array in the list represents a front, starting with the Pareto front. Each particle has its own index.
@@ -205,7 +205,7 @@ class Mesh():
             fitness_matrix (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the fitness values of the particles.
 
         Returns:
-            :type:`tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]`: A tuple with the fronts and the ranks of the particles, respectively.
+            :type:`tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]`: A tuple with the fronts and the domination ranks of the particles, respectively.
         '''
 
         # If there is only one particle in the particle list, then it is the Pareto front by itself
@@ -353,7 +353,11 @@ class Mesh():
         self.population.fitness[:min_evaluations] = fitnesses
     
     def population_selection(self) -> None:
-        ''' Selects the best particles from the previous (before applying the equation of motion) and current populations. The top :attr:~mesh.parameters.MeshParameters.population_size particles, i.e., those with the lowest rank, are chosen. In case of a tie, particles with the largest crowding distance are selected. '''
+        ''' Selects the best particles from the previous (before applying the equation of motion) and current populations. The top :attr:~mesh.parameters.MeshParameters.population_size particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
+        
+        Note:
+            The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
+        '''
 
         population_size = self.params.population_size
         pre_allocated = self.pre_allocated
@@ -462,7 +466,7 @@ class Mesh():
                 self.population.fitness[:min_evaluations] = fitnesses
                 # Repeat the population fitness for all personal best input
                 self.population.personal_best_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
-                # Get the population fronts and ranks
+                # Get the population fronts and domination ranks
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                 # Initialize the memory
                 self.memory = Memory(self.population, self.fronts[0], self.params)
