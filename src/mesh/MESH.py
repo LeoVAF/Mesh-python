@@ -41,7 +41,6 @@ from operations.differential_mutation_operation import get_differential_mutation
 from validations.python import assert_type, assert_type_or_falsy
 from validations.numpy import is_fitness_function
 
-from scipy.stats import truncnorm
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
 from types import MethodType
