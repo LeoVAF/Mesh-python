@@ -1,5 +1,5 @@
-from MESH import *
-from parameters import MeshParameters
+from mesh.core import *
+from mesh.parameters import MeshParameters
 
 from pymoo.problems import get_problem
 from concurrent.futures import ProcessPoolExecutor, as_completed

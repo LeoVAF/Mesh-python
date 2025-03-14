@@ -1,5 +1,5 @@
-from MESH import *
-from MESH_old import *
+from mesh.core import *
+from mesh.MESH_old import *
 
 from pymoo.problems import get_problem
 

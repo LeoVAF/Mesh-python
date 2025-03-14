@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 if TYPE_CHECKING:
-    from MESH import Mesh
+    from mesh.core import Mesh
 
 def pool_from_population(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
   ''' Makes a pool list of particle position from population according to differential mutation operations. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
 
   Returns:
     :type:`list[np.ndarray[np.float64, 2]]`: The pool list of particles from population.
@@ -33,7 +33,7 @@ def pool_from_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
   ''' Returns a pool list of particle position from memory according to differential mutation operations. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
 
   Returns:
     :type:`list[np.ndarray[np.float64, 2]]`: The pool list of particles from memory.
@@ -58,7 +58,7 @@ def pool_from_population_and_memory(self: Mesh) -> list[np.ndarray[np.float64, 2
   ''' Makes a pool list of particle position from population and memory according to differential mutation operations. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
 
   Returns:
     :type:`list[np.ndarray[np.float64, 2]]`: The pool list of particles from population and memory.
@@ -99,7 +99,7 @@ def get_differential_mutation_pool(type: {0, 1, 2}) -> Callable[[Mesh], list[np.
     type (:type:`{0, 1, 2}`): The type of Differential Mutation pool.
   
   Returns:
-    :type:`Callable[[Mesh], list[np.ndarray[np.float64, 2]]]`: The respective function to make the differential mutation pool.
+    :type:`Callable[[:class:`~mesh.core.Mesh`], list[np.ndarray[np.float64, 2]]]`: The respective function to make the differential mutation pool.
   '''
 
   return differential_mutation_pool_options[type]

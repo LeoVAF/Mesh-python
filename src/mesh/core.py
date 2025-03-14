@@ -32,14 +32,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
-from parameters import MeshParameters
-from utils.particles import Population, Memory
-from utils.auxiliar import PreAllocated, StoppingAlgorithm
-from operations.global_best_attribution import get_global_best_attribution
-from operations.differential_mutation_pool import get_differential_mutation_pool
-from operations.differential_mutation_operation import get_differential_mutation_operation
-from validations.python import assert_type, assert_type_or_falsy
-from validations.numpy import is_fitness_function
+from mesh.parameters import MeshParameters
+from mesh.utils.particles import Population, Memory
+from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
+from mesh.operations.global_best_attribution import get_global_best_attribution
+from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
+from mesh.operations.differential_mutation_operation import get_differential_mutation_operation
+from mesh.validations.python import assert_type, assert_type_or_falsy
+from mesh.validations.numpy import is_fitness_function
 
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance

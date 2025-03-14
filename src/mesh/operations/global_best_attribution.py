@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 if TYPE_CHECKING:
-    from MESH import Mesh
+    from mesh.core import Mesh
 
 def sigma_evaluation(self: Mesh, fitness_matrix: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
   r''' Calculates the sigma value for each particle in the population. The sigma value is the fitness difference of all the dimensions. The sigma value is a :math:`C^{n_{obj}}_2`-dimensional vector calculated as follows:
@@ -18,7 +18,7 @@ def sigma_evaluation(self: Mesh, fitness_matrix: np.ndarray[np.number, 2]) -> np
     :math:`C^{n_{obj}}_2` is the combination of :math:`n_{obj}` elements taken 2 by 2.
 
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
     fitness_matrix (:type:`np.ndarray[np.number, 2]`): The fitness matrix of the population.
 
   Returns:
@@ -40,7 +40,7 @@ def nearest_sigma_in_memory(self: Mesh, particle_idxs: np.ndarray[np.integer]) -
   ''' Finds the nearest particle index in memory by sigma value, For each population particle index. The nearest particle will be different from itself (some particles in population can be in memory).
   
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
     particle_idxs (:type:`np.ndarray[np.integer]`): The indices of the population particles to find the nearest particle.
 
   Returns:
@@ -65,7 +65,7 @@ def nearest_sigma_in_fronts(self: Mesh, particle_idxs: np.ndarray[np.integer], s
   ''' Finds the nearest particle index in the search indices by sigma value, for each population particle index. The nearest particle will be different from itself.
 
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
     particle_idxs (:type:`np.ndarray[np.integer]`): The indices of the population particles to find the nearest particle.
     search_idxs (:type:`np.ndarray[np.integer]`): The indices of the particles to search for the nearest neighbors.
 
@@ -90,7 +90,7 @@ def sigma_method_in_memory(self: Mesh) -> None:
   ''' Global best attribution with sigma method in memory. The global best for each particle in the population will be the nearest particle different from itself in memory using the sigma value.
   
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
   '''
 
   # Evaluate sigma
@@ -107,7 +107,7 @@ def sigma_method_in_fronts(self: Mesh) -> None:
     The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
 
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
   '''
 
   # Get the fronts and its length
@@ -132,7 +132,7 @@ def random_in_memory(self: Mesh) -> None:
   ''' Global best attribution with random choice in memory under an uniform distribution. The global best for each particle in the population will be a random particle in memory.
   
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
   '''
   # Get the random indices for the particles from memory
   random_indices = np.random.randint(0, len(self.memory.position), size=self.params.population_size)
@@ -146,7 +146,7 @@ def random_in_fronts(self: Mesh) -> None:
     The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
   
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
   '''
 
   # Get the masks for the respective rank positions
@@ -187,7 +187,7 @@ def get_global_best_attribution(type: {0, 1, 2, 3}) -> Callable[[Mesh], None]:
     type (:type:`{0, 1, 2, 3}`): The type of global best attribution operation.
 
   Returns:
-    :type:`Callable[[Mesh], None]`: The respective function to select the global best.
+    :type:`Callable[[:class:`~mesh.core.Mesh`], None]`: The respective function to select the global best.
   '''
 
   return global_best_attribution_options[type]

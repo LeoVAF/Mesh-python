@@ -1,5 +1,5 @@
-from parameters import MeshParameters
-from validations.python import assert_type
+from mesh.parameters import MeshParameters
+from mesh.validations.python import assert_type
 
 from sklearn.neighbors import NearestNeighbors
 
@@ -33,7 +33,7 @@ class PreAllocated():
         self.vector_for_operations: np.ndarray[np.float64]
         ''' Numpy array for operations. '''
         self.fitness_selection: np.ndarray[np.float64, 2]
-        ''' Numpy matrix used in :meth:`~mesh.MESH.MESH.population_selection` to store the fitness of the population before and after the particle moviment. '''
+        ''' Numpy matrix used in :meth:`~mesh.core.Mesh.population_selection` to store the fitness of the population before and after the particle moviment. '''
         self.position_copy: np.ndarray[np.float64, 2]
         ''' Numpy matrix to store the position of the particles before the particle moviment. '''
         self.velocity_copy: np.ndarray[np.float64, 2]

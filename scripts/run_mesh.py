@@ -31,8 +31,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from MESH import Mesh
-from parameters import MeshParameters
+from mesh.core import Mesh
+from mesh.parameters import MeshParameters
 from microgrid.techno_ka import techno_ka
 
 from pathlib import Path

@@ -5,8 +5,8 @@ from scipy.stats import truncnorm
 import numpy as np
 
 if TYPE_CHECKING:
-    from MESH import Mesh
-    from parameters import MeshParameters
+    from mesh.core import Mesh
+    from mesh.parameters import MeshParameters
 
 def binomial_mutation_mask(params: MeshParameters, idx_size: int) -> np.ndarray[bool, 2]:
   ''' Makes a mask numpy matrix to apply the binomial mutation. Each value represents if the mutation will be applied or not.
@@ -45,7 +45,7 @@ def rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
     xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
     
   Returns:
@@ -91,7 +91,7 @@ def rand_2_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
     xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
 
   Returns:
@@ -140,7 +140,7 @@ def best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
     xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
 
   Returns:
@@ -190,7 +190,7 @@ def current_to_best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
     xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
 
   Returns:
@@ -243,7 +243,7 @@ def current_to_rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
     In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
-    self (:class:`~mesh.MESH.Mesh`): An instance of Mesh.
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
     xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
 
   Returns:
@@ -300,7 +300,7 @@ def get_differential_mutation_operation(type: {0, 1, 2, 3, 4}) -> Callable[[Mesh
     type (:type:`{0, 1, 2, 3, 4}`): The type of Differential Mutation operation.
 
   Returns:
-    :type:`Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]`: The Differential Mutation operation function.
+    :type:`Callable[[:class:`~mesh.core.Mesh`, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]`: The Differential Mutation operation function.
   '''
 
   return differential_mutation_operation_options[type]

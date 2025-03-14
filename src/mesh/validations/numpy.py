@@ -1,6 +1,6 @@
 from typing import Callable
 
-from validations.python import assert_type, is_greater_in_type
+from mesh.validations.python import assert_type, is_greater_in_type
 
 import numpy as np
 import inspect

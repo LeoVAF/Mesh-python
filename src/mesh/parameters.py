@@ -1,8 +1,8 @@
-from validations.python import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
-from validations.numpy import assert_np_vectors_for_boundary
-from operations.global_best_attribution import global_best_attribution_options
-from operations.differential_mutation_pool import differential_mutation_pool_options
-from operations.differential_mutation_operation import differential_mutation_operation_options
+from mesh.validations.python import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
+from mesh.validations.numpy import assert_np_vectors_for_boundary
+from mesh.operations.global_best_attribution import global_best_attribution_options
+from mesh.operations.differential_mutation_pool import differential_mutation_pool_options
+from mesh.operations.differential_mutation_operation import differential_mutation_operation_options
 
 from typing import Optional
 

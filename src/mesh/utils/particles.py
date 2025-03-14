@@ -31,9 +31,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from parameters import MeshParameters
-from validations.python import assert_type
-from validations.numpy import assert_np_vector_index
+from mesh.parameters import MeshParameters
+from mesh.validations.python import assert_type
+from mesh.validations.numpy import assert_np_vector_index
 
 from pygmo import crowding_distance
 from math import comb
