@@ -180,13 +180,13 @@ def test_is_fitness_function():
     npv.is_fitness_function(lambda x: x + 1, 'fit_func', 10, 0)
   with pytest.raises(ValueError, match='"fit_func" must receive a numpy array of numbers with size equals to 10.'):
     npv.is_fitness_function(lambda x: x[10] + 1, 'fit_func', 10, 9)
-  with pytest.raises(ValueError, match='"fit_func" must have only one argument without default values, but it has 2.'):
+  with pytest.raises(ValueError, match='"fit_func" must receive a numpy array of numbers with size equals to 10.'):
     npv.is_fitness_function(TestFitnessFunction.invalid_static_fitness_function_1, 'fit_func', 10, 10)
-  with pytest.raises(ValueError, match='"fit_func" must have at least one argument without default values.'):
+  with pytest.raises(ValueError, match='"fit_func" must receive a numpy array of numbers with size equals to 10.'):
     npv.is_fitness_function(TestFitnessFunction.invalid_static_fitness_function_2, 'fit_func', 10, 10)
-  with pytest.raises(ValueError, match='"fit_func" must have only one argument without default values, but it has 2.'):
+  with pytest.raises(ValueError, match='"fit_func" must receive a numpy array of numbers with size equals to 3.'):
     npv.is_fitness_function(test_fitness_function.invalid_class_fitness_function_1, 'fit_func', 3, 3)
-  with pytest.raises(ValueError, match='"fit_func" must have at least one argument without default values.'):
+  with pytest.raises(ValueError, match='"fit_func" must receive a numpy array of numbers with size equals to 3.'):
     npv.is_fitness_function(test_fitness_function.invalid_class_fitness_function_2, 'fit_func', 3, 3)
   with pytest.raises(ValueError, match='The return of "fit_func" must be one-dimensional.'):
     npv.is_fitness_function(test_fitness_function.invalid_instance_fitness_function_2, 'fit_func', 3, 3)

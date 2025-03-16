@@ -1,9 +1,8 @@
-from typing import Callable
-
 from mesh.validations.python_validations import assert_type, is_greater_in_type
 
+from typing import Callable
+
 import numpy as np
-import inspect
 
 def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> None:
   ''' Checks if the ``arr`` is a numpy array with the expected subtype.
@@ -150,29 +149,10 @@ def is_fitness_function(fit_func: Callable[[np.ndarray[np.number]], np.ndarray[n
   is_greater_in_type(position_dim, 'position_dim', (int, np.integer), 0)
   is_greater_in_type(objective_dim, 'objective_dim', (int, np.integer), 0)
 
-  # Get the fitness function annotation
-  annotation = inspect.signature(fit_func)
-  fit_func_args = list(annotation.parameters.values())
-
-  # Check the number of arguments without default values
-  arg_non_default_list = [arg.default == inspect.Parameter.empty for arg in fit_func_args]
-  # Check the fitness function arguments
-  if not arg_non_default_list:
-    raise ValueError(f'"{fit_func_name}" must have at least one argument without default values.')
-  else:
-    mandatory_args = arg_non_default_list.count(True)
-    # Check fitness function possibilities
-    class_method = fit_func_args[0].name == 'cls' and isinstance(fit_func, classmethod) and mandatory_args == 2
-    static_method = isinstance(fit_func, staticmethod) and mandatory_args == 1
-    instance_method = fit_func_args[0].name == 'self' and mandatory_args == 2
-    pure_function = mandatory_args == 1
-    if not (class_method or static_method or instance_method or pure_function):
-      raise ValueError(f'"{fit_func_name}" must have only one argument without default values, but it has {arg_non_default_list.count(True)}.')
-
-  # Check the type of the arguments
+  # Check the type of the fitness function argument
   try:
     arr_test = np.array([0.0] * position_dim)
-    # Check the return type
+    # Get the return
     ret = fit_func(arr_test)
   except Exception:
     raise ValueError(f'"{fit_func_name}" must receive a numpy array of numbers with size equals to {position_dim}.')
