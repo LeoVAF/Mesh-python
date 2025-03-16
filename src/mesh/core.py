@@ -37,9 +37,9 @@ from mesh.utils.particles import Population, Memory
 from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
 from mesh.operations.global_best_attribution import get_global_best_attribution
 from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
-from mesh.operations.differential_mutation_operation import get_differential_mutation_operation
-from mesh.validations.python import assert_type, assert_type_or_falsy
-from mesh.validations.numpy import is_fitness_function
+from mesh.operations.differential_mutation_strategy import get_differential_mutation_strategy
+from mesh.validations.python_validations import assert_type, assert_type_or_falsy
+from mesh.validations.numpy_validations import is_fitness_function
 
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
@@ -78,7 +78,7 @@ class Mesh():
         ''' Function to attribute the global best to the particles. '''
         self.differential_mutation_pool: MethodType[Callable[[Mesh], list[np.ndarray[np.float64, 2]]]]
         ''' Function to make the differential mutation pool. '''
-        self.differential_mutation_operation: MethodType[Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
+        self.differential_mutation_strategy: MethodType[Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
         ''' Function to do the differential mutation operation. '''
         self.population: Population
         ''' Population of particles. '''
@@ -113,7 +113,7 @@ class Mesh():
         # Chosing the operations just one time
         self.global_best_attribution = MethodType(get_global_best_attribution(params.global_best_attribution_type), self)
         self.differential_mutation_pool = MethodType(get_differential_mutation_pool(params.dm_pool_type), self)
-        self.differential_mutation_operation = MethodType(get_differential_mutation_operation(params.dm_operation_type), self)
+        self.differential_mutation_strategy = MethodType(get_differential_mutation_strategy(params.dm_operation_type), self)
         # Use a random seed if there is
         np.random.seed(params.random_state)
         # Particles
@@ -237,7 +237,7 @@ class Mesh():
         # A array of a matrix pool in each row
         xr_pool_list = self.differential_mutation_pool()
         # Apply a strategy
-        xst, valid_idxs = self.differential_mutation_operation(xr_pool_list)
+        xst, valid_idxs = self.differential_mutation_strategy(xr_pool_list)
         if len(xst):
             # Update the current particle if the new particle from the strategy is better
             st_fitnesses, min_evaluations = self.fitness_eval(xst)

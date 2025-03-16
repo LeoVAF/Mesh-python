@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from mesh.parameters import MeshParameters
-from mesh.validations.python import assert_type
-from mesh.validations.numpy import assert_np_vector_index
+from mesh.validations.python_validations import assert_type
+from mesh.validations.numpy_validations import assert_np_vector_index
 
 from pygmo import crowding_distance
 from math import comb

@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from mesh.core import Mesh
     from mesh.parameters import MeshParameters
 
-def binomial_mutation_mask(params: MeshParameters, idx_size: int) -> np.ndarray[bool, 2]:
+def binomial_mutation_mask(params: MeshParameters, idx_size: int) -> np.ndarray[np.bool, 2]:
   ''' Makes a mask numpy matrix to apply the binomial mutation. Each value represents if the mutation will be applied or not.
   
   Args:
@@ -16,7 +16,7 @@ def binomial_mutation_mask(params: MeshParameters, idx_size: int) -> np.ndarray[
     idx_size (:type:`int`): The size of the indexes to apply the mutation.
     
   Returns:
-    :type:`np.ndarray[bool, 2]`: The mutation mask.
+    :type:`np.ndarray[np.bool, 2]`: The mutation mask.
   '''
 
   # Get the mutation weight
@@ -277,7 +277,7 @@ def current_to_rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
   else:
     return np.array([]), np.array([])
 
-differential_mutation_operation_options = {
+differential_mutation_strategy_options = {
   0: rand_1_bin,
   1: rand_2_bin,
   2: best_1_bin,
@@ -293,7 +293,7 @@ differential_mutation_operation_options = {
   - :type:`4`: Applies the DE/current-to-rand/1/bin strategy.
 '''
 
-def get_differential_mutation_operation(type: {0, 1, 2, 3, 4}) -> Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]:
+def get_differential_mutation_strategy(type: {0, 1, 2, 3, 4}) -> Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]:
   ''' Chooses the Differential Mutation operation. 
   
   Args:
@@ -303,4 +303,4 @@ def get_differential_mutation_operation(type: {0, 1, 2, 3, 4}) -> Callable[[Mesh
     :type:`Callable[[:class:`~mesh.core.Mesh`, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]`: The Differential Mutation operation function.
   '''
 
-  return differential_mutation_operation_options[type]
+  return differential_mutation_strategy_options[type]

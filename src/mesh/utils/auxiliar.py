@@ -1,5 +1,5 @@
 from mesh.parameters import MeshParameters
-from mesh.validations.python import assert_type
+from mesh.validations.python_validations import assert_type
 
 from sklearn.neighbors import NearestNeighbors
 

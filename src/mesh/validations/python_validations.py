@@ -2,14 +2,14 @@ from typing import Iterable, Iterator
 
 import numpy as np
 
-def assert_type(var: any, var_name: str, expected_types: type | tuple, is_optional: bool = False) -> None:
+def assert_type(var: any, var_name: str, expected_types: type | tuple, is_optional: bool | np.bool = False) -> None:
   ''' Checks if the ``var`` is one of the expected types.
   
   Args:
     var (:type:`any`): The input to be checked.
     var_name (:type:`str`): The name of the input.
     expected_types (:type:`type | tuple`): The type or tuple of types to be checked.
-    is_optional (:type:`bool`): If the ``var`` is optional.
+    is_optional (:type:`bool | np.bool`): If the ``var`` is optional.
 
   Raises:
     TypeError: If the input is not one of the expected types.
@@ -20,8 +20,8 @@ def assert_type(var: any, var_name: str, expected_types: type | tuple, is_option
     raise TypeError(f'The input "var_name" has type {type(var_name)}, but expected <class \'str\'>.')
   if not isinstance(expected_types, type) and not (isinstance(expected_types, tuple) and all(isinstance(item, type) for item in expected_types)):
     raise TypeError(f'The input "expected_types" has type {type(expected_types)}, but expected (<class \'type\'>, <class \'tuple\'>).')
-  if not isinstance(is_optional, bool):
-    raise TypeError(f'The input "is_optional" has type {type(is_optional)}, but expected <class \'bool\'>.')
+  if not isinstance(is_optional, (bool, np.bool)):
+    raise TypeError(f'The input "is_optional" has type {type(is_optional)}, but expected (<class \'bool\'>, <class \'numpy.bool\'>).')
   
   # Check the optional case
   if is_optional and var is None:
@@ -30,14 +30,14 @@ def assert_type(var: any, var_name: str, expected_types: type | tuple, is_option
   if not isinstance(var, expected_types):
     raise TypeError(f'The input "{var_name}" has type {type(var)}, but expected {expected_types}.')
 
-def assert_type_or_falsy(var: any, var_name: str, expected_types: type | tuple, is_optional: bool = False) -> None:
+def assert_type_or_falsy(var: any, var_name: str, expected_types: type | tuple, is_optional: bool | np.bool = False) -> None:
   ''' Checks if the ``var`` has the correct type or is a falsy var.
   
   Args:
     var (:type:`any`): The input to be checked.
     var_name (:type:`str`): The name of the input.
     expected_types (:type:`type | tuple`): The type or tuple of types to be checked.
-    is_optional (:type:`bool`): If the ``var`` is optional.
+    is_optional (:type:`bool | np.bool`): If the ``var`` is optional.
 
   Raises:
     TypeError: If the input is not one of the expected types.
@@ -47,7 +47,7 @@ def assert_type_or_falsy(var: any, var_name: str, expected_types: type | tuple, 
   if var:
     assert_type(var, var_name, expected_types, is_optional=is_optional)
 
-def is_greater_in_type(number: int | float | np.number, number_name: str, number_type: int | float | np.number | tuple, value: int | float | np.number, is_optional: bool = False) -> None:
+def is_greater_in_type(number: int | float | np.number, number_name: str, number_type: int | float | np.number | tuple, value: int | float | np.number, is_optional: bool | np.bool = False) -> None:
   ''' Checks if the ``number`` is of a respective type and if it is greater than ``value``.
   
   Args:
@@ -55,7 +55,7 @@ def is_greater_in_type(number: int | float | np.number, number_name: str, number
     number_name (:type:`str`): The name of the input.
     number_type (:type:`int | float | np.number | tuple`): The type to be checked.
     value (:type:`int | float | np.number`): The value to be compared with.
-    is_optional (:type:`bool`): If the ``number`` is optional.
+    is_optional (:type:`bool | np.bool`): If the ``number`` is optional.
 
   Raises:
     TypeError: If the input is not of the expected type.
@@ -77,7 +77,7 @@ def is_greater_in_type(number: int | float | np.number, number_name: str, number
   if number <= value:
     raise ValueError(f'The input "{number_name}" has value {number}, but it must be greater than {value}.')
 
-def is_between_inclusive(number: int | float | np.number, number_name: str, lower_bound: int | float | np.number, upper_bound: int | float | np.number, is_optional: bool = False) -> None:
+def is_between_inclusive(number: int | float | np.number, number_name: str, lower_bound: int | float | np.number, upper_bound: int | float | np.number, is_optional: bool | np.bool = False) -> None:
   ''' Checks if the ``number`` is between ``lower_bound`` and ``upper_bound``, inclusive.
   
   Args:
@@ -85,7 +85,7 @@ def is_between_inclusive(number: int | float | np.number, number_name: str, lowe
     number_name (:type:`str`): The name of the input.
     lower_bound (:type:`int | float | np.number`): The lower bound.
     upper_bound (:type:`int | float | np.number`): The upper_bound bound.
-    is_optional (:type:`bool`): If the ``number`` is optional.
+    is_optional (:type:`bool | np.bool`): If the ``number`` is optional.
 
   Raises:
     TypeError: If the input is not of the expected type.
