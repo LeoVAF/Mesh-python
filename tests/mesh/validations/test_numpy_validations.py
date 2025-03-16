@@ -53,7 +53,7 @@ def test_assert_np_vector_for_operations():
   
   with pytest.raises(ValueError, match='The input "vec_value" must be one-dimensional.'):
     npv.assert_np_vector_for_operations(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), 'vec_value', 9)
-  with pytest.raises(ValueError, match='The input "size" must be greater than 0.'):
+  with pytest.raises(ValueError, match='The parameter size must be greater than 0.'):
     npv.assert_np_vector_for_operations(np.array([0, 1]), 'vec_value', -2)
   with pytest.raises(ValueError, match='The input "vec_value" with size 2 must have size 1.'):
     npv.assert_np_vector_for_operations(np.array([0, 1]), 'vec_value', 1)
@@ -84,7 +84,7 @@ def test_assert_np_vectors_for_boundary():
     npv.assert_np_vectors_for_boundary(np.array([1,2,3,4,5,6,7,8,9]), 'vec1', np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), 'vec2', 9)
   with pytest.raises(ValueError, match='The input "vec2" with size 2 must have size 1.'):
     npv.assert_np_vectors_for_boundary(np.array([0]), 'vec1', np.array([1, 1]), 'vec2', 1)
-  with pytest.raises(ValueError, match='The input "size" must be greater than 0.'):
+  with pytest.raises(ValueError, match='The parameter size must be greater than 0.'):
     npv.assert_np_vectors_for_boundary(np.array([0, 0]), 'vec1', np.array([1, 1]), 'vec2', -2)
   with pytest.raises(ValueError, match='The input "vec1" must be less than "vec2".'):
     npv.assert_np_vectors_for_boundary(np.array([0, 2, 0]), 'vec1', np.array([1, 1, 1]), 'vec2', 3)
@@ -92,6 +92,7 @@ def test_assert_np_vectors_for_boundary():
 def test_assert_np_vector_index():
   # Successful cases
   assert npv.assert_np_vector_index(np.array([0, 1, 2]), 'idx_vec', 5) == None
+  assert npv.assert_np_vector_index(np.array([-5, 0, 4]), 'idx_vec', 5) == None
   
   # Failure cases
   with pytest.raises(TypeError, match='The input "idx_vec" has type <class \'int\'>, but expected <class \'numpy.ndarray\'>.'):
@@ -100,9 +101,94 @@ def test_assert_np_vector_index():
     npv.assert_np_vector_index(np.array([0, 0]), 1, 1)
   with pytest.raises(TypeError, match='The input "max_index" has type <class \'float\'>, but expected \(<class \'int\'>, <class \'numpy.integer\'>\).'):
     npv.assert_np_vector_index(np.array([0, 0]), 'idx_vec', 1.)
+  with pytest.raises(TypeError, match='The input "idx_vec" has dtype float64, but expected \(<class \'int\'>, <class \'numpy.integer\'>\).'):
+    npv.assert_np_vector_index(np.array([0., 0.]), 'idx_vec', 1)
+  with pytest.raises(TypeError, match='The input "idx_vec" has dtype float64, but expected \(<class \'int\'>, <class \'numpy.integer\'>\).'):
+    npv.assert_np_vector_index(np.array([0, 0, np.nan]), 'idx_vec', 1)
   
-  # with pytest.raises(ValueError, match='The input "size" has type <class \'float\'>, but expected \(<class \'int\'>, <class \'numpy.integer\'>\).'):
-  #   npv.assert_np_vector_index(np.array([0, 0]), 1, 1.)
+  with pytest.raises(ValueError, match='The input "idx_vec" must be one-dimensional.'):
+    npv.assert_np_vector_index(np.array([[0, 0]]), 'idx_vec', 1)
+  with pytest.raises(ValueError, match='The input "idx_vec" has indices out of bounds. The maximum index is 1.'):
+    npv.assert_np_vector_index(np.array([0, 1]), 'idx_vec', 1)
+  with pytest.raises(ValueError, match='The input "idx_vec" has indices out of bounds. The maximum index is 2.'):
+    npv.assert_np_vector_index(np.array([-3, 0, 1]), 'idx_vec', 2)
 
 def test_is_fitness_function():
-  pass
+  # Creating types of fitness function
+  class TestFitnessFunction():
+    str_value = 'foo'
+    array_value = np.array([1,2,3])
+    def __init__(self):
+      self.array_value = np.array([1,2,3])
+    # Static methods
+    @staticmethod
+    def valid_static_fitness_function(x):
+      return x + 1
+    @staticmethod
+    def invalid_static_fitness_function_1(x, y):
+      return x + y
+    @staticmethod
+    def invalid_static_fitness_function_2():
+      return 'Invalid'
+    # Class methods
+    @classmethod
+    def valid_class_fitness_function(cls, x):
+      return cls.array_value + x + 1
+    @classmethod
+    def invalid_class_fitness_function_1(cls, x, y):
+      return x + y
+    @classmethod
+    def invalid_class_fitness_function_2(cls):
+      None
+    @classmethod
+    def invalid_class_fitness_function_3(cls, x):
+      return cls.str_value
+    # Instance methods
+    def valid_instance_fitness_function(self, x, y=1, z=1):
+      return x + self.array_value + (y + z)
+    def invalid_instance_fitness_function_1(self, x):
+      return np.array(['str', 'another_str'])
+    def invalid_instance_fitness_function_2(self, x):
+      return np.array([[0,1,2], [3,4,5], [6,7,8]])
+  test_fitness_function = TestFitnessFunction()
+
+  # Successful cases
+  assert npv.is_fitness_function(lambda x: x + 1, 'fit_func', 10, 10) == None
+  assert npv.is_fitness_function(lambda x: np.concatenate((x + 1, x)), 'fit_func', 5, 10) == None
+  assert npv.is_fitness_function(lambda x: x[:5] + 1, 'fit_func', 10, 5) == None
+  assert npv.is_fitness_function(TestFitnessFunction.valid_static_fitness_function, 'fit_func', 5, 5) == None
+  assert npv.is_fitness_function(test_fitness_function.valid_class_fitness_function, 'fit_func', 3, 3) == None
+  assert npv.is_fitness_function(test_fitness_function.valid_instance_fitness_function, 'fit_func', 3, 3) == None
+
+  # Failure cases
+  with pytest.raises(TypeError, match='The input "fit_func" has type <class \'int\'>, but expected a callable.'):
+    npv.is_fitness_function(1, 'fit_func', 10, 10)
+  with pytest.raises(TypeError, match='The input "fit_func_name" has type <class \'int\'>, but expected <class \'str\'>.'):
+    npv.is_fitness_function(lambda x: x + 1, 1, 10, 10)
+  with pytest.raises(TypeError, match='The input "position_dim" has type <class \'float\'>, but expected \(<class \'int\'>, <class \'numpy.integer\'>\).'):
+    npv.is_fitness_function(lambda x: x + 1, 'fit_func', 10., 10)
+  with pytest.raises(TypeError, match='The input "objective_dim" has type <class \'float\'>, but expected \(<class \'int\'>, <class \'numpy.integer\'>\).'):
+    npv.is_fitness_function(lambda x: x + 1, 'fit_func', 10, 10.)
+  with pytest.raises(TypeError, match='The return of "fit_func" must be a numpy vector.'):
+    npv.is_fitness_function(test_fitness_function.invalid_class_fitness_function_3, 'fit_func', 3, 3)
+  with pytest.raises(TypeError, match='The return of "fit_func" must have dtype of a number.'):
+    npv.is_fitness_function(test_fitness_function.invalid_instance_fitness_function_1, 'fit_func', 3, 3)
+
+  with pytest.raises(ValueError, match='The input "position_dim" has value 0, but it must be greater than 0.'):
+    npv.is_fitness_function(lambda x: x + 1, 'fit_func', 0, 10)
+  with pytest.raises(ValueError, match='The input "objective_dim" has value 0, but it must be greater than 0.'):
+    npv.is_fitness_function(lambda x: x + 1, 'fit_func', 10, 0)
+  with pytest.raises(ValueError, match='"fit_func" must receive a numpy array of numbers with size equals to 10.'):
+    npv.is_fitness_function(lambda x: x[10] + 1, 'fit_func', 10, 9)
+  with pytest.raises(ValueError, match='"fit_func" must have only one argument without default values, but it has 2.'):
+    npv.is_fitness_function(TestFitnessFunction.invalid_static_fitness_function_1, 'fit_func', 10, 10)
+  with pytest.raises(ValueError, match='"fit_func" must have at least one argument without default values.'):
+    npv.is_fitness_function(TestFitnessFunction.invalid_static_fitness_function_2, 'fit_func', 10, 10)
+  with pytest.raises(ValueError, match='"fit_func" must have only one argument without default values, but it has 2.'):
+    npv.is_fitness_function(test_fitness_function.invalid_class_fitness_function_1, 'fit_func', 3, 3)
+  with pytest.raises(ValueError, match='"fit_func" must have at least one argument without default values.'):
+    npv.is_fitness_function(test_fitness_function.invalid_class_fitness_function_2, 'fit_func', 3, 3)
+  with pytest.raises(ValueError, match='The return of "fit_func" must be one-dimensional.'):
+    npv.is_fitness_function(test_fitness_function.invalid_instance_fitness_function_2, 'fit_func', 3, 3)
+  with pytest.raises(ValueError, match='The return of "fit_func" with size 5 must have size 10.'):
+    npv.is_fitness_function(lambda x: x + 1, 'fit_func', 5, 10)

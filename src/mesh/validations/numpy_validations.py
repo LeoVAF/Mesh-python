@@ -69,7 +69,7 @@ def assert_np_vector_for_operations(vec: np.ndarray[np.number], vec_name: str, s
   if vec.ndim != 1:
     raise ValueError(f'The input "{vec_name}" must be one-dimensional.')
   if size < 0:
-     raise ValueError('The input "size" must be greater than 0.')
+     raise ValueError(f'The parameter size must be greater than 0.')
   if vec.size != size:
 	  raise ValueError(f'The input "{vec_name}" with size {vec.size} must have size {size}.')
 
@@ -118,16 +118,13 @@ def assert_np_vector_index(idx_vec: np.ndarray, idx_vec_name: str, max_index: in
 
   # Check the vector subtype
   if not np.issubdtype(idx_vec.dtype, int) and not np.issubdtype(idx_vec.dtype, np.integer):
-    raise TypeError(f'The input "{idx_vec_name}" has dtype "{idx_vec.dtype}", but expected an type of integer.')
+    raise TypeError(f'The input "{idx_vec_name}" has dtype {idx_vec.dtype}, but expected (<class \'int\'>, <class \'numpy.integer\'>).')
 
   # Check the vector values
   if idx_vec.ndim != 1:
     raise ValueError(f'The input "{idx_vec_name}" must be one-dimensional.')
-  if np.any(np.isnan(idx_vec)):
-    raise ValueError(f'The input "{idx_vec_name}" has NaN values.')
   if np.any(idx_vec >= max_index) or np.any(idx_vec < -max_index):
     raise ValueError(f'The input "{idx_vec_name}" has indices out of bounds. The maximum index is {max_index}.')
-
 
 def is_fitness_function(fit_func: Callable[[np.ndarray[np.number]], np.ndarray[np.number]], fit_func_name: str, position_dim: int | np.integer, objective_dim: int | np.integer) -> None:
   ''' Checks if the fitness function is correctly annotated.
@@ -141,12 +138,15 @@ def is_fitness_function(fit_func: Callable[[np.ndarray[np.number]], np.ndarray[n
     Raises:
     TypeError: If the input is not of the expected type.
     ValueError: If the input is not a fitness function.
+  
+  Note:
+    Here, a fitness function is considered a function that receive a numpy vector of numbers and return a numpy vector of numbers, with the correct position and objective dimensions.
   '''
 
   # Check the input types
-  if not callable(fit_func):
-    raise TypeError(f'The input "{fit_func_name}" must be a callable, but it is of type "{type(fit_func)}".')
   assert_type(fit_func_name, 'fit_func_name', str)
+  if not callable(fit_func):
+    raise TypeError(f'The input "{fit_func_name}" has type {type(fit_func)}, but expected a callable.')
   is_greater_in_type(position_dim, 'position_dim', (int, np.integer), 0)
   is_greater_in_type(objective_dim, 'objective_dim', (int, np.integer), 0)
 
@@ -155,11 +155,10 @@ def is_fitness_function(fit_func: Callable[[np.ndarray[np.number]], np.ndarray[n
   fit_func_args = list(annotation.parameters.values())
 
   # Check the number of arguments without default values
-  arg_non_default_list = [arg.default != inspect.Parameter.empty for arg in fit_func_args]
-  
+  arg_non_default_list = [arg.default == inspect.Parameter.empty for arg in fit_func_args]
   # Check the fitness function arguments
   if not arg_non_default_list:
-    raise ValueError('The fitness function must have at least one argument without default values.')
+    raise ValueError(f'"{fit_func_name}" must have at least one argument without default values.')
   else:
     mandatory_args = arg_non_default_list.count(True)
     # Check fitness function possibilities
@@ -167,15 +166,23 @@ def is_fitness_function(fit_func: Callable[[np.ndarray[np.number]], np.ndarray[n
     static_method = isinstance(fit_func, staticmethod) and mandatory_args == 1
     instance_method = fit_func_args[0].name == 'self' and mandatory_args == 2
     pure_function = mandatory_args == 1
-    if class_method or static_method or instance_method or pure_function:
-      raise ValueError(f'The fitness function must have only one argument without default values, but it has "{arg_non_default_list.count(True)}".')
+    if not (class_method or static_method or instance_method or pure_function):
+      raise ValueError(f'"{fit_func_name}" must have only one argument without default values, but it has {arg_non_default_list.count(True)}.')
 
   # Check the type of the arguments
   try:
     arr_test = np.array([0.0] * position_dim)
     # Check the return type
-    result = fit_func(arr_test)
+    ret = fit_func(arr_test)
   except Exception:
-    raise ValueError(f'The fitness function "{fit_func_name}" must receive a numpy array with the design space dimension ({position_dim}) and return a numpy array with the objective dimension ({objective_dim}).')
+    raise ValueError(f'"{fit_func_name}" must receive a numpy array of numbers with size equals to {position_dim}.')
+  
   # Check if the return is a numpy array with the correct dimensions and subtype
-  assert_np_vector_for_operations(result, 'result', objective_dim)
+  if not isinstance(ret, np.ndarray):
+     raise TypeError(f'The return of "{fit_func_name}" must be a numpy vector.')
+  if not np.issubdtype(ret.dtype, np.number):
+     raise TypeError(f'The return of "{fit_func_name}" must have dtype of a number.')
+  if ret.ndim != 1:
+    raise ValueError(f'The return of "{fit_func_name}" must be one-dimensional.')
+  if ret.size != objective_dim:
+	  raise ValueError(f'The return of "{fit_func_name}" with size {ret.size} must have size {objective_dim}.')

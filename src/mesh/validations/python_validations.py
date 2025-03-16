@@ -17,11 +17,11 @@ def assert_type(var: any, var_name: str, expected_types: type | tuple, is_option
 
   # Check the input types
   if not isinstance(var_name, str):
-    raise TypeError(f'The input "var_name" has type {type(var_name)}, but expected <class \'str\'>.')
+    raise TypeError(f'The parameter "var_name" has type {type(var_name)}, but expected <class \'str\'>.')
   if not isinstance(expected_types, type) and not (isinstance(expected_types, tuple) and all(isinstance(item, type) for item in expected_types)):
-    raise TypeError(f'The input "expected_types" has type {type(expected_types)}, but expected (<class \'type\'>, <class \'tuple\'>).')
+    raise TypeError(f'The parameter "expected_types" has type {type(expected_types)}, but expected (<class \'type\'>, <class \'tuple\'>).')
   if not isinstance(is_optional, (bool, np.bool)):
-    raise TypeError(f'The input "is_optional" has type {type(is_optional)}, but expected (<class \'bool\'>, <class \'numpy.bool\'>).')
+    raise TypeError(f'The parameter "is_optional" has type {type(is_optional)}, but expected (<class \'bool\'>, <class \'numpy.bool\'>).')
   
   # Check the optional case
   if is_optional and var is None:
@@ -100,7 +100,7 @@ def is_between_inclusive(number: int | float | np.number, number_name: str, lowe
 
   # Check if the boundaries are valids
   if lower_bound > upper_bound:
-    raise ValueError('The input "lower_bound" must be greater or equal to the input "upper_bound".')
+    raise ValueError('The parameter "lower_bound" must be greater or equal to the parameter "upper_bound".')
   # Check the optional case
   if is_optional and number is None:
     return
@@ -126,12 +126,12 @@ def is_in_options(option: any, option_name: str, options: Iterable | Iterator) -
   try:
     iter(options)
   except TypeError:
-    raise TypeError(f'The input "options" has type {type(options)}, but expected an iterable or iterator.')
+    raise TypeError(f'The parameter "options" has type {type(options)}, but expected an iterable or iterator.')
 
   # Check if the option is in the options
   try:
     valid_iter = option not in options
   except:
-    raise ValueError('The input "options" must be a valid iterable/iterator for "option".')
+    raise ValueError('The parameter "options" must be a valid iterable/iterator for "option".')
   if valid_iter:
     raise ValueError(f'The input "{option_name}" must be one of the following options: {options}.')
