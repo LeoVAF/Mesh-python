@@ -105,7 +105,7 @@ def rand_2_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   valid_idxs = np.flatnonzero(valid_mask)
   idx_size = len(valid_idxs)
   if idx_size:
-    # Get three random indices for particle positions from pool
+    # Get five random indices for particle positions from pool
     xr = np.array([xr_pool_list[idx][np.random.permutation(len(xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
@@ -156,7 +156,7 @@ def best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   valid_idxs = np.flatnonzero(valid_mask)
   idx_size = len(valid_idxs)
   if idx_size:
-    # Get three random indices for particle positions from pool
+    # Get two random indices for particle positions from pool
     xr = np.array([xr_pool_list[idx][np.random.permutation(len(xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
@@ -206,7 +206,7 @@ def current_to_best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
   valid_idxs = np.flatnonzero(valid_mask)
   idx_size = len(valid_idxs)
   if idx_size:
-    # Get three random indices for particle positions from pool
+    # Get two random indices for particle positions from pool
     xr = np.array([xr_pool_list[idx][np.random.permutation(len(xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
