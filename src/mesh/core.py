@@ -117,7 +117,7 @@ class Mesh():
         # Use a random seed if there is
         np.random.seed(params.random_state)
         # Particles
-        self.population = Population(params)
+        self.population = None
         # Memory particles (and the final result after run MESH)
         self.memory = None
         # Fronts (a list of numpy arrays with index of each particle in the respective front)
@@ -157,6 +157,21 @@ class Mesh():
             self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
             self.total_bar = min(params.population_size*(2*params.max_gen+1), params.max_fit_eval)
     
+    def initialize(self):
+        ''' Initializes the MESH with some initial operations. It initializes the population, memory and personal best fitness, does initial fitness evaluations and calculates the domination fronts. '''
+
+        # Initialize the population
+        self.population = Population(self.params)
+        # Evaluate the initial population
+        fitnesses, min_evaluations = self.fitness_eval(self.population.position)
+        self.population.fitness[:min_evaluations] = fitnesses
+        # Get the population fronts and domination ranks
+        self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
+        # Initialize the memory
+        self.memory = Memory(self.population, self.fronts[0], self.params)
+        # Repeat the population fitness for all personal best input
+        self.population.personal_best_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
+
     def fitness_evaluations(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
         ''' Evaluates the fitness given a particle position matrix.
         
@@ -213,23 +228,6 @@ class Mesh():
         # Do the Fast Non-dominated Sorting from Pygmo
         non_dominated_fronts, _, _, ranks = fast_non_dominated_sorting(points=fitness_matrix)
         return non_dominated_fronts, ranks
-    
-    def reflect_velocity_at_bounds(self, velocity_input: np.ndarray[np.number, 2], position_input: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
-        ''' Reverses the direction of each component of the velocity that took the particle out of its respective boundaries.
-        
-        Args:
-            velocity_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle velocities.
-            position_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
-        
-        Returns:
-            :type:`np.ndarray[np.number, 2]`: A numpy matrix with the velocities reflected at the boundaries.
-        '''
-
-        neg_velocity = (velocity_input < 0)
-        return np.where(((position_input == self.params.position_min_value) & neg_velocity) |
-                        ((position_input == self.params.position_max_value) & (~ neg_velocity)),
-                        -velocity_input,
-                        velocity_input)
 
     def differential_mutation(self) -> None:
         ''' Applies a differential mutation operation decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type` in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`. '''
@@ -265,6 +263,23 @@ class Mesh():
         
         # Mutate the weights using a number sampled under the Standard Gaussian Distribution
         self.weights += np.random.normal(0, 1, (3, self.params.population_size)) * self.params.mutation_rate
+
+    def reflect_velocity_at_bounds(self, velocity_input: np.ndarray[np.number, 2], position_input: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
+        ''' Reverses the direction of each component of the velocity that took the particle out of its respective boundaries.
+        
+        Args:
+            velocity_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle velocities.
+            position_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
+        
+        Returns:
+            :type:`np.ndarray[np.number, 2]`: A numpy matrix with the velocities reflected at the boundaries.
+        '''
+
+        neg_velocity = (velocity_input < 0)
+        return np.where(((position_input == self.params.position_min_value) & neg_velocity) |
+                        ((position_input == self.params.position_max_value) & (~ neg_velocity)),
+                        -velocity_input,
+                        velocity_input)
 
     def move_population(self) -> None:
         r''' Applies the equation of motion to the particles. The MESH equation of motion is given by:
@@ -457,15 +472,8 @@ class Mesh():
             with tqdm(total=self.total_bar, leave=False) as pbar:
                 # A variable to update the tqdm bar
                 prev_bar_value = 0
-                # Evaluate the initial population
-                fitnesses, min_evaluations = self.fitness_eval(self.population.position)
-                self.population.fitness[:min_evaluations] = fitnesses
-                # Repeat the population fitness for all personal best input
-                self.population.personal_best_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
-                # Get the population fronts and domination ranks
-                self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-                # Initialize the memory
-                self.memory = Memory(self.population, self.fronts[0], self.params)
+                # Initialize the algorithm with initial operations
+                self.initialize()
                 # Main loop
                 while True:
                     # Count generations if it is a stopping criterion
