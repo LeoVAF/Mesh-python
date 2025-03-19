@@ -5,7 +5,7 @@ description = "implementation of MESH"
 authors = ["Leonardo Veiga Acioly Filho"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "*", from = "src/mesh"}]
+packages = [{include = "mesh", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.13"
