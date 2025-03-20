@@ -8,7 +8,7 @@ from unittest import TestCase, main
 import numpy as np
 
 class TestDifferentialMutationPool(TestCase):
-  def test_pool_from_population():
+  def test_pool_from_population(self):
     # Initialize a random Mesh instance
     params = MeshParameters(objective_dim=2,
                             position_dim=5, position_min_value=np.array([0]*5), position_max_value=np.array([1]*5), 
@@ -32,7 +32,7 @@ class TestDifferentialMutationPool(TestCase):
     for i, pool in enumerate(pool_list):
       assert all([np.all(mesh.population.position[i] != pos) for pos in pool])
 
-  def test_pool_from_memory():
+  def test_pool_from_memory(self):
     # Initialize a random Mesh instance
     params = MeshParameters(objective_dim=2,
                             position_dim=5, position_min_value=np.array([0]*5), position_max_value=np.array([1]*5), 
@@ -56,7 +56,7 @@ class TestDifferentialMutationPool(TestCase):
     for i, pool in enumerate(pool_list):
       assert all([np.all(mesh.population.position[i] != pos) for pos in pool])
 
-  def test_pool_from_population_and_memory():
+  def test_pool_from_population_and_memory(self):
     # Initialize a random Mesh instance
     params = MeshParameters(objective_dim=2,
                             position_dim=5, position_min_value=np.array([0]*5), position_max_value=np.array([1]*5), 

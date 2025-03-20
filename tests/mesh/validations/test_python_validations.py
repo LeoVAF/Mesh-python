@@ -108,6 +108,8 @@ class TestPythonValidations(TestCase):
     # Failure cases
     with self.assertRaisesRegex(TypeError, r'The input "option_name" has type <class \'int\'>, but expected <class \'str\'>.'):
       pv.is_in_options(1, 1, [1])
+    with self.assertRaisesRegex(TypeError, r'The parameter "options" has type <class \'int\'>, but expected an iterable or iterator.'):
+      pv.is_in_options(1, 'int_value', 1)
     
     with self.assertRaisesRegex(ValueError, r'The parameter "options" must be a valid iterable/iterator for "option".'):
       pv.is_in_options(1, 'int_value', 'iterator')
