@@ -16,7 +16,7 @@ dependencies:
   - pandas=2.2
   - hyperopt=0.2
   - cython=3.0
-  # - pytest=8.2
+  - pytest=8.2
   # Project management
   # - poetry=2.1
   - make=4.4

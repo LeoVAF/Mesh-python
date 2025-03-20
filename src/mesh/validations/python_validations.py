@@ -1,5 +1,7 @@
 from typing import Iterable, Iterator
 
+from typing import Callable
+
 import numpy as np
 
 def assert_type(var: any, var_name: str, expected_types: type | tuple, is_optional: bool | np.bool = False) -> None:
@@ -135,3 +137,23 @@ def is_in_options(option: any, option_name: str, options: Iterable | Iterator) -
     raise ValueError('The parameter "options" must be a valid iterable/iterator for "option".')
   if valid_iter:
     raise ValueError(f'The input "{option_name}" must be one of the following options: {options}.')
+
+def is_function(f: Callable, f_name: str) -> None:
+  ''' Checks if ``f`` is function.
+  
+  Args:
+    f (:type:`Callable`): The function to be checked.
+    f_name (:type:`str`): The name of the function.
+    
+    Raises:
+    TypeError: If the input is not of the expected type.
+    ValueError: If the input is not a fitness function.
+  
+  Note:
+    Here, a fitness function is considered a function that receive a numpy vector of numbers and return a numpy vector of numbers, with the correct position and objective dimensions.
+  '''
+
+  # Check the input types
+  assert_type(f_name, 'f_name', str)
+  if not callable(f):
+    raise TypeError(f'The input "{f_name}" has type {type(f)}, but expected a callable.')

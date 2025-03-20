@@ -55,26 +55,27 @@ def main():
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 0
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
-    experiment_name = "dtlz1"
+    experiment_name = bat_name[select_bat]
+    # experiment_name = 'zdt2'
 
-    objective_dim = 2 # Number of objectives
-    position_dim = 10 # Design space dimension
-    position_min_value = np.array([0]*position_dim) # Lower bound of problem
-    position_max_value = np.array([1]*position_dim) # Upper bound of problem
-    # position_min_value = np.array([10, 1, 100]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
-    # position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
+    objective_dim = 3 # Number of objectives
+    position_dim = 3 # Design space dimension
+    # position_min_value = np.array([0]*position_dim) # Lower bound of problem
+    # position_max_value = np.array([1]*position_dim) # Upper bound of problem
+    position_min_value = np.array([10, 1, 100]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
+    position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
     
-    # def func(args):
-    #     r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[:objective_dim]
-    #     #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
-    #     r[-1] = -r[-1] # Maximizing renewable factor
-    #     return r
+    def func(args):
+        r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[:objective_dim]
+        #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
+        r[-1] = -r[-1] # Maximizing renewable factor
+        return r
     # func = get_problem(experiment_name, n_var=position_dim).evaluate
-    func = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim).evaluate
+    # func = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim).evaluate
 
     max_iterations = 0 # Maximum number of iterations (not used if it less than one)
-    max_fitness_eval = 5000 # Maximum fitness evaluations (not used if it is less than one)
-    population_size = 100 # Population size
+    max_fitness_eval = 1000 # Maximum fitness evaluations (not used if it is less than one)
+    population_size = 50 # Population size
     num_final_solutions = population_size # Number of final solutions
     memory_size = population_size # Maximum number of particles in memory
 
@@ -105,7 +106,7 @@ def main():
                                 max_personal_guides=personal_guide_array_size,
                                 random_state=random_state)
         
-        log = f"result/{config}_run{i+1}"
+        log = False # f"result/{config}_run{i+1}"
         mesh = Mesh(params, func, log_memory=log)
         mesh.run()
         Pos, Fit = mesh.get_results()

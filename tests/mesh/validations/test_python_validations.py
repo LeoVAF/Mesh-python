@@ -113,6 +113,17 @@ class TestPythonValidations(TestCase):
       pv.is_in_options(1, 'int_value', 'iterator')
     with self.assertRaisesRegex(ValueError, r'The input "int_value" must be one of the following options: \[0, 2\].'):
       pv.is_in_options(1, 'int_value', [0, 2])
+  
+  def test_is_fitness_function(self):
+    # Successful cases
+    self.assertIsNone(pv.is_function(lambda x: x + 1, 'func'))
+    self.assertIsNone(pv.is_function(lambda x: x[:5] + 1, 'func'))
+
+    # Failure cases
+    with self.assertRaisesRegex(TypeError, r'The input "func" has type <class \'int\'>, but expected a callable.'):
+      pv.is_function(1, 'func')
+    with self.assertRaisesRegex(TypeError, r'The input "f_name" has type <class \'int\'>, but expected <class \'str\'>.'):
+      pv.is_function(lambda x: x + 1, 1)
 
 if __name__ == '__main__':
     main()

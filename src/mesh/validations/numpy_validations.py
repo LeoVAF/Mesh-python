@@ -1,7 +1,5 @@
 from mesh.validations.python_validations import assert_type, is_greater_in_type
 
-from typing import Callable
-
 import numpy as np
 
 def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> None:
@@ -124,45 +122,3 @@ def assert_np_vector_index(idx_vec: np.ndarray, idx_vec_name: str, max_index: in
     raise ValueError(f'The input "{idx_vec_name}" must be one-dimensional.')
   if np.any(idx_vec >= max_index) or np.any(idx_vec < -max_index):
     raise ValueError(f'The input "{idx_vec_name}" has indices out of bounds. The maximum index is {max_index}.')
-
-def is_fitness_function(fit_func: Callable[[np.ndarray[np.number]], np.ndarray[np.number]], fit_func_name: str, position_dim: int | np.integer, objective_dim: int | np.integer) -> None:
-  ''' Checks if the fitness function is correctly annotated.
-  
-  Args:
-    fit_func (:type:`Callable[[np.ndarray[np.number]], np.ndarray[np.number]]`): The fitness function to be checked.
-    fit_func_name (:type:`str`): The name of the fitness function.
-    position_dim (:type:`int | np.integer`): The design space dimension.
-    objective_dim (:type:`int | np.integer`): The number of objectives.
-    
-    Raises:
-    TypeError: If the input is not of the expected type.
-    ValueError: If the input is not a fitness function.
-  
-  Note:
-    Here, a fitness function is considered a function that receive a numpy vector of numbers and return a numpy vector of numbers, with the correct position and objective dimensions.
-  '''
-
-  # Check the input types
-  assert_type(fit_func_name, 'fit_func_name', str)
-  if not callable(fit_func):
-    raise TypeError(f'The input "{fit_func_name}" has type {type(fit_func)}, but expected a callable.')
-  is_greater_in_type(position_dim, 'position_dim', (int, np.integer), 0)
-  is_greater_in_type(objective_dim, 'objective_dim', (int, np.integer), 0)
-
-  # Check the type of the fitness function argument
-  try:
-    arr_test = np.array([0.0] * position_dim)
-    # Get the return
-    ret = fit_func(arr_test)
-  except Exception:
-    raise ValueError(f'"{fit_func_name}" must receive a numpy array of numbers with size equals to {position_dim}.')
-  
-  # Check if the return is a numpy array with the correct dimensions and subtype
-  if not isinstance(ret, np.ndarray):
-     raise TypeError(f'The return of "{fit_func_name}" must be a numpy vector.')
-  if not np.issubdtype(ret.dtype, np.number):
-     raise TypeError(f'The return of "{fit_func_name}" must have dtype of a number.')
-  if ret.ndim != 1:
-    raise ValueError(f'The return of "{fit_func_name}" must be one-dimensional.')
-  if ret.size != objective_dim:
-	  raise ValueError(f'The return of "{fit_func_name}" with size {ret.size} must have size {objective_dim}.')

@@ -38,8 +38,7 @@ from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
 from mesh.operations.global_best_attribution import get_global_best_attribution
 from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
 from mesh.operations.differential_mutation_strategy import get_differential_mutation_strategy
-from mesh.validations.python_validations import assert_type, assert_type_or_falsy
-from mesh.validations.numpy_validations import is_fitness_function
+from mesh.validations.python_validations import assert_type, assert_type_or_falsy, is_function
 
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
@@ -123,7 +122,7 @@ class Mesh():
         # Fronts (a list of numpy arrays with index of each particle in the respective front)
         self.fronts = []
         # Estabilish the fitness function
-        is_fitness_function(fitness_function, 'fitness_function', params.position_dim, params.objective_dim)
+        is_function(fitness_function, 'fitness_function')
         self.fitness_function = fitness_function
         # Start the generation counter
         self.generation_counter = 0
