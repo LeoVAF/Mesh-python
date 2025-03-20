@@ -1,9 +1,10 @@
 from mesh.validations import numpy_validations as npv
 
-import numpy as np
-import unittest
+from unittest import TestCase, main
 
-class TestAssertNpArraySubtype(unittest.TestCase):
+import numpy as np
+
+class TestNumpyValidations(TestCase):
   def test_assert_np_array_subtype(self):
     # Successful cases
     self.assertIsNone(npv.assert_np_array_subtype(np.array([1, 2, 3]), 'array_value', np.int64))
@@ -190,5 +191,5 @@ class TestAssertNpArraySubtype(unittest.TestCase):
     with self.assertRaisesRegex(ValueError, r'The return of "fit_func" with size 5 must have size 10.'):
       npv.is_fitness_function(lambda x: x + 1, 'fit_func', 5, 10)
 
-# if __name__ == '__main__':
-#     unittest.main()
+if __name__ == '__main__':
+    main()

@@ -1,8 +1,8 @@
 from mesh.validations import python_validations as pv
 
-import unittest
+from unittest import TestCase, main
 
-class TestAssertions(unittest.TestCase):
+class TestPythonValidations(TestCase):
   def test_assert_type(self):
     # Successful cases
     self.assertIsNone(pv.assert_type(1, 'int_value', int))
@@ -115,4 +115,4 @@ class TestAssertions(unittest.TestCase):
       pv.is_in_options(1, 'int_value', [0, 2])
 
 if __name__ == '__main__':
-    unittest.main()
+    main()
