@@ -30,7 +30,7 @@ class MeshParameters:
     
         dm_operation_type (:type:`{0, 1, 2, 3, 4}`): Differential mutation operation type. See :attr:`~mesh.operations.differential_mutation_strategy.differential_mutation_strategy_options`.
     
-        communication_probability (:type:`int | float | np.number`): Communication probability. Must be a number between 0 and 1, inclusive.
+        communication_probability (:type:`int | float | np.number`): Communication/cooperation probability. Must be a number between 0 and 1, inclusive.
         
         mutation_rate (:type:`int | float | np.number`): Mutation rate. Must be a number between 0 and 1, inclusive.
         
@@ -95,7 +95,7 @@ class MeshParameters:
         self.dm_operation_type: {0,1,2,3,4}
         ''' Differential mutation operation. '''
         self.communication_probability: int | float
-        ''' Communication probability. It must be a number between 0 and 1. '''
+        ''' Communication/cooperation probability. It must be a number between 0 and 1. '''
         self.mutation_rate: int | float
         ''' Mutation rate. '''
         self.max_gen: int | np.integer

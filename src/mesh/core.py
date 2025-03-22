@@ -255,9 +255,9 @@ class Mesh():
         r''' Calculates the weights by the following equation:
 
         .. math::
-            w^* = w + \tau_{mut} \cdot \mathcal{N}(0, 1),
+            w^* = w + \tau_{mut} \cdot r_\mathcal{N},
         
-        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\mathcal{N}(0, 1)` is a number sampled from the standard Gaussian Distribution.
+        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r_\mathcal{N} \sim \mathcal{N}(0, 1)` is a number sampled from the standard Gaussian Distribution.
         '''
         
         # Mutate the weights using a number sampled under the Standard Gaussian Distribution
@@ -286,7 +286,7 @@ class Mesh():
         .. math::
 
             \begin{cases}
-                v^{(t+1)} = w^*_Iv^{(t)} + w^*_A(x_{pb} - x^{(t)}) + w^*_CC \times (x^*_{gb} - x^{(t)}) \\
+                v^{(t+1)} = w^*_Iv^{(t)} + w^*_A(x_{pb} - x^{(t)}) + w^*_C C^{(t)} \times (x^*_{gb} - x^{(t)}) \\
                 x^{(t+1)} = x^{(t)} + v^{(t+1)}
             \end{cases},
         
@@ -297,11 +297,11 @@ class Mesh():
         - :math:`w_I` is the inertia weight;
         - :math:`w_A` is the assimilation weight;
         - :math:`w_C` is the cooperation weight;
-        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`U(0,\ 1)` a number sampled under a uniform distribution between 0 and 1 and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
+        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`r_\mathcal{U} \sim \mathcal{U}(0,\ 1)` a number sampled under a uniform distribution between 0 and 1 and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
 
         .. math::
 
-            C_{ij} = \begin{cases} 1,\ \text{if } (i = j) \land (U(0,\ 1) \leq \tau_{com}) \\ 0,\ \text{otherwise} \end{cases}.
+            C_{ij} = \begin{cases} 1,\ \text{if } (i = j) \land (r_\mathcal{U} \leq \tau_{com}) \\ 0,\ \text{otherwise} \end{cases}.
 
         - :math:`x_{pb}` is the personal best vector of the particle;
         - :math:`x_{gb}` is the global best vector o the particle.
@@ -311,9 +311,9 @@ class Mesh():
             
             .. math::
                 
-                x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot \mathcal{N}(0, 1)).
+                x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot r_\mathcal{N}),
             
-            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution.
+            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r_\mathcal{N} \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution.
         '''
 
         # Get the parameters
@@ -346,10 +346,10 @@ class Mesh():
         np.multiply(vector_for_operations, params.mutation_rate, out=vector_for_operations)
         np.add(vector_for_operations, 1, out=vector_for_operations)
         np.multiply(vector_for_operations[:, np.newaxis], gb_positions, out=matrix_for_operations)
-        ################## Mutation of the global best positions ##################
+        ###########################################################################
         np.subtract(matrix_for_operations, positions, out=matrix_for_operations)
         np.multiply(matrix_for_operations, weights[2][:, np.newaxis], out=matrix_for_operations)
-        np.multiply(matrix_for_operations, np.random.uniform(0.0, 1.0, (population_size, params.position_dim)) < params.communication_probability, out=matrix_for_operations)
+        np.multiply(matrix_for_operations, np.random.uniform(0.0, 1.0, params.position_dim) < params.communication_probability, out=matrix_for_operations)
         np.add(velocities, matrix_for_operations, out=velocities)
         # Calculate the new velocity (clipped)
         np.clip(velocities, params.velocity_min_value, params.velocity_max_value, out=velocities)
@@ -366,7 +366,7 @@ class Mesh():
         ''' Selects the best particles from the previous (before applying the equation of motion) and current populations. The top :attr:~mesh.parameters.MeshParameters.population_size particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
         
         Note:
-            The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
+            The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with rank zero.
         '''
 
         population_size = self.params.population_size
