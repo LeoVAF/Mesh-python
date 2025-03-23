@@ -3,7 +3,7 @@ import shutil
 import glob
 
 # Folders
-build_dir = "src/mesh/compiling"
+build_dir = "src/mesh/compiled"
 build_temp_dir = "build"  # Temporary folder created by setuptools
 extra_dir = os.path.join(build_dir, "mesh")  # Extra folder 'mesh' that needs to be removed
 
@@ -11,8 +11,8 @@ extra_dir = os.path.join(build_dir, "mesh")  # Extra folder 'mesh' that needs to
 os.system(f"python scripts/compiler.py build_ext --build-lib {build_dir}")
 
 # Find the compiled file (.so ou .pyd) inside the extra folder
-compiled_files = glob.glob(os.path.join(build_dir, "mesh", "compiling", "*.so")) + \
-                 glob.glob(os.path.join(build_dir, "mesh", "compiling", "*.pyd"))
+compiled_files = glob.glob(os.path.join(build_dir, "mesh", "compiled", "*.so")) + \
+                 glob.glob(os.path.join(build_dir, "mesh", "compiled", "*.pyd"))
 
 # Move only the compiled file to the correct folder
 for file in compiled_files:
