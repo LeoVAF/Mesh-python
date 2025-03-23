@@ -44,7 +44,9 @@ from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
 from types import MethodType
 from typing import Callable, Optional
+
 from concurrent.futures import ProcessPoolExecutor
+from joblib import Parallel, delayed
 
 import numpy as np
 
@@ -210,8 +212,8 @@ class Mesh():
             :type:`tuple[np.ndarray[np.number, 2], int]`: A tuple with the fitness matrix and the number of evaluations.
         '''
         # Create a pool of processes to execute the fitness function parallelly
-        with ProcessPoolExecutor(max_workers=self.num_proc) as executor:
-            fitness_values = list(executor.map(self.fitness_function, X))
+        fitness_values = Parallel(n_jobs=self.num_proc)(delayed(self.fitness_function)(x) for x in X)
+
         return np.array(fitness_values), len(X)
     
     def dominates(self, x: np.ndarray[np.number, ], y: np.ndarray[np.number, ], axis: int | np.integer = 0) -> np.ndarray[np.bool, ]:
