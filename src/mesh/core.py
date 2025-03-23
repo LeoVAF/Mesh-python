@@ -211,9 +211,9 @@ class Mesh():
         Returns:
             :type:`tuple[np.ndarray[np.number, 2], int]`: A tuple with the fitness matrix and the number of evaluations.
         '''
+        
         # Create a pool of processes to execute the fitness function parallelly
         fitness_values = Parallel(n_jobs=self.num_proc)(delayed(self.fitness_function)(x) for x in X)
-
         return np.array(fitness_values), len(X)
     
     def dominates(self, x: np.ndarray[np.number, ], y: np.ndarray[np.number, ], axis: int | np.integer = 0) -> np.ndarray[np.bool, ]:
