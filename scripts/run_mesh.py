@@ -73,6 +73,8 @@ def main():
     func = get_problem(experiment_name, n_var=position_dim).evaluate
     # func = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim).evaluate
 
+    num_proc = None # Number of processes to execute the fitness function in parallel
+
     max_iterations = 0 # Maximum number of iterations (not used if it less than one)
     max_fitness_eval = 5000 # Maximum fitness evaluations (not used if it is less than one)
     population_size = 100 # Population size
@@ -107,7 +109,7 @@ def main():
                                 random_state=random_state)
         
         log = f"result/{config}_run{i+1}"
-        mesh = Mesh(params, func, log_memory=log)
+        mesh = Mesh(params, func, log_memory=log, num_proc=num_proc)
         mesh.run()
         Pos, Fit = mesh.get_results()
         result[i+1] = {"F":Fit, "P":Pos}

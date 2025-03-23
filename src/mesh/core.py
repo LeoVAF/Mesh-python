@@ -38,12 +38,13 @@ from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
 from mesh.operations.global_best_attribution import get_global_best_attribution
 from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
 from mesh.operations.differential_mutation_strategy import get_differential_mutation_strategy
-from mesh.validations.python_validations import assert_type, assert_type_or_falsy, is_function
+from mesh.validations.python_validations import assert_type, is_greater_in_type, is_function
 
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
 from types import MethodType
-from typing import Callable
+from typing import Callable, Optional
+from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 
@@ -59,17 +60,22 @@ class Mesh():
     Args:
         params (:class:`~mesh.parameters.MeshParameters`): MESH parameters.
         fitness_function (:type:`Callable[[np.ndarray[np.number]], np.ndarray[np.number]]`): A fitness function that returns a numpy array with each objective value in the respective component.
-        log_memory (:type:`str | False`): A string to log the memory. The file name will use this string. It must be a string or a falsy value. Default is False.
+        log_memory (:type:`str | None`): A string to log the memory. If its value is ``None``, then the memory location and fitness will not be logged in a file.
+        num_proc (:type:`int | None`): Number of processes to execute the fitness function in parallel. If it is ``None``, so the fitness function will execute sequentially.
     
     Raises:
         TypeError: If the input is not the expected type.
         ValueError: If the input is not the allowed value.
+    
+    Note:
+        Using parallel evaluations is only advantageous if :attr:`fitness_function` is sufficiently computationally expensive.
     '''
 
     def __init__(self,
-                params: MeshParameters, # MESH parameters
-                fitness_function: Callable[[np.ndarray[np.number]], np.ndarray[np.number]], # A fitness function that returns a numpy array with each objective value in the respective component
-                log_memory=False): # A string to log the memory (the file name will use this string)
+                params: MeshParameters,
+                fitness_function: Callable[[np.ndarray[np.number]], np.ndarray[np.number]],
+                log_memory: Optional[str] = None,
+                num_proc: Optional[int] = None):
         
         self.params: MeshParameters
         ''' Mesh parameters. '''
@@ -95,9 +101,13 @@ class Mesh():
         ''' Weights for the algorithm operations moving the population. '''
         self.pre_allocated: PreAllocated
         ''' Pre-allocated data for the algorithm. '''
-        self.log_memory: str | False
-        ''' A string to log the memory. '''
-        self.fitness_eval: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 1], int]]
+        self.log_memory: Optional[str]
+        ''' A string to log the memory. If its value is ``None``, then the memory location and fitness will not be logged in a file. '''
+        self.num_proc: Optional[int]
+        ''' Number of processes to execute the fitness function in parallel. If it is ``None``, so the fitness function will execute sequentially. '''
+        self.evaluation_way: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 2], int]]
+        ''' The way to evaluate the fitness function. It can be sequentially or parallelly. If :attr:`num_proc` is greater than zero, so the fitness evaluations will be parallel with :attr:`num_proc` processes. '''
+        self.evaluate: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 2], int]]
         ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is greater than 0, so the fitness evaluations will be counted. '''
         self.count_generation: Callable[[], None]
         ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is 0. '''
@@ -133,8 +143,15 @@ class Mesh():
         # Store some pre-calculated data
         self.pre_allocated = PreAllocated(params)
         # Variable for logging memory
-        assert_type_or_falsy(log_memory, 'log_memory', str)
+        assert_type(log_memory, 'log_memory', str, is_optional=True)
         self.log_memory = log_memory
+        # Check if the fitness evaluation will be sequential or parallel
+        is_greater_in_type(num_proc, 'num_proc', int, 0, is_optional=True)
+        self.num_proc = num_proc
+        if self.num_proc is not None:
+            self.evaluation_way = self.parallel_fitness_evaluation
+        else:
+            self.evaluation_way = self.sequential_fitness_evaluation
         # Check if generation is a stopping criterion
         if params.max_gen > 0:
             self.count_generation = self.stopping_by_generation
@@ -142,9 +159,9 @@ class Mesh():
             self.count_generation = lambda : None
         # Check if the fitness evaluation is a stopping criterion
         if params.max_fit_eval > 0:
-            self.fitness_eval = self.stopping_by_fitness_eval
+            self.evaluate = self.stopping_by_fitness_eval
         else:
-            self.fitness_eval = self.fitness_evaluations
+            self.evaluate = self.evaluation_way
         # Choose the way to update the algorithm progress bar
         if params.max_gen == 0:
             self.total_bar = params.max_fit_eval
@@ -162,7 +179,7 @@ class Mesh():
         # Initialize the population
         self.population = Population(self.params)
         # Evaluate the initial population
-        fitnesses, min_evaluations = self.fitness_eval(self.population.position)
+        fitnesses, min_evaluations = self.evaluate(self.population.position)
         self.population.fitness[:min_evaluations] = fitnesses
         # Get the population fronts and domination ranks
         self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
@@ -171,8 +188,8 @@ class Mesh():
         # Repeat the population fitness for all personal best input
         self.population.personal_best_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
 
-    def fitness_evaluations(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
-        ''' Evaluates the fitness given a particle position matrix.
+    def sequential_fitness_evaluation(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
+        ''' Evaluates the fitness given a particle position matrix sequentially.
         
         Args:
             X (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
@@ -182,6 +199,20 @@ class Mesh():
         '''
 
         return np.array([self.fitness_function(x) for x in X]), len(X)
+
+    def parallel_fitness_evaluation(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
+        ''' Evaluates the fitness given a particle position matrix parallelly.
+        
+        Args:
+            X (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
+
+        Returns:
+            :type:`tuple[np.ndarray[np.number, 2], int]`: A tuple with the fitness matrix and the number of evaluations.
+        '''
+        # Create a pool of processes to execute the fitness function parallelly
+        with ProcessPoolExecutor(max_workers=self.num_proc) as executor:
+            fitness_values = list(executor.map(self.fitness_function, X))
+        return np.array(fitness_values), len(X)
     
     def dominates(self, x: np.ndarray[np.number, ], y: np.ndarray[np.number, ], axis: int | np.integer = 0) -> np.ndarray[np.bool, ]:
         r''' Checks if an numpy array x dominates an numpy array y on the respective axis. Given two arrays :math:`x \in \mathbb{R}^n` and :math:`y \in \mathbb{R}^n`, :math:`x` dominates :math:`y` if and only if the following condition are satisfied:
@@ -237,7 +268,7 @@ class Mesh():
         xst, valid_idxs = self.differential_mutation_strategy(xr_pool_list)
         if len(xst):
             # Update the current particle if the new particle from the strategy is better
-            st_fitnesses, min_evaluations = self.fitness_eval(xst)
+            st_fitnesses, min_evaluations = self.evaluate(xst)
             min_valid_idxs = valid_idxs[:min_evaluations]
             valid_pop_fitnesses = self.population.fitness[min_valid_idxs]
             domination_mask = self.dominates(st_fitnesses, valid_pop_fitnesses, axis=1)
@@ -359,7 +390,7 @@ class Mesh():
         # Reflect the velocity at the bounds
         self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
         # Evaluate the fitness function
-        fitnesses, min_evaluations = self.fitness_eval(self.population.position)
+        fitnesses, min_evaluations = self.evaluate(self.population.position)
         self.population.fitness[:min_evaluations] = fitnesses
     
     def population_selection(self) -> None:
@@ -506,7 +537,7 @@ class Mesh():
             # Update memory
             self.update_memory()
             # Log the memory
-            if self.log_memory:
+            if self.log_memory is not None:
                 self.logging()
 
     def update_progress_bar_by_fitness_evaluation(self, pbar: tqdm, prev_bar_value: int) -> int:
@@ -570,7 +601,7 @@ class Mesh():
         self.fitness_eval_counter += min_evaluations
         # Slice the particle positions for the minimum evaluations
         X_min = X[:min_evaluations]
-        return self.fitness_evaluations(X_min)
+        return self.evaluation_way(X_min)
 
     def get_results(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
         ''' Returns a tuple with the memory position and fitness, respectively.

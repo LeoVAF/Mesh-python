@@ -32,23 +32,6 @@ def assert_type(var: any, var_name: str, expected_types: type | tuple, is_option
   if not isinstance(var, expected_types):
     raise TypeError(f'The input "{var_name}" has type {type(var)}, but expected {expected_types}.')
 
-def assert_type_or_falsy(var: any, var_name: str, expected_types: type | tuple, is_optional: bool | np.bool = False) -> None:
-  ''' Checks if the ``var`` has the correct type or is a falsy var.
-  
-  Args:
-    var (:type:`any`): The input to be checked.
-    var_name (:type:`str`): The name of the input.
-    expected_types (:type:`type | tuple`): The type or tuple of types to be checked.
-    is_optional (:type:`bool | np.bool`): If the ``var`` is optional.
-
-  Raises:
-    TypeError: If the input is not one of the expected types.
-  '''
-
-  # Check if the var has the correct type or is a falsy var
-  if var:
-    assert_type(var, var_name, expected_types, is_optional=is_optional)
-
 def is_greater_in_type(number: int | float | np.number, number_name: str, number_type: int | float | np.number | tuple, value: int | float | np.number, is_optional: bool | np.bool = False) -> None:
   ''' Checks if the ``number`` is of a respective type and if it is greater than ``value``.
   

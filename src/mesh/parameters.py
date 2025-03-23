@@ -22,7 +22,7 @@ class MeshParameters:
             
         population_size (:type:`int | np.integer`): Population size. Must be a positive integer (> 0).
         
-        memory_size (:type:`int | np.integer`, optional): Number of particles in memory. Default is None. Must be a positive integer (> 0) or ``None``.
+        memory_size (:type:`int | np.integer | None`): Number of particles in memory. Default is None. Must be a positive integer (> 0) or ``None``.
         
         global_best_attribution_type (:type:`{0, 1, 2, 3}`): Global best attribution operation type. See :attr:`~mesh.operations.global_best_attribution.global_best_attribution_options`.
         
@@ -40,7 +40,7 @@ class MeshParameters:
         
         max_personal_guides (:type:`int | np.integer`): Maximum number of personal guides. Must be a positive integer (> 0).
 
-        random_state (:type:`int | np.integer`, optional): Numpy random seed to generate random numbers. Default is None. Must be an integer or ``None``.
+        random_state (:type:`int | np.integer | None`): Numpy random seed to generate random numbers. Default is None. Must be an integer or ``None``.
 
     Raises:
         TypeError: If the input is not the expected type.
@@ -53,7 +53,7 @@ class MeshParameters:
                  position_min_value: np.ndarray[np.number],
                  position_max_value: np.ndarray[np.number],
                  population_size: int | np.integer,
-                 memory_size: Optional[int] | np.integer = None,
+                 memory_size: int | Optional[np.integer] = None,
                  global_best_attribution_type: {0,1,2,3} = 0,
                  dm_pool_type: {0,1,2} = 0,
                  dm_operation_type: {0,1,2,3,4} = 0,
@@ -62,7 +62,7 @@ class MeshParameters:
                  max_gen: int | np.integer = 0,
                  max_fit_eval: int | np.integer = 0,
                  max_personal_guides: int | np.integer = 3,
-                 random_state: Optional[int] | np.integer = None):
+                 random_state: int | Optional[np.integer] = None):
         
         self.objective_dim: int | np.integer
         ''' Number of problem objectives. '''
@@ -86,7 +86,7 @@ class MeshParameters:
         '''
         self.population_size: int | np.integer
         ''' Number of particles. '''
-        self.memory_size: Optional[int] | np.integer
+        self.memory_size: int | Optional[np.integer]
         ''' Maximum size of MESH memory. If it is ``None``, so the memory size will be equal to :attr:`population_size`. '''
         self.global_best_attribution_type: {0,1,2,3}
         ''' Global best selection method. '''
@@ -104,7 +104,7 @@ class MeshParameters:
         ''' Maximum number of fitness evaluations. If the parameter ``max_fit_eval`` is negative, so it will be equal to 0. '''
         self.max_personal_guides: int | np.integer
         ''' Maximum number of personal guides. '''
-        self.random_state: Optional[int] | np.integer
+        self.random_state: int | Optional[np.integer]
         ''' Seed to generate random numbers. '''
 
         # Set the number of objectives

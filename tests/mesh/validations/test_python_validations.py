@@ -19,24 +19,6 @@ class TestPythonValidations(TestCase):
       pv.assert_type(1, 'var', int, is_optional=1)
     with self.assertRaisesRegex(TypeError, r'The input "var" has type <class \'int\'>, but expected \(<class \'float\'>, <class \'list\'>\).'):
       pv.assert_type(1, 'var', (float, list))
-  
-  def test_assert_type_or_falsy(self):
-    # Successful cases
-    self.assertIsNone(pv.assert_type_or_falsy(1, 'int_value', int))
-    self.assertIsNone(pv.assert_type_or_falsy(1.0, 'float_value', float))
-    self.assertIsNone(pv.assert_type_or_falsy(1, 'int_value', (int, float)))
-    self.assertIsNone(pv.assert_type_or_falsy(None, 'None_value', int, is_optional=True))
-    self.assertIsNone(pv.assert_type_or_falsy(None, 'None_value', int, is_optional=False))
-    
-    # Failure cases
-    with self.assertRaisesRegex(TypeError, r'The parameter "var_name" has type <class \'int\'>, but expected <class \'str\'>.'):
-      pv.assert_type_or_falsy(1, 2, int)
-    with self.assertRaisesRegex(TypeError, r'The parameter "expected_types" has type <class \'NoneType\'>, but expected \(<class \'type\'>, <class \'tuple\'>\).'):
-      pv.assert_type_or_falsy(1, 'var', None)
-    with self.assertRaisesRegex(TypeError, r'The parameter "is_optional" has type <class \'int\'>, but expected \(<class \'bool\'>, <class \'numpy.bool\'>\).'):
-      pv.assert_type_or_falsy(1, 'var', int, is_optional=1)
-    with self.assertRaisesRegex(TypeError, r'The input "var" has type <class \'int\'>, but expected \(<class \'float\'>, <class \'list\'>\).'):
-      pv.assert_type_or_falsy(1, 'var', (float, list))
 
   def test_is_greater_in_type(self):
     # Successful cases

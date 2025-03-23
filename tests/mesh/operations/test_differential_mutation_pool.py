@@ -21,7 +21,7 @@ class TestDifferentialMutationPool(TestCase):
                             max_personal_guides=3,
                             random_state=None)
     func = get_problem('zdt1', n_var=5).evaluate
-    mesh = Mesh(params, func, log_memory=False)
+    mesh = Mesh(params, func, log_memory=None)
     # Initialize the algorithm
     mesh.initialize()
 
@@ -45,7 +45,7 @@ class TestDifferentialMutationPool(TestCase):
                             max_personal_guides=3,
                             random_state=None)
     func = get_problem('zdt1', n_var=5).evaluate
-    mesh = Mesh(params, func, log_memory=False)
+    mesh = Mesh(params, func, log_memory=None)
     # Initialize the algorithm
     mesh.initialize()
 
@@ -69,7 +69,7 @@ class TestDifferentialMutationPool(TestCase):
                             max_personal_guides=3,
                             random_state=None)
     func = get_problem('zdt1', n_var=5).evaluate
-    mesh = Mesh(params, func, log_memory=False)
+    mesh = Mesh(params, func, log_memory=None)
     # Initialize the algorithm
     mesh.initialize()
 

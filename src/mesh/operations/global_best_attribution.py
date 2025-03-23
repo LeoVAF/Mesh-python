@@ -10,7 +10,7 @@ def sigma_evaluation(self: Mesh, fitness_matrix: np.ndarray[np.number, 2]) -> np
   r''' Calculates the sigma value for each particle in the population. The sigma value is the fitness difference of all the dimensions. The sigma value is a :math:`C^{n_{obj}}_2`-dimensional vector calculated as follows:
 
   .. math::
-    \sigma = \frac{1}{\sum^{n_{obj}}_{i=1} f^2_i} \left[f^2_0 - f^2_1,\ f^2_0 - f^2_2,\ \ldots,\ f^2_1 - f^2_2,\ f^2_1 - f^2_3,\ \ldots,\ f^2_{n_{obj}-1} - f^2_{n_{obj}} \right]^T,
+    \sigma = \frac{1}{\sum^{n_{obj}}_{i=1} f^2_i} \left[f^2_1 - f^2_2,\ f^2_1 - f^2_3,\ \ldots,\ f^2_2 - f^2_3,\ f^2_2 - f^2_4,\ \ldots,\ f^2_{n_{obj}-1} - f^2_{n_{obj}} \right]^T,
   
   where :math:`f_i` is the value of the i-th objective, :math:`\forall i \in \{1, 2, \ldots, n_{obj} \}`.
 
