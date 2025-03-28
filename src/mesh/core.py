@@ -44,8 +44,6 @@ from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
 from types import MethodType
 from typing import Callable, Optional
-
-from concurrent.futures import ProcessPoolExecutor
 from joblib import Parallel, delayed
 
 import numpy as np
@@ -216,30 +214,33 @@ class Mesh():
         fitness_values = Parallel(n_jobs=self.num_proc)(delayed(self.fitness_function)(x) for x in X)
         return np.array(fitness_values), len(X)
     
-    def dominates(self, x: np.ndarray[np.number, ], y: np.ndarray[np.number, ], axis: int | np.integer = 0) -> np.ndarray[np.bool, ]:
-        r''' Checks if an numpy array x dominates an numpy array y on the respective axis. Given two arrays :math:`x \in \mathbb{R}^n` and :math:`y \in \mathbb{R}^n`, :math:`x` dominates :math:`y` if and only if the following condition are satisfied:
-
-        .. math::
+    def dominates(self, Fx: np.ndarray[np.number, ], Fy: np.ndarray[np.number, ], axis: int | np.integer = 0) -> np.ndarray[np.bool, ]:
+        r''' Checks if the domination condition for the numpy arrays ``Fx`` and ``Fy`` with fitness values are satisfied on the respective ``axis``.
         
-            x \neq y\ \land\ x \preceq y,
-        
-        where:
+        Note:
+            Given two decision vectors :math:`x,\ y \in \mathbb{R}^m` and :math:`F(x) = [f_1(x),\ \ldots,\ f_n(x)]^T` as the fitness function of the multi-objective optimization problem, :math:`x` dominates :math:`y` if and only if the following condition are satisfied:
 
-        .. math::
-
-            x \neq y &\iff \exists i \in \{1,\ \ldots,\ n\}\ (\ x_i \neq y_i), \\
-            x \preceq y &\iff \forall i \in \{1,\ \ldots,\ n\}\ (x_i \leq y_i).
+            .. math::
             
+                F(x) \neq F(y)\ \land\ F(x) \preceq F(y),
+            
+            where:
+
+            .. math::
+
+                F(x) \neq F(y) &\iff \exists i \in \{1,\ \ldots,\ n\}\ (\ f_i(x) \neq f_i(y)), \\
+                F(x) \preceq F(y) &\iff \forall i \in \{1,\ \ldots,\ n\}\ (f_i(x) \leq f_i(y)).
+        
         Args:
-            x (:type:`np.ndarray[np.number, n]`): A n-dimensional numpy array.
-            y (:type:`np.ndarray[np.number, n]`): A n-dimensional numpy array.
+            Fx (:type:`np.ndarray[np.number, n]`): A n-dimensional numpy array with fitness values.
+            Fy (:type:`np.ndarray[np.number, n]`): A n-dimensional numpy array with fitness values.
             axis (:type:`int | np.integer`): The axis to compare the arrays. Default is 0.
         
         Returns:
             :type:`np.ndarray[np.bool, n-1]`: A (n-1)-dimensional numpy array with the result of the comparison.
         '''
 
-        return np.all(x <= y, axis=axis) & np.any(x < y, axis=axis)
+        return np.all(Fx <= Fy, axis=axis) & np.any(Fx < Fy, axis=axis)
 
     def get_domination_fronts(self, fitness_matrix: np.ndarray[np.number, 2]) -> tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]:
         ''' Gets the fronts and the domination ranks of the particles given a fitness matrix.
