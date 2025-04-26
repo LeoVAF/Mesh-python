@@ -56,7 +56,7 @@ def main():
     select_bat = 0
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'zdt2'
+    experiment_name = 'zdt3'
 
     objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
@@ -76,16 +76,16 @@ def main():
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     max_iterations = 0 # Maximum number of iterations (not used if it less than one)
-    max_fitness_eval = 5000 # Maximum fitness evaluations (not used if it is less than one)
+    max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
     population_size = 100 # Population size
     num_final_solutions = population_size # Number of final solutions
     memory_size = population_size # Maximum number of particles in memory
 
-    communication_probability =  0.7 # Communication probability
-    mutation_rate = 0.9 # Mutation rate
+    communication_probability =  0.05 # Communication probability
+    mutation_rate = 0.22 # Mutation rate
     personal_guide_array_size = 3 # Number of personal guides
 
-    random_state = 42 # Defines a seed for random numbers (not used if it is None)
+    random_state = None # Defines a seed for random numbers (not used if it is None)
 
     global_best_attribution_type = 0 # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
     dm_pool_type = 0 # 0 -> V1 | 1 -> V2 | 2 -> V3
@@ -108,7 +108,7 @@ def main():
                                 max_personal_guides=personal_guide_array_size,
                                 random_state=random_state)
         
-        log = f"result/{config}_run{i+1}"
+        log = None # f"result/{config}_run{i+1}"
         mesh = Mesh(params, func, log_memory=log, num_proc=num_proc)
         mesh.run()
         Pos, Fit = mesh.get_results()

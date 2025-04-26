@@ -60,7 +60,7 @@ class Population:
         ''' Numpy matrix with the particle's velocities initialized randomly under uniform distribution. '''
         self.fitness: np.ndarray[np.float64, 2]
         ''' Numpy matrix with the particle's fitnesses initialized with ``np.inf`` values. '''
-        self.rank: np.ndarray[np.float64]
+        self.rank: np.ndarray[np.integer]
         ''' Numpy array with the particle's rank. '''
         self.sigma: Optional[np.ndarray[np.float64, 2]] = None
         ''' Numpy matrix for the sigma values. Initialized with ``np.inf`` values. Used only if the Sigma method is used. '''
@@ -106,7 +106,7 @@ class Memory:
         """ Numpy matrix with the memory position. """
         self.fitness: np.ndarray[np.float64, 2]
         """ Numpy matrix with the memory fitness. """
-        self.sigma: Optional[np.ndarray[np.float64]] = None
+        self.sigma: Optional[np.ndarray[np.float64, 2]] = None
         """ Numpy matrix with the memory sigma values. This attribute is only used when the Sigma method is used. """
 
         if(len(pareto_front) <= params.memory_size):
