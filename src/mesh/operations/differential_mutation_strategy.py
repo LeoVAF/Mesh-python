@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from mesh.parameters import MeshParameters
 
 def binomial_mutation_mask(params: MeshParameters, idx_size: int) -> np.ndarray[np.bool, 2]:
-  ''' Makes a mask numpy matrix to apply the binomial mutation. Each value represents if the mutation will be applied or not.
+  ''' Makes a mask numpy matrix to apply the binomial mutation. Each value represents if the mutation will be applied (True values) or not (False values).
   
   Args:
     params (:class:`~mesh.parameters.MeshParameters`): The parameters :attr:`~mesh.parameters.MeshParameters.position_dim` and :attr:`~mesh.parameters.MeshParameters.mutation_rate` are used to make the mask.

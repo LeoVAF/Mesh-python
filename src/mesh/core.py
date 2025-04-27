@@ -289,9 +289,9 @@ class Mesh():
         r''' Calculates the weights by the following equation:
 
         .. math::
-            w^* = w + \tau_{mut} \cdot r_\mathcal{N},
+            w^* = w + \tau_{mut} \cdot r,
         
-        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r_\mathcal{N} \sim \mathcal{N}(0, 1)` is a number sampled from the standard Gaussian Distribution.
+        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution.
         '''
         
         # Mutate the weights using a number sampled under the Standard Gaussian Distribution
@@ -320,9 +320,9 @@ class Mesh():
         .. math::
 
             \begin{cases}
-                v^{(t+1)} = w^*_Iv^{(t)} + w^*_A(x_{pb} - x^{(t)}) + w^*_C C^{(t)} \times (x^*_{gb} - x^{(t)}) \\
-                x^{(t+1)} = x^{(t)} + v^{(t+1)}
-            \end{cases},
+                v^{(t+1)} = w^*_Iv^{(t)} + w^*_A(x_{pb} - x^{(t)}) + w^*_C C^{(t)} \times (x^*_{gb} - x^{(t)}), \\
+                x^{(t+1)} = x^{(t)} + v^{(t+1)},
+            \end{cases}
         
         where:
 
@@ -331,11 +331,11 @@ class Mesh():
         - :math:`w_I` is the inertia weight;
         - :math:`w_A` is the assimilation weight;
         - :math:`w_C` is the cooperation weight;
-        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`r_\mathcal{U} \sim \mathcal{U}(0,\ 1)` a number sampled under a uniform distribution between 0 and 1 and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
+        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`r_i \sim \mathcal{U}(0,\ 1)` a number sampled under a uniform distribution between 0 and 1 for each line of :math:`C` and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
 
         .. math::
 
-            C_{ij} = \begin{cases} 1,\ \text{if } (i = j) \land (r_\mathcal{U} \leq \tau_{com}) \\ 0,\ \text{otherwise} \end{cases}.
+            C_{ij} = \begin{cases} 1, & \text{if } (i = j) \land (r_i \leq \tau_{com}); \\ 0, & \text{otherwise}. \end{cases}
 
         - :math:`x_{pb}` is the personal best vector of the particle;
         - :math:`x_{gb}` is the global best vector o the particle.
@@ -345,9 +345,9 @@ class Mesh():
             
             .. math::
                 
-                x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot r_\mathcal{N}),
+                x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot r),
             
-            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r_\mathcal{N} \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution.
+            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution.
         '''
 
         # Get the parameters
