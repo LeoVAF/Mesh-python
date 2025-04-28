@@ -25,8 +25,8 @@ def run_mesh(experiment_name,
 	population_size = 100 # Population size
 	num_final_solutions = population_size # Number of final solutions
 	memory_size = population_size # Maximum number of particles in memory
-	communication_probability = 0.7 # Communication probability
-	mutation_rate = 0.9 # Mutation rate
+	communication_probability = 0.05 # Communication probability
+	mutation_rate = 0.2 # Mutation rate
 	personal_guide_array_size = 3 # Number of personal guides
 	random_state = None # Defines a seed for random numbers (not used if it is None)
 
@@ -47,7 +47,7 @@ def run_mesh(experiment_name,
 							max_gen=max_iterations, max_fit_eval=max_fitness_eval,
 							max_personal_guides=personal_guide_array_size,
 							random_state=random_state)
-		log = False
+		log = None
 		mesh = Mesh(params, func, log_memory=log)
 		mesh.run()
 		Pos, Fit = mesh.get_results()

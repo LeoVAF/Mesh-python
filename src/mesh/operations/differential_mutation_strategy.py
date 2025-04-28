@@ -8,15 +8,15 @@ if TYPE_CHECKING:
     from mesh.core import Mesh
     from mesh.parameters import MeshParameters
 
-def binomial_mutation_mask(params: MeshParameters, idx_size: int) -> np.ndarray[np.bool, 2]:
-  ''' Makes a mask numpy matrix to apply the binomial mutation. Each value represents if the mutation will be applied (True values) or not (False values).
+def binomial_crossover_mask(params: MeshParameters, idx_size: int) -> np.ndarray[np.bool, 2]:
+  ''' Makes a mask numpy matrix to apply the binomial crossover. Each value represents if the crossover will be applied (True values) or not (False values).
   
   Args:
     params (:class:`~mesh.parameters.MeshParameters`): The parameters :attr:`~mesh.parameters.MeshParameters.position_dim` and :attr:`~mesh.parameters.MeshParameters.mutation_rate` are used to make the mask.
-    idx_size (:type:`int`): The size of the indexes to apply the mutation.
+    idx_size (:type:`int`): The size of the indexes to apply the crossover.
     
   Returns:
-    :type:`np.ndarray[np.bool, 2]`: The mutation mask.
+    :type:`np.ndarray[np.bool, 2]`: The crossover mask.
   '''
 
   # Get the mutation weight
@@ -69,9 +69,11 @@ def rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     xst += xr[:, 0]
     # Clip the positions to the boundaries
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-    # Apply the mutation operator
-    mutation_mask = binomial_mutation_mask(self.params, idx_size)
-    xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+    # Apply the crossover operator in the personal best position
+    crossover_mask = binomial_crossover_mask(self.params, idx_size)
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
+    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
+    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -117,9 +119,11 @@ def rand_2_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     xst += xr[:, 0]
     # Clip the positions to the boundaries
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-    # Apply the mutation operator
-    mutation_mask = binomial_mutation_mask(self.params, idx_size)
-    xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+    # Apply the crossover operator in the personal best position
+    crossover_mask = binomial_crossover_mask(self.params, idx_size)
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
+    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
+    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -166,9 +170,11 @@ def best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     xst += self.population.global_best[valid_idxs]
     # Clip the positions to the boundaries
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-    # Apply the mutation operator
-    mutation_mask = binomial_mutation_mask(self.params, idx_size)
-    xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+    # Apply the crossover operator in the personal best position
+    crossover_mask = binomial_crossover_mask(self.params, idx_size)
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
+    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
+    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -219,9 +225,11 @@ def current_to_best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
     xst += x
     # Clip the positions to the boundaries
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-    # Apply the mutation operator
-    mutation_mask = binomial_mutation_mask(self.params, idx_size)
-    xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+    # Apply the crossover operator in the personal best position
+    crossover_mask = binomial_crossover_mask(self.params, idx_size)
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
+    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
+    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -270,9 +278,11 @@ def current_to_rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
     xst += x
     # Clip the positions to the boundaries
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
-    # Apply the mutation operator
-    mutation_mask = binomial_mutation_mask(self.params, idx_size)
-    xst[mutation_mask] = self.population.position[valid_mask][mutation_mask]
+    # Apply the crossover operator in the personal best position
+    crossover_mask = binomial_crossover_mask(self.params, idx_size)
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
+    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
+    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])
