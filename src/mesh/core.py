@@ -179,14 +179,13 @@ class Mesh():
         # Initialize the population
         self.population = Population(self.params)
         # Evaluate the initial population
-        fitnesses, min_evaluations = self.evaluate(self.population.position)
-        self.population.fitness[:min_evaluations] = fitnesses
+        self.population.fitness[:] = self.evaluate(self.population.position)
         # Get the population fronts and domination ranks
         self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         # Initialize the memory
         self.memory = Memory(self.population, self.fronts[0], self.params)
         # Repeat the population fitness for all personal best input
-        self.population.personal_best_fit[:, :, :] = np.repeat(fitnesses[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
+        self.population.personal_best_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
 
     def sequential_fitness_evaluation(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
         ''' Evaluates the fitness given a particle position matrix sequentially.
@@ -195,10 +194,10 @@ class Mesh():
             X (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
 
         Returns:
-            :type:`tuple[np.ndarray[np.number, 2], int]`: A tuple with the fitness matrix and the number of evaluations.
+            :type:`np.ndarray[np.number, 2]`: The fitness matrix associated with the particle positions.
         '''
 
-        return np.array([self.fitness_function(x) for x in X]), len(X)
+        return np.array([self.fitness_function(x) for x in X])
 
     def parallel_fitness_evaluation(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
         ''' Evaluates the fitness given a particle position matrix parallelly.
@@ -207,12 +206,12 @@ class Mesh():
             X (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
 
         Returns:
-            :type:`tuple[np.ndarray[np.number, 2], int]`: A tuple with the fitness matrix and the number of evaluations.
+            :type:`np.ndarray[np.number, 2]`: The fitness matrix associated with the particle positions.
         '''
         
         # Create a pool of processes to execute the fitness function parallelly
         fitness_values = Parallel(n_jobs=self.num_proc)(delayed(self.fitness_function)(x) for x in X)
-        return np.array(fitness_values), len(X)
+        return np.array(fitness_values)
     
     def dominates(self, Fx: np.ndarray[np.number, ], Fy: np.ndarray[np.number, ], axis: int | np.integer = 0) -> np.ndarray[np.bool, ]:
         r''' Checks if the domination condition for the numpy arrays ``Fx`` and ``Fy`` with fitness values are satisfied on the respective ``axis``.
@@ -270,27 +269,25 @@ class Mesh():
         '''
         
         # A array of a matrix pool in each row
-        xr_pool_list = self.differential_mutation_pool()
+        Xr_pool_list = self.differential_mutation_pool()
         # Apply a strategy
-        Xst, valid_idxs = self.differential_mutation_strategy(xr_pool_list)
+        Xst, valid_idxs = self.differential_mutation_strategy(Xr_pool_list)
         # Get the position and fitness to update the memory
         update_memory_pos = self.population.position
         update_memory_fit = self.population.fitness
         if len(Xst):
             # Update the current particle if the new particle from the strategy is better
-            Fst, min_evaluations = self.evaluate(Xst)
-            min_valid_idxs = valid_idxs[:min_evaluations]
-            valid_pop_fitnesses = self.population.fitness[min_valid_idxs]
+            Fst = self.evaluate(Xst)
+            valid_pop_fitnesses = self.population.fitness[valid_idxs]
             domination_mask = self.dominates(Fst, valid_pop_fitnesses, axis=1)
-            update_idxs = min_valid_idxs[domination_mask]
+            update_idxs = valid_idxs[domination_mask]
             # Update the positions and the fitnesses
-            self.population.position[update_idxs] = Xst[:min_evaluations][domination_mask]
+            self.population.position[update_idxs] = Xst[domination_mask]
             self.population.fitness[update_idxs] = Fst[domination_mask]
             # Update the memory with the new particles from the strategy
-            if(min_evaluations > 0):
-                update_memory_pos = np.concatenate((update_memory_pos, Xst[:min_evaluations]), axis=0)
-                update_memory_fit = np.concatenate((update_memory_fit, Fst), axis=0)    
-                self.update_memory(update_memory_pos, update_memory_fit)
+            update_memory_pos = np.concatenate((update_memory_pos, Xst), axis=0)
+            update_memory_fit = np.concatenate((update_memory_fit, Fst), axis=0)
+            self.update_memory(update_memory_pos, update_memory_fit)
             # If a particle was replaced for a particle from a strategy, update the personal best
             if len(update_idxs):
                 self.update_personal_best(update_idxs)
@@ -404,9 +401,8 @@ class Mesh():
         np.clip(positions, params.position_min_value, params.position_max_value, out=positions)
         # Reflect the velocity at the bounds
         self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
-        # Evaluate the fitness function
-        fitnesses, min_evaluations = self.evaluate(self.population.position)
-        self.population.fitness[:min_evaluations] = fitnesses
+        # Evaluate the positions with the fitness function
+        self.population.fitness[:] = self.evaluate(self.population.position)
     
     def population_selection(self) -> None:
         ''' Selects the best particles from the previous (before applying the equation of motion) and current populations. The top :attr:~mesh.parameters.MeshParameters.population_size particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
@@ -608,13 +604,18 @@ class Mesh():
         # Check if the stopping criterion reached
         if self.fitness_eval_counter >= self.params.max_fit_eval:
             raise StoppingAlgorithm()
+        # Get the size of the position matrix
+        X_size = len(X)
         # Calculate the minimum number of fitness evaluations
-        min_evaluations = min(self.params.max_fit_eval - self.fitness_eval_counter, len(X))
+        min_evaluations = min(self.params.max_fit_eval - self.fitness_eval_counter, X_size)
         # Update the fitness counter
         self.fitness_eval_counter += min_evaluations
-        # Slice the particle positions for the minimum evaluations
-        X_min = X[:min_evaluations]
-        return self.evaluation_way(X_min)
+        # Evaluate the fitness function
+        if(min_evaluations < X_size):
+            # Evaluate the sliced particle positions for the minimum evaluations and concatenate the rest with np.inf
+            return np.concatenate((self.evaluation_way(X[:min_evaluations]), np.full((X_size - min_evaluations, self.params.objective_dim), np.inf)), axis=0)
+        else:
+            return self.evaluation_way(X)
 
     def get_results(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
         ''' Returns a tuple with the memory position and fitness, respectively.
