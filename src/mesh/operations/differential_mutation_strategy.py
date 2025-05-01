@@ -71,9 +71,9 @@ def rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
     # Apply the crossover operator in the personal best position
     crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
-    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
-    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
+    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    xst[crossover_mask] = valid_pb_positions[crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -121,9 +121,9 @@ def rand_2_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
     # Apply the crossover operator in the personal best position
     crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
-    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
-    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
+    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    xst[crossover_mask] = valid_pb_positions[crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -172,9 +172,9 @@ def best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
     # Apply the crossover operator in the personal best position
     crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
-    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
-    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
+    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    xst[crossover_mask] = valid_pb_positions[crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -227,9 +227,9 @@ def current_to_best_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
     # Apply the crossover operator in the personal best position
     crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
-    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
-    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
+    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    xst[crossover_mask] = valid_pb_positions[crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -280,9 +280,9 @@ def current_to_rand_1_bin(self: Mesh, xr_pool_list: list[np.ndarray[np.float64, 
     np.clip(xst, self.params.position_min_value, self.params.position_max_value, out=xst)
     # Apply the crossover operator in the personal best position
     crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=self.params.population_size)
-    pb_positions = self.population.personal_best_pos[np.arange(self.params.population_size), random_indices, :]
-    xst[crossover_mask] = pb_positions[valid_mask][crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
+    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    xst[crossover_mask] = valid_pb_positions[crossover_mask]
     return xst, valid_idxs
   else:
     return np.array([]), np.array([])

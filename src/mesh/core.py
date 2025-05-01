@@ -262,28 +262,40 @@ class Mesh():
         non_dominated_fronts, _, _, ranks = fast_non_dominated_sorting(points=fitness_matrix)
         return non_dominated_fronts, ranks
 
-    def differential_mutation(self) -> None:
-        ''' Applies a differential mutation operation decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type` in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`. '''
+    def differential_mutation(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
+        ''' Applies a differential mutation operation decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type` in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`.
+        
+        Returns:
+            :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]`: A tuple with the position and fitness used to update the memory the second time at the generation (for efficiency).
+        '''
         
         # A array of a matrix pool in each row
         xr_pool_list = self.differential_mutation_pool()
         # Apply a strategy
-        xst, valid_idxs = self.differential_mutation_strategy(xr_pool_list)
-        if len(xst):
+        Xst, valid_idxs = self.differential_mutation_strategy(xr_pool_list)
+        # Get the position and fitness to update the memory
+        update_memory_pos = self.population.position
+        update_memory_fit = self.population.fitness
+        if len(Xst):
             # Update the current particle if the new particle from the strategy is better
-            st_fitnesses, min_evaluations = self.evaluate(xst)
+            Fst, min_evaluations = self.evaluate(Xst)
             min_valid_idxs = valid_idxs[:min_evaluations]
             valid_pop_fitnesses = self.population.fitness[min_valid_idxs]
-            domination_mask = self.dominates(st_fitnesses, valid_pop_fitnesses, axis=1)
+            domination_mask = self.dominates(Fst, valid_pop_fitnesses, axis=1)
             update_idxs = min_valid_idxs[domination_mask]
             # Update the positions and the fitnesses
-            self.population.position[update_idxs] = xst[:min_evaluations][domination_mask]
-            self.population.fitness[update_idxs] = st_fitnesses[domination_mask]
-            # If a particle was replaced for a particle from a strategy update some information
+            self.population.position[update_idxs] = Xst[:min_evaluations][domination_mask]
+            self.population.fitness[update_idxs] = Fst[domination_mask]
+            # Update the memory with the new particles from the strategy
+            if(min_evaluations > 0):
+                update_memory_pos = np.concatenate((update_memory_pos, Xst[:min_evaluations]), axis=0)
+                update_memory_fit = np.concatenate((update_memory_fit, Fst), axis=0)    
+                self.update_memory(update_memory_pos, update_memory_fit)
+            # If a particle was replaced for a particle from a strategy, update the personal best
             if len(update_idxs):
                 self.update_personal_best(update_idxs)
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-                self.update_memory()
+        return update_memory_pos, update_memory_fit
 
     def mutate_weights(self) -> None:
         r''' Calculates the weights by the following equation:
@@ -468,33 +480,35 @@ class Mesh():
         self.population.personal_best_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
         self.population.personal_best_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
-    def update_memory(self):
-        ''' Updates the memory position and fitness using the Pareto front formed by the particles from previous memory particles and the current Pareto front. '''
+    def update_memory(self, position_matrix: np.ndarray[np.float64, 2], fitness_matrix: np.ndarray[np.float64, 2]) -> None:
+        ''' Updates the memory position and fitness using a position and fitness numpy matrices.
         
-        # Get the indices of the Pareto front
-        pareto_idxs = self.fronts[0]
+        Args:
+            position_matrix (:type:`np.ndarray[np.float64, 2]`): A numpy matrix with the position of the particles.
+            fitness_matrix (:type:`np.ndarray[np.float64, 2]`): A numpy matrix with the fitness of the particles.
+        '''
+
         # Get the unique positions from the Pareto front and the memory
-        position_matrix = np.concatenate((self.population.position[pareto_idxs], self.memory.position), axis=0)
-        position_matrix, unique_idxs = np.unique(position_matrix, axis=0, return_index=True)
+        unique_positions, unique_idxs = np.unique(np.concatenate((self.memory.position, position_matrix), axis=0), axis=0, return_index=True)
         # Get the unique fitnesses from the Pareto front and the memory
-        fitness_matrix = np.concatenate((self.population.fitness[pareto_idxs], self.memory.fitness), axis=0)[unique_idxs]
+        unique_fitnesses = np.concatenate((self.memory.fitness, fitness_matrix), axis=0)[unique_idxs]
         # Get the Pareto front indices from the memory candidates
-        memory_pareto_front_idxs = self.get_domination_fronts(fitness_matrix)[0][0]
+        memory_pareto_front_idxs = self.get_domination_fronts(unique_fitnesses)[0][0]
         # If the new memory Pareto front has size less or equal than the memory size, then set the new memory
         memory_size = self.params.memory_size
         if(len(memory_pareto_front_idxs) <= memory_size):
-            self.memory.position = position_matrix[memory_pareto_front_idxs]
-            self.memory.fitness = fitness_matrix[memory_pareto_front_idxs]
+            self.memory.position = unique_positions[memory_pareto_front_idxs]
+            self.memory.fitness = unique_fitnesses[memory_pareto_front_idxs]
         # Else get the particles with the highest crowd distance in the new memory Pareto front
         else:
             # Select the particles with the highest crowd distance
-            selected_fitness = fitness_matrix[memory_pareto_front_idxs]
+            selected_fitness = unique_fitnesses[memory_pareto_front_idxs]
             # Calculate the crowding distance
             crowd_distances = crowding_distance(selected_fitness)
             # Get the indices of the particles with the highest crowd distance
             idxs = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
             # Update the memory
-            self.memory.position = position_matrix[memory_pareto_front_idxs[idxs]]
+            self.memory.position = unique_positions[memory_pareto_front_idxs[idxs]]
             self.memory.fitness = selected_fitness[idxs]
 
     def run(self):
@@ -512,7 +526,7 @@ class Mesh():
                     # Count generations if it is a stopping criterion
                     self.count_generation()
                     # Calculate Xst for each particle
-                    self.differential_mutation()
+                    update_memory_pos, update_memory_fit = self.differential_mutation()
                     # Mutate the weights
                     self.mutate_weights()
                     # Update global best
@@ -530,15 +544,11 @@ class Mesh():
                     # Get the fronts
                     self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                     # Update memory
-                    self.update_memory()
+                    self.update_memory(update_memory_pos, update_memory_fit)
                     # Update the progress bar
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
         # The end of the algorithm
         except StoppingAlgorithm:
-            # Get the fronts
-            self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-            # Update memory
-            self.update_memory()
             # Log the memory
             if self.log_memory is not None:
                 self.logging()
