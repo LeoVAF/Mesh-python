@@ -70,8 +70,11 @@ def main():
     #     #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
     #     r[-1] = -r[-1] # Maximizing renewable factor
     #     return r
-    func = get_problem(experiment_name, n_var=position_dim).evaluate
-    # func = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim).evaluate
+    
+    if experiment_name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}:
+        func = get_problem(experiment_name, n_var=position_dim).evaluate
+    else:
+        func = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim).evaluate
 
     num_proc = None # Number of processes to execute the fitness function in parallel
 
