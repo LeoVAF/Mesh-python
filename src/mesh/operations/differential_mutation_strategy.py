@@ -8,27 +8,32 @@ if TYPE_CHECKING:
     from mesh.core import Mesh
     from mesh.parameters import MeshParameters
 
-def binomial_crossover_mask(params: MeshParameters, idx_size: int) -> np.ndarray[np.bool, 2]:
-  ''' Makes a mask numpy matrix to apply the binomial crossover. Each value represents if the crossover will be applied (True values) or not (False values).
+def binomial_crossover(X1: np.ndarray[np.any, 2], X2: np.ndarray[np.any, 2], params: MeshParameters) -> np.ndarray[np.bool, 2]:
+  ''' Apply the binomial crossover in the numpy matrix ``X1``.
   
   Args:
-    params (:class:`~mesh.parameters.MeshParameters`): The parameters :attr:`~mesh.parameters.MeshParameters.position_dim` and :attr:`~mesh.parameters.MeshParameters.mutation_rate` are used to make the mask.
-    idx_size (:type:`int`): The size of the indexes to apply the crossover.
+    X1 (:type:`np.ndarray[np.any, 2]`): The numpy matrix to apply the crossover.
+    X2 (:type:`np.ndarray[np.any, 2]`): The second numpy matrix that will share information in the crossover.
+    params (:class:`~mesh.parameters.MeshParameters`): The parameters :attr:`~mesh.parameters.MeshParameters.position_dim` and :attr:`~mesh.parameters.MeshParameters.mutation_rate` are used to apply the crossover.
     
   Returns:
-    :type:`np.ndarray[np.bool, 2]`: The crossover mask.
+    :type:`np.ndarray[np.any, 2]`: The matrix ``X1`` after applying the crossover.
   '''
 
-  # Get the mutation weight
-  mutation_weight = truncnorm.rvs(0, 0.5, size=(idx_size, 1)) * params.mutation_rate
-  # Make the mutation index for each particle
-  mutation_index = np.random.randint(0, params.position_dim, size=idx_size)
-  # Calculate the mutation chance to apply the binomial mutation
-  mutation_chance = np.random.uniform(0.0, 1.0, size=(idx_size, params.position_dim))
-  # Get the mutation mask
-  mutation_mask = mutation_chance < mutation_weight
-  mutation_mask[np.arange(idx_size), mutation_index] = True
-  return mutation_mask
+  # Get the size of the X1 to apply the crossover
+  size = X1.shape[0]
+  # Get the crossover weight
+  crossover_weight = truncnorm.rvs(0, 0.5, size=(size, 1)) * params.mutation_rate
+  # Make the crossover index for each particle
+  crossover_index = np.random.randint(0, params.position_dim, size=size)
+  # Calculate the crossover chance to apply the binomial crossover
+  crossover_chance = np.random.uniform(0.0, 1.0, size=(size, params.position_dim))
+  # Get the crossover mask
+  crossover_mask = crossover_chance < crossover_weight
+  crossover_mask[np.arange(size), crossover_index] = True
+  # Apply the crossover
+  X1[crossover_mask] = X2[crossover_mask]
+  return X1
 
 def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/rand/1/bin strategy. The strategy is defined as follows:
@@ -57,12 +62,12 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   # Get the mask for the pools with valid length
   valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
   valid_idxs = np.flatnonzero(valid_mask)
-  idx_size = len(valid_idxs)
-  if idx_size:
+  valid_idx_size = len(valid_idxs)
+  if valid_idx_size:
     # Get three random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\1\bin strategy
     Xst = Xr[:, 1] - Xr[:, 2]
     Xst *= operation_weight
@@ -70,10 +75,9 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
-    crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
-    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst[crossover_mask] = valid_pb_positions[crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
+    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -105,12 +109,12 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   # Get the mask for the pools with valid length
   valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
   valid_idxs = np.flatnonzero(valid_mask)
-  idx_size = len(valid_idxs)
-  if idx_size:
+  valid_idx_size = len(valid_idxs)
+  if valid_idx_size:
     # Get five random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\2\bin strategy
     Xst = Xr[:, 3] - Xr[:, 4]
     Xst += Xr[:, 1]
@@ -120,10 +124,9 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
-    crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
-    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst[crossover_mask] = valid_pb_positions[crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
+    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -158,12 +161,12 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   # Get the mask for the pools with valid length
   valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
   valid_idxs = np.flatnonzero(valid_mask)
-  idx_size = len(valid_idxs)
-  if idx_size:
+  valid_idx_size = len(valid_idxs)
+  if valid_idx_size:
     # Get two random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\1\bin strategy
     Xst = Xr[:, 0] - Xr[:, 1]
     Xst *= operation_weight
@@ -171,10 +174,9 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
-    crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
-    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst[crossover_mask] = valid_pb_positions[crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
+    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -210,12 +212,12 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   # Get the mask for the pools with valid length
   valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
   valid_idxs = np.flatnonzero(valid_mask)
-  idx_size = len(valid_idxs)
-  if idx_size:
+  valid_idx_size = len(valid_idxs)
+  if valid_idx_size:
     # Get two random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\1\bin strategy
     X = self.population.position[valid_idxs]
     Xst = Xr[:, 0] - Xr[:, 1]
@@ -226,10 +228,9 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
-    crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
-    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst[crossover_mask] = valid_pb_positions[crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
+    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -263,12 +264,12 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   # Get the mask for the pools with valid length
   valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
   valid_idxs = np.flatnonzero(valid_mask)
-  idx_size = len(valid_idxs)
-  if idx_size:
+  valid_idx_size = len(valid_idxs)
+  if valid_idx_size:
     # Get three random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\2\bin strategy
     X = self.population.position[valid_idxs]
     Xst = Xr[:, 1] - Xr[:, 2]
@@ -279,10 +280,9 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
-    crossover_mask = binomial_crossover_mask(self.params, idx_size)
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=idx_size)
-    valid_pb_positions = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst[crossover_mask] = valid_pb_positions[crossover_mask]
+    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
+    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
+    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])

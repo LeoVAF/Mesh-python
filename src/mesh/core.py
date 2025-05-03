@@ -409,6 +409,9 @@ class Mesh():
         
         Note:
             The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with rank zero.
+        
+        Returns:
+            :type:`np.ndarray[np.integer]`: A numpy array with the indices of the current population that were selected.
         '''
 
         population_size = self.params.population_size
@@ -438,6 +441,8 @@ class Mesh():
         pb_idxs = np.concatenate((prev_idxs, current_idxs), axis=0)
         self.population.personal_best_fit[:] = self.population.personal_best_fit[pb_idxs]
         self.population.personal_best_pos[:] = self.population.personal_best_pos[pb_idxs]
+        # Return the indices of the current population that were selected
+        return current_idxs
 
     def update_personal_best(self, pop_indices: np.ndarray[np.integer]) -> None:
         ''' Updates the personal guides of the particles by the population index.
@@ -534,9 +539,9 @@ class Mesh():
                     # Apply the movviment to the particles
                     self.move_population()
                     # Select the best particles from those before and after movement
-                    self.population_selection()
+                    selected_idxs = self.population_selection()
                     # Update the personal best
-                    self.update_personal_best(np.arange(self.params.population_size))
+                    self.update_personal_best(selected_idxs)
                     # Get the fronts
                     self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                     # Update memory
