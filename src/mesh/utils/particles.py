@@ -77,8 +77,8 @@ class Population:
         self.fitness = np.full((params.population_size, params.objective_dim), np.inf)
         self.rank= np.empty(params.population_size, dtype=int)
         if params.global_best_attribution_type < 2:
-            self.sigma = np.full((params.population_size, comb(params.objective_dim, 2)), np.inf)
-        self.global_best = np.empty((params.population_size, params.position_dim))
+            self.sigma = np.full((params.population_size, comb(params.objective_dim, 2)), np.nan)
+        self.global_best = np.full((params.population_size, params.position_dim), np.nan)
         self.personal_best_pos = np.repeat(self.position[:, np.newaxis, :], params.max_personal_guides, axis=1)
         self.personal_best_fit = np.empty((params.population_size, params.max_personal_guides, params.objective_dim))
 

@@ -126,7 +126,7 @@ def sigma_method_in_fronts(self: Mesh) -> None:
     current_front = fronts[i]
     nearest_idxs = nearest_sigma_in_fronts(self, current_front, search_front)
     search_front = current_front
-    self.population.global_best[nearest_idxs] = self.population.position[nearest_idxs]
+    self.population.global_best[current_front] = self.population.position[nearest_idxs]
 
 def random_in_memory(self: Mesh) -> None:
   ''' Global best attribution with random choice in memory under an uniform distribution. The global best for each particle in the population will be a random particle in memory.
