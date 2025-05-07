@@ -22,11 +22,11 @@ def run_mesh(experiment_name,
 	position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
 	max_iterations = 0 # Maximum number of iterations (not used if it less than one)
 	max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
-	population_size = 100 # Population size
+	population_size = 50 # Population size
 	num_final_solutions = population_size # Number of final solutions
 	memory_size = population_size # Maximum number of particles in memory
-	communication_probability = 0.05 # Communication probability
-	mutation_rate = 0.2 # Mutation rate
+	communication_probability = 0.7 # Communication probability
+	mutation_rate = 0.4 # Mutation rate
 	personal_guide_array_size = 3 # Number of personal guides
 	random_state = None # Defines a seed for random numbers (not used if it is None)
 
@@ -104,13 +104,13 @@ def list_of_funcs(func_name, position_dim, objective_dim):
 
 if __name__ == "__main__":
 	# Parameter list
-	mesh_exp = ['dtlz1', 'dtlz2', 'dtlz4', 'dtlz7'] # ['zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
+	mesh_exp = ['dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7', 'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
 	mesh_runs = [30]
 	mesh_pos_dim = [10]
 	mesh_obj_dim = [2]
-	mesh_global_best_type = [0] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
-	mesh_dm_pool_type = [0] # 0 -> V1 | 1 -> V2 | 2 -> V3
-	mesh_differential_evolution_type = [0] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
+	mesh_global_best_type = [0,1,2,3] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
+	mesh_dm_pool_type = [0,1,2] # 0 -> V1 | 1 -> V2 | 2 -> V3
+	mesh_differential_evolution_type = [0,1,2,3,4] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 	params_list = [
 		[mf, runs, p_dim, obj_dim, list_of_funcs(mf, p_dim, obj_dim), gb_type, pool_type, de_type]
 		for mf in mesh_exp
@@ -123,5 +123,5 @@ if __name__ == "__main__":
 	]
 
 	# Execute in parallel
-	workers = 16
+	workers = 24
 	resultados = execute_with_parallelism(run_mesh, params_list, max_workers=workers)
