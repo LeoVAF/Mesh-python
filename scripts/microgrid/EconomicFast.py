@@ -1,4 +1,4 @@
-from math import ceil
+from math import floor
 
 def economic_fast(gridc, Pl, Fg, cwh, max_pv, num_wt, bat_DoD, bat_cap, select_bat, Edch, Emet, metering_compensation):
     exch_rate = 1.14 #-----------> Exchange rate €$ to US$
@@ -43,34 +43,43 @@ def economic_fast(gridc, Pl, Fg, cwh, max_pv, num_wt, bat_DoD, bat_cap, select_b
     OM = 20 # Percentage of initial costs [%]
     # rated power
     DSL_P = 1 #---------------->4 formerly
+    WT_P=5
     
     ####### Economic analysis #######
-    k_grid = (gridc[gridc != 0]/1).sum() # Total consumption from grid
-    fuel_consumption = Fg * k_grid # Fuel consuption in one year for gridc
+    k = (gridc[gridc != 0]/1).sum() # Total consumption from grid
+    fuel_consumption = Fg * k # Fuel consuption in one year for gridc
+    k = DSL_LF/k
+    if k<PRJ_LF:
+        n=floor(PRJ_LF/k) # n is number of repalcement for gridc in project life time
+        price_d=DSL_COST*DSL_P*n
+    else:
+        k_d=PRJ_LF
+        price_d=DSL_COST*DSL_P
 
     ####### Net metering #######
-    k_met = (Emet[Emet != 0]/1).sum() # Total metering [kWh]
-    fuel_consumption += (1 - metering_compensation) * Fg * k_met # Fuel consumption in one year for gridc
-
-    k = k_grid + k_met
-    k = DSL_LF/k # Year life time
-    if k < PRJ_LF:
-        n = ceil(PRJ_LF/k) # n is number of repalcement for gridc in project life time
-        price_d = DSL_COST*DSL_P*n 
-    else:
-        k_d = PRJ_LF
-        price_d = DSL_COST*DSL_P
+    price_m = 0
+    if metering_compensation > 0:
+        k = (Emet[Emet != 0]/1).sum() # Total metering [kWh]
+        fuel_consumption += (1 - metering_compensation) * Fg * k # Fuel consumption in one year for gridc
+        k = DSL_LF/k # Year life time
+        if k < PRJ_LF:
+            n = floor(PRJ_LF/k) # n is number of repalcement for gridc in project life time
+            price_m = DSL_COST*DSL_P*n 
+        else:
+            k_d = PRJ_LF
+            price_m = DSL_COST*DSL_P
         
     ####### Battery cost #######
-    k = ceil(PRJ_LF/BAT_LF)
-    bat_price = BAT_CAP_COST*cwh*ceil(PRJ_LF/BAT_LF) + BAT_BOPT # Added BoP Cost
-    pv_price = PV_COST*max_pv*ceil(PRJ_LF/PV_LF)
-    wt_price = WT_COST*num_wt*ceil(PRJ_LF/WT_LF)
+    k = floor(PRJ_LF/BAT_LF)
+    bat_price = BAT_CAP_COST*cwh*floor(PRJ_LF/BAT_LF) + BAT_BOPT # Added BoP Cost
     dc = (BAT_CAP_COST*cwh)/(BAT_cycle*cwh*bat_DoD)
+
+    pv_price = PV_COST*max_pv # *floor(PRJ_LF/PV_LF)
+    wt_price = WT_COST*WT_P*num_wt # *floor(PRJ_LF/WT_LF)
 
     ####### HGMS costs #######
     i = (INTREST-INFLATION)/100 # Real interest rate = monetary interest rate-rate of inflation
-    initial_cost = wt_price + pv_price + bat_price + price_d + INV_COST + PV_reg + Wind_reg
+    initial_cost = wt_price + pv_price + bat_price + price_d + INV_COST + PV_reg + Wind_reg + price_m
     OM = initial_cost*(OM/100)
     initial_cost = initial_cost+OM # Adding operation and maintenance cost
 
@@ -84,4 +93,3 @@ def economic_fast(gridc, Pl, Fg, cwh, max_pv, num_wt, bat_DoD, bat_cap, select_b
     price_electricity = Anual_cost/Anual_load
 
     return price_electricity
-

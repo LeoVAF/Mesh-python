@@ -34,11 +34,11 @@ def techno_ka(max_pv, num_wt, bat_DoD, bat_cap, select_bat, solar_data, wind_dat
     del tc
     del solar_data
 
-    factor = 3.5 # 5.3(loadres)    #3.5(loadin)
+    factor = 4 # 5.3(loadres)    #3.5(loadin)
   
     load  = np.concatenate((load, [load[-1]])) * factor  
 
-    uinv = 0.75 # System efficiency
+    uinv = 0.7 # System efficiency
     bat_efficiency_list = [0.765,0.90,0.92,0.96,0.94,0.938,0.9155,0.95,0.86,0.855,0.70,0.80,0.75,0.70]
     bat_efficiency = bat_efficiency_list[select_bat]; # Battery efficiency [%]
 
@@ -55,7 +55,7 @@ def techno_ka(max_pv, num_wt, bat_DoD, bat_cap, select_bat, solar_data, wind_dat
     uw = 0.95 #
     vco = 20 # Cut out -------------------> changed from 40 to 25 m/s
     vci = 3 # Cut in 2.5
-    vr = 12 # Rated speed(m/s)
+    vr = 9 # Rated speed(m/s)
     pr = 30 # Rated power(kW) 5
     alfa = 0.1 # For heavily forested landscape
     pmax = 30 # Maximum output power [kWh]

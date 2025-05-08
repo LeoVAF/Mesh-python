@@ -1,10 +1,12 @@
 from mesh.core import *
 from mesh.parameters import MeshParameters
+from microgrid.techno_ka import techno_ka
 
 from pymoo.problems import get_problem
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from pickle import dump
+from functools import partial
 
 import numpy as np
 
@@ -18,11 +20,11 @@ def run_mesh(experiment_name,
 						dm_pool_type,
 						dm_operation_type):
 
-	position_min_value = np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
-	position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
+	position_min_value = np.array([10, 1, 50]) # np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
+	position_max_value = np.array([450, 5, 500]) # np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
 	max_iterations = 0 # Maximum number of iterations (not used if it less than one)
-	max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
-	population_size = 50 # Population size
+	max_fitness_eval = 3000 # Maximum fitness evaluations (not used if it is less than one)
+	population_size = 100 # Population size
 	num_final_solutions = population_size # Number of final solutions
 	memory_size = population_size # Maximum number of particles in memory
 	communication_probability = 0.7 # Communication probability
@@ -92,23 +94,40 @@ def execute_with_parallelism(func, params_list, max_workers=4):
 				results.append((params, None))
 	return results
 
+#################### Microgrid function #######################
+Path("result").mkdir(parents=False, exist_ok=True)
+solar_data = np.genfromtxt('scripts/microgrid/seasonal_data/solreal.txt')
+wind_data = np.genfromtxt('scripts/microgrid/seasonal_data/wind_data.txt')
+load_ind = np.genfromtxt('scripts/microgrid/seasonal_data/loadind.txt')
+load_res = np.genfromtxt('scripts/microgrid/seasonal_data/loadres.txt')
+def microgrid_func(args, bat_number, objective_dim):
+	r = techno_ka(args[0], args[1], 0.8, args[2], bat_number, solar_data, wind_data, load_ind)[:objective_dim]
+	#r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
+	r[-1] = -r[-1] # Maximizing renewable factor
+	return r
+################################################################
+
 def list_of_funcs(func_name, position_dim, objective_dim):
-	set1 = {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}
-	set2 = {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'}
-	if func_name.lower() in set1:
+	benchmark_set_1 = {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}
+	benchamrk_set_2 = {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'}
+	microgrid_dict = {'LAG':0, 'LTO':1, 'LCO':2, 'LFP':3, 'LMO':4, 'LNCMO':5, 'LNCAO':6, 'LPoly':7, 'NNC':8, 'NaS':9, 'NiC':10, 'NMH':11, 'RFV':12, 'ZnBr':13}
+	if func_name.lower() in benchmark_set_1:
 		return get_problem(func_name.lower(), n_var=position_dim).evaluate
-	elif func_name.lower() in set2:
+	elif func_name.lower() in benchamrk_set_2:
 		return get_problem(func_name.lower(), n_var=position_dim, n_obj=objective_dim).evaluate
+	elif func_name in microgrid_dict:
+		return partial(microgrid_func, bat_number=microgrid_dict[func_name], objective_dim=objective_dim)
 	else:
 		raise ValueError
 
 if __name__ == "__main__":
 	# Parameter list
-	mesh_exp = ['dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7', 'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
+	# mesh_exp = ['dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7', 'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
+	mesh_exp = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
 	mesh_runs = [30]
-	mesh_pos_dim = [10]
-	mesh_obj_dim = [2]
-	mesh_global_best_type = [0,1,2,3] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
+	mesh_pos_dim = [3]
+	mesh_obj_dim = [3]
+	mesh_global_best_type = [0,1] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
 	mesh_dm_pool_type = [0,1,2] # 0 -> V1 | 1 -> V2 | 2 -> V3
 	mesh_differential_evolution_type = [0,1,2,3,4] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 	params_list = [
