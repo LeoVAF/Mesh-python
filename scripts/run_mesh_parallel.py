@@ -109,7 +109,8 @@ def microgrid_func(args, bat_number, objective_dim):
 
 def list_of_funcs(func_name, position_dim, objective_dim):
 	benchmark_set_1 = {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}
-	benchamrk_set_2 = {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'}
+	benchamrk_set_2 = {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7',
+										'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}
 	microgrid_dict = {'LAG':0, 'LTO':1, 'LCO':2, 'LFP':3, 'LMO':4, 'LNCMO':5, 'LNCAO':6, 'LPoly':7, 'NNC':8, 'NaS':9, 'NiC':10, 'NMH':11, 'RFV':12, 'ZnBr':13}
 	if func_name.lower() in benchmark_set_1:
 		return get_problem(func_name.lower(), n_var=position_dim).evaluate
@@ -122,8 +123,8 @@ def list_of_funcs(func_name, position_dim, objective_dim):
 
 if __name__ == "__main__":
 	# Parameter list
-	# mesh_exp = ['dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7', 'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
-	mesh_exp = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
+	mesh_exp = ['dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7', 'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
+	# mesh_exp = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
 	mesh_runs = [30]
 	mesh_pos_dim = [3]
 	mesh_obj_dim = [3]

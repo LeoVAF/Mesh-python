@@ -173,7 +173,7 @@ def techno_ka(max_pv, num_wt, bat_DoD, bat_cap, select_bat, solar_data, wind_dat
     LOLP=k/8640
     reliability=sum(aa)/sum(Pl)
 
-    metering_compensation = 0.0 # 0.25
+    metering_compensation = 0.25
 
     price_electricity = economic_fast(gridc, Pl, Fg, cwh, max_pv, num_wt, bat_DoD, bat_cap, select_bat, Edch, Emet, metering_compensation)
     ali=[Pp[:168], Pw[:168], Eb[:168], gridc[:168], Pl[:168], Edump[:168]]

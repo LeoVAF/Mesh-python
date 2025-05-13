@@ -61,13 +61,14 @@ def economic_fast(gridc, Pl, Fg, cwh, max_pv, num_wt, bat_DoD, bat_cap, select_b
     if metering_compensation > 0:
         k = (Emet[Emet != 0]/1).sum() # Total metering [kWh]
         fuel_consumption += (1 - metering_compensation) * Fg * k # Fuel consumption in one year for gridc
-        k = DSL_LF/k # Year life time
-        if k < PRJ_LF:
-            n = floor(PRJ_LF/k) # n is number of repalcement for gridc in project life time
-            price_m = DSL_COST*DSL_P*n 
-        else:
-            k_d = PRJ_LF
-            price_m = DSL_COST*DSL_P
+        if k != 0:
+            k = DSL_LF/k # Year life time
+            if k < PRJ_LF:
+                n = floor(PRJ_LF/k) # n is number of repalcement for gridc in project life time
+                price_m = DSL_COST*DSL_P*n 
+            else:
+                k_d = PRJ_LF
+                price_m = DSL_COST*DSL_P
         
     ####### Battery cost #######
     k = floor(PRJ_LF/BAT_LF)
