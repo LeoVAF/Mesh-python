@@ -50,13 +50,13 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid/seasonal_data/loadres.txt')
     
-    num_runs = 1 # Number of runs
+    num_runs = 30 # Number of runs
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 0
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'dtlz1'
+    experiment_name = 'zdt1'
 
     objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
@@ -81,7 +81,6 @@ def main():
     max_iterations = 0 # Maximum number of iterations (not used if it less than one)
     max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
     population_size = 50 # Population size
-    num_final_solutions = population_size # Number of final solutions
     memory_size = population_size # Maximum number of particles in memory
 
     communication_probability =  0.2 # Communication probability
@@ -123,16 +122,20 @@ def main():
         else:
             combined_P = np.vstack((combined_P, Pos))
             combined_F = np.vstack((combined_F, Fit))
+    # Getting the unique points
+    unique_combined_P, unique_idxs = np.unique(combined_P, axis=0, return_index=True)
+    unique_combined_F = combined_F[unique_idxs]
     # Sorting the vector Fit
     # Return: (non dominated front, domination list, domination counter, non domination ranks)
-    if len(combined_F) == 1:
+    if len(unique_combined_F) == 1:
         ndf = [[0]]
     else:
-        ndf, _, _, _ = fast_non_dominated_sorting(points=combined_F)
-    n = min(num_final_solutions, len(ndf[0]))
+        ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_F)
+    n = len(ndf[0])
     # Get the best indexes based on number of final solutions
-    best_idx = select_best_N_mo(combined_F, n)
-    result['combined'] = (combined_P[best_idx], combined_F[best_idx])
+    pareto_front = unique_combined_F[ndf[0]]
+    best_idx = select_best_N_mo(pareto_front, n)
+    result['combined'] = (unique_combined_P[ndf[0]][best_idx], pareto_front[best_idx])
     with open(f'result/{config}.pkl', 'wb') as file:
         dump(result, file)
 
