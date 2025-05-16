@@ -34,9 +34,10 @@
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
 from microgrid.techno_ka import techno_ka
+from problems import get_problem
 
 from pathlib import Path
-from pymoo.problems import get_problem
+# from pymoo.problems import get_problem
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo
 from pickle import dump
@@ -50,7 +51,7 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid/seasonal_data/loadres.txt')
     
-    num_runs = 30 # Number of runs
+    num_runs = 1 # Number of runs
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 0
@@ -60,21 +61,15 @@ def main():
 
     objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
-    position_min_value = np.array([0]*position_dim) # Lower bound of problem
-    position_max_value = np.array([1]*position_dim) # Upper bound of problem
+    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
+    
     # position_min_value = np.array([10, 1, 100]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
     # position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
-    
     # def func(args):
     #     r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[:objective_dim]
     #     #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
     #     r[-1] = -r[-1] # Maximizing renewable factor
     #     return r
-    
-    if experiment_name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}:
-        func = get_problem(experiment_name, n_var=position_dim).evaluate
-    else:
-        func = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim).evaluate
 
     num_proc = None # Number of processes to execute the fitness function in parallel
 
