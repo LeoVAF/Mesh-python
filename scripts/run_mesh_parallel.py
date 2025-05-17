@@ -1,8 +1,8 @@
 from mesh.core import *
 from mesh.parameters import MeshParameters
 from microgrid.techno_ka import techno_ka
+from problems import get_problem
 
-from pymoo.problems import get_problem
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from pickle import dump
@@ -15,13 +15,12 @@ Path("result").mkdir(parents=False, exist_ok=True)
 def run_mesh(experiment_name,
 						num_runs, # Number of executions
 						position_dim, objective_dim, # Number of variables and dimension of objective space
-						func, # Fitness Function
+						problem, # Tuple with function to be optimized and the limits of the design space
 						global_best_attribution_type,
 						dm_pool_type,
 						dm_operation_type):
 
-	position_min_value = np.array([0]*position_dim) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
-	position_max_value = np.array([1]*position_dim) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
+	func, position_min_value, position_max_value = problem
 	max_iterations = 0 # Maximum number of iterations (not used if it less than one)
 	max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
 	population_size = 50 # Population size
@@ -108,32 +107,26 @@ def microgrid_func(args, bat_number, objective_dim):
 	return r
 ################################################################
 
-def list_of_funcs(func_name, position_dim, objective_dim):
-	benchmark_set_1 = {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}
-	benchamrk_set_2 = {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7',
-										'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}
+def list_of_problems(func_name, position_dim, objective_dim):
 	microgrid_dict = {'LAG':0, 'LTO':1, 'LCO':2, 'LFP':3, 'LMO':4, 'LNCMO':5, 'LNCAO':6, 'LPoly':7, 'NNC':8, 'NaS':9, 'NiC':10, 'NMH':11, 'RFV':12, 'ZnBr':13}
-	if func_name.lower() in benchmark_set_1:
-		return get_problem(func_name.lower(), n_var=position_dim).evaluate
-	elif func_name.lower() in benchamrk_set_2:
-		return get_problem(func_name.lower(), n_var=position_dim, n_obj=objective_dim).evaluate
-	elif func_name in microgrid_dict:
-		return partial(microgrid_func, bat_number=microgrid_dict[func_name], objective_dim=objective_dim)
+	if func_name in microgrid_dict:
+		return partial(microgrid_func, bat_number=microgrid_dict[func_name], objective_dim=objective_dim), np.array([10, 1, 50]), np.array([500, 5, 500])
 	else:
-		raise ValueError
+		func, position_min_value, position_max_value = get_problem(func_name, n_var=position_dim, n_obj=objective_dim)
+		return func, position_min_value, position_max_value
 
 if __name__ == "__main__":
 	# Parameter list
-	mesh_exp = ['zdt1'] # ['dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7', 'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
 	# mesh_exp = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
+	mesh_exp = ['zdt1'] # ['dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7', 'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6']
 	mesh_runs = [30]
-	mesh_pos_dim = [10]
 	mesh_obj_dim = [2]
-	mesh_global_best_type = [0,1,2,3] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
+	mesh_pos_dim = [30]
+	mesh_global_best_type = [0,1] # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
 	mesh_dm_pool_type = [0,1,2] # 0 -> V1 | 1 -> V2 | 2 -> V3
 	mesh_differential_evolution_type = [0,1,2,3,4] # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 	params_list = [
-		[mf, runs, p_dim, obj_dim, list_of_funcs(mf, p_dim, obj_dim), gb_type, pool_type, de_type]
+		[mf, runs, p_dim, obj_dim, list_of_problems(mf, p_dim, obj_dim), gb_type, pool_type, de_type]
 		for mf in mesh_exp
 		for runs in mesh_runs
 		for p_dim in mesh_pos_dim
