@@ -92,8 +92,25 @@ def dtlz5(x, n_obj=3):
     F[i] = np.prod(np.cos(theta[:n_obj-i-1])) * np.sin(theta[n_obj-i-1]) * g_plus_1
   return F
 
-x = np.random.uniform(size=(5,))
-print(dtlz5(x, n_obj=3) - pymoo.problems.get_problem("dtlz5", n_var=5, n_obj=3).evaluate(x, return_values_of=["F"]))
+def dtlz6(x, n_obj=3):
+  g_plus_1 = 1 + (np.sum(x[n_obj-1:]**0.1))
+  theta = np.zeros(n_obj-1)
+  theta[0] = x[0]*(np.pi / 2)
+  theta[1:] = np.pi/(4*g_plus_1)*(1 + 2*(g_plus_1-1)*x[1:n_obj-1])
+  F = np.zeros(n_obj)
+  F[0] = np.prod(np.cos(theta)) * g_plus_1
+  F[-1] = np.sin(theta[0]) * g_plus_1
+  for i in range(1, n_obj-1):
+    F[i] = np.prod(np.cos(theta[:n_obj-i-1])) * np.sin(theta[n_obj-i-1]) * g_plus_1
+  return F
+
+def dtlz7(x, n_obj=3):
+  g = 1 + 9 * (np.sum(x[n_obj-1:]) / (len(x) - n_obj + 1))
+  F = np.zeros(n_obj)
+  F[:n_obj-1] = x[:n_obj-1]
+  h = n_obj - np.sum(F[:n_obj-1] * (1 + np.sin(3*np.pi*F[:n_obj-1])) / (1 + g))
+  F[-1] = (1 + g) * h
+  return F
 
 def get_problem(name, n_var, n_obj):
   # Validation of inputs
@@ -102,18 +119,14 @@ def get_problem(name, n_var, n_obj):
   if name in {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'} and n_var < n_obj:
     raise ValueError(f"Problem {name} requires at least {n_obj} variables.")
   # Problem selection
-  if name == 'zdt1':
-    return zdt1, np.array([0.0]*n_var), np.array([1.0]*n_var)
-  elif name == 'zdt2':
-    return zdt2, np.array([0.0]*n_var), np.array([1.0]*n_var)
-  elif name == 'zdt3':
-    return zdt3, np.array([0.0]*n_var), np.array([1.0]*n_var)
+  if name == {'zdt1', 'zdt2', 'zdt3', 'zdt6'}:
+    func = {'zdt1':zdt1, 'zdt2':zdt2, 'zdt3':zdt3, 'zdt6':zdt6}
+    return func[name], np.array([0.0]*n_var), np.array([1.0]*n_var)
   elif name == 'zdt4':
     return zdt4, np.array([0.0] + [-5.0]*(n_var-1)), np.array([1] + [5.0]*(n_var-1))
-  elif name == 'zdt6':
-    return zdt6, np.array([0.0]*n_var), np.array([1.0]*n_var)
-  elif name == 'dtlz1':
-    return partial(dtlz1, n_obj=n_obj), np.array([0.0]*n_var), np.array([1.0]*n_var)
+  elif name in {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'}:
+    func = {'dtlz1':dtlz1, 'dtlz2':dtlz2, 'dtlz3':dtlz3, 'dtlz4':dtlz4, 'dtlz5':dtlz5, 'dtlz6':dtlz6, 'dtlz7':dtlz7}
+    return partial(func[name], n_obj=n_obj), np.array([0.0]*n_var), np.array([1.0]*n_var)
   else:
     raise ValueError(f"Problem {name} not found.")
 

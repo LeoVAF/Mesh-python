@@ -58,7 +58,7 @@ def main():
     select_bat = 0
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'dtlz1'
+    experiment_name = 'dtlz2'
 
     objective_dim = 3 # Number of objectives
     position_dim = 5 # Design space dimension
