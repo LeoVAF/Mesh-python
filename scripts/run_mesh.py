@@ -58,10 +58,10 @@ def main():
     select_bat = 0
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'zdt6'
+    experiment_name = 'dtlz1'
 
-    objective_dim = 2 # Number of objectives
-    position_dim = 10 # Design space dimension
+    objective_dim = 3 # Number of objectives
+    position_dim = 5 # Design space dimension
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
     
     # position_min_value = np.array([10, 1, 50]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
@@ -76,8 +76,8 @@ def main():
     max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
     population_size = 50 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability =  0.5 # Communication probability
-    mutation_rate = 0.5 # Mutation rate
+    communication_probability =  0.8 # Communication probability
+    mutation_rate = 0.8 # Mutation rate
     personal_guide_array_size = 3 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
