@@ -121,7 +121,7 @@ def get_problem(name, n_var, n_obj):
     raise ValueError(f"Problem {name} requires at least {n_obj} variables.")
   
   # Problem selection
-  if name == {'zdt1', 'zdt2', 'zdt3', 'zdt6'}:
+  if name in {'zdt1', 'zdt2', 'zdt3', 'zdt6'}:
     func = {'zdt1':zdt1, 'zdt2':zdt2, 'zdt3':zdt3, 'zdt6':zdt6}
     return func[name], np.array([0.0]*n_var), np.array([1.0]*n_var)
   elif name == 'zdt4':
