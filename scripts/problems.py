@@ -1,7 +1,7 @@
 import numpy as np
 from functools import partial
 from pygmo import fast_non_dominated_sorting
-import pymoo.problems
+from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
 
 def zdt1(x):
   f1 = x[0]
@@ -119,6 +119,7 @@ def get_problem(name, n_var, n_obj):
     raise ValueError(f"Problem {name} only supports 2 objectives.")
   if name in {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'} and n_var < n_obj:
     raise ValueError(f"Problem {name} requires at least {n_obj} variables.")
+  
   # Problem selection
   if name == {'zdt1', 'zdt2', 'zdt3', 'zdt6'}:
     func = {'zdt1':zdt1, 'zdt2':zdt2, 'zdt3':zdt3, 'zdt6':zdt6}
@@ -128,6 +129,14 @@ def get_problem(name, n_var, n_obj):
   elif name in {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'}:
     func = {'dtlz1':dtlz1, 'dtlz2':dtlz2, 'dtlz3':dtlz3, 'dtlz4':dtlz4, 'dtlz5':dtlz5, 'dtlz6':dtlz6, 'dtlz7':dtlz7}
     return partial(func[name], n_obj=n_obj), np.array([0.0]*n_var), np.array([1.0]*n_var)
+  elif name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
+    func = {'wfg1':WFG1(n_var=n_var, n_obj=n_obj).evaluate, 'wfg4':WFG4(n_var=n_var, n_obj=n_obj).evaluate, 'wfg5':WFG5(n_var=n_var, n_obj=n_obj).evaluate,
+            'wfg6':WFG6(n_var=n_var, n_obj=n_obj).evaluate, 'wfg7':WFG7(n_var=n_var, n_obj=n_obj).evaluate, 'wfg8':WFG8(n_var=n_var, n_obj=n_obj).evaluate,
+            'wfg9':WFG9(n_var=n_var, n_obj=n_obj).evaluate}
+    return func[name], np.array([0.0]*n_var), np.array([2.0*i for i in range(1, n_var+1)])
+  elif name in {'wfg2', 'wfg3'}:
+    func = {'wfg2':WFG2(n_var=n_var, n_obj=n_obj).evaluate, 'wfg3':WFG3(n_var=n_var, n_obj=n_obj).evaluate}
+    return func[name], np.array([0.0]*n_var), np.array([2.0*i for i in range(1, n_var+1)])
   else:
     raise ValueError(f"Problem {name} not found.")
 
@@ -245,12 +254,18 @@ def dtlz7_pareto(N, n_obj=3):
     non_dominated_points = all_points[ndf[0]]
     return non_dominated_points[np.argsort(non_dominated_points[:, 0])]
 
-dtlz7_pareto(50, 3)
-
 def get_pareto(name, N, n_var, n_obj):
   pareto_set = {'zdt1':zdt1_pareto(N), 'zdt2':zdt2_pareto(N), 'zdt3':zdt3_pareto(N), 'zdt4':zdt4_pareto(N), 'zdt6':zdt6_pareto(N),
-                'dtlz1':dtlz1_pareto(N, n_obj), 'dtlz2':dtlz2_pareto(N, n_obj), 'dtlz3':dtlz3_pareto(N, n_obj), 'dtlz4':dtlz4_pareto(N, n_obj), 'dtlz5':dtlz5_pareto(N, n_obj), 'dtlz6':dtlz6_pareto(N, n_obj), 'dtlz7':dtlz7_pareto(N, n_obj)}
+                'dtlz1':dtlz1_pareto(N, n_obj), 'dtlz2':dtlz2_pareto(N, n_obj), 'dtlz3':dtlz3_pareto(N, n_obj), 'dtlz4':dtlz4_pareto(N, n_obj), 'dtlz5':dtlz5_pareto(N, n_obj),
+                'dtlz6':dtlz6_pareto(N, n_obj), 'dtlz7':dtlz7_pareto(N, n_obj),
+                'wfg1':WFG1(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N), 'wfg4':WFG4(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N),
+                'wfg5':WFG5(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N), 'wfg6':WFG6(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N),
+                'wfg7':WFG7(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N), 'wfg8':WFG8(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N),
+                'wfg9':WFG9(n_var=n_var, n_obj=n_obj).pareto_front()}
   if name in pareto_set:
+    return pareto_set[name]
+  elif name in {'wfg2', 'wfg3'}:
+    pareto_set = {'wfg2':WFG2(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N), 'wfg3':WFG3(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)}
     return pareto_set[name]
   else:
     raise ValueError(f"Pareto front for {name} not found.")
