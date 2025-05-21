@@ -12,7 +12,7 @@ import pstats
 
 objective_dim = 5
 position_dim = 10
-max_iterations = 0
+max_iterations = None
 max_fitness_eval = 10000
 population_size = 500
 

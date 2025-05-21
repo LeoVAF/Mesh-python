@@ -21,7 +21,7 @@ def run_mesh(experiment_name,
 						dm_operation_type):
 
 	func, position_min_value, position_max_value = problem
-	max_iterations = 0 # Maximum number of iterations (not used if it less than one)
+	max_iterations = None # Maximum number of iterations (not used if it less than one)
 	max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
 	population_size = 50 # Population size
 	memory_size = population_size # Maximum number of particles in memory

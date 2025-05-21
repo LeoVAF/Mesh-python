@@ -153,20 +153,20 @@ class Mesh():
         else:
             self.evaluation_way = self.sequential_fitness_evaluation
         # Check if generation is a stopping criterion
-        if params.max_gen > 0:
+        if params.max_gen != None:
             self.count_generation = self.stopping_by_generation
         else:
             self.count_generation = lambda : None
         # Check if the fitness evaluation is a stopping criterion
-        if params.max_fit_eval > 0:
+        if params.max_fit_eval != None:
             self.evaluate = self.stopping_by_fitness_eval
         else:
             self.evaluate = self.evaluation_way
         # Choose the way to update the algorithm progress bar
-        if params.max_gen == 0:
+        if params.max_gen == None:
             self.total_bar = params.max_fit_eval
             self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
-        elif params.max_fit_eval == 0:
+        elif params.max_fit_eval == None:
             self.total_bar = params.max_gen
             self.update_progress_bar = self.update_progress_bar_by_generation
         else:

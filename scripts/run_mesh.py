@@ -58,7 +58,7 @@ def main():
     select_bat = 0
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'zdt1'
+    experiment_name = 'zdt4'
 
     objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
@@ -72,9 +72,9 @@ def main():
     #     r[-1] = -r[-1] # Maximizing renewable factor
     #     return n
 
-    max_iterations = 0 # Maximum number of iterations (not used if it less than one)
-    max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
-    population_size = 500 # Population size
+    max_iterations = None # Maximum number of iterations
+    max_fitness_eval = 15000 # Maximum fitness evaluations
+    population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
     communication_probability =  0.8 # Communication probability
     mutation_rate = 0.8 # Mutation rate

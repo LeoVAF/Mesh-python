@@ -257,15 +257,26 @@ def dtlz7_pareto(N, n_obj=3):
 def get_pareto(name, N, n_var, n_obj):
   pareto_set = {'zdt1':zdt1_pareto(N), 'zdt2':zdt2_pareto(N), 'zdt3':zdt3_pareto(N), 'zdt4':zdt4_pareto(N), 'zdt6':zdt6_pareto(N),
                 'dtlz1':dtlz1_pareto(N, n_obj), 'dtlz2':dtlz2_pareto(N, n_obj), 'dtlz3':dtlz3_pareto(N, n_obj), 'dtlz4':dtlz4_pareto(N, n_obj), 'dtlz5':dtlz5_pareto(N, n_obj),
-                'dtlz6':dtlz6_pareto(N, n_obj), 'dtlz7':dtlz7_pareto(N, n_obj),
-                'wfg1':WFG1(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N), 'wfg4':WFG4(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N),
-                'wfg5':WFG5(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N), 'wfg6':WFG6(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N),
-                'wfg7':WFG7(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N), 'wfg8':WFG8(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N),
-                'wfg9':WFG9(n_var=n_var, n_obj=n_obj).pareto_front()}
+                'dtlz6':dtlz6_pareto(N, n_obj), 'dtlz7':dtlz7_pareto(N, n_obj)}
   if name in pareto_set:
     return pareto_set[name]
-  elif name in {'wfg2', 'wfg3'}:
-    pareto_set = {'wfg2':WFG2(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N), 'wfg3':WFG3(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)}
-    return pareto_set[name]
+  elif name == 'wfg1':
+    return WFG1(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
+  elif name == 'wfg2':
+    return WFG2(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
+  elif name == 'wfg3':
+    return WFG3(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
+  elif name == 'wfg4':
+    return WFG4(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
+  elif name == 'wfg5':
+    return WFG5(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
+  elif name == 'wfg6':
+    return WFG6(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
+  elif name == 'wfg7':
+    return WFG7(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
+  elif name == 'wfg8':
+    return WFG8(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
+  elif name == 'wfg9':
+    return WFG9(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
   else:
     raise ValueError(f"Pareto front for {name} not found.")

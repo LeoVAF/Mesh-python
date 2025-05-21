@@ -22,7 +22,7 @@ class MeshParameters:
             
         population_size (:type:`int | np.integer`): Population size. Must be a positive integer (> 0).
         
-        memory_size (:type:`int | np.integer | None`): Number of particles in memory. Default is None. Must be a positive integer (> 0) or ``None``.
+        memory_size (:type:`int | np.integer | None`): Number of particles in memory. Default is None. Must be a positive integer (> 0) or ``None``. If it is ``None``, the memory size will be equal to population size.
         
         global_best_attribution_type (:type:`{0, 1, 2, 3}`): Global best attribution operation type. See :attr:`~mesh.operations.global_best_attribution.global_best_attribution_options`.
         
@@ -34,9 +34,9 @@ class MeshParameters:
         
         mutation_rate (:type:`int | float | np.number`): Mutation rate. Must be a number between 0 and 1, inclusive.
         
-        max_gen (:type:`int | np.integer`): Maximum number of generations. Must be an integer.
+        max_gen (:type:`int | np.integer`): Maximum number of generations. Must be a non-negative integer or ``None``.
         
-        max_fit_eval (:type:`int | np.integer`): Maximum number of fitness evaluations. Must be an integer.
+        max_fit_eval (:type:`int | np.integer`): Maximum number of fitness evaluations. Must be a non-negative integer or ``None``.
         
         max_personal_guides (:type:`int | np.integer`): Maximum number of personal guides. Must be a positive integer (> 0).
 
@@ -98,10 +98,10 @@ class MeshParameters:
         ''' Communication/cooperation probability. It must be a number between 0 and 1. '''
         self.mutation_rate: int | float
         ''' Mutation rate. '''
-        self.max_gen: int | np.integer
-        ''' Maximum number of generations. If the parameter ``max_gen`` is negative, so it will be equal to 0. '''
-        self.max_fit_eval: int | np.integer
-        ''' Maximum number of fitness evaluations. If the parameter ``max_fit_eval`` is negative, so it will be equal to 0. '''
+        self.max_gen: int | np.integer | None
+        ''' Maximum number of generations. It won't be used if it's ``None``. '''
+        self.max_fit_eval: int | np.integer | None
+        ''' Maximum number of fitness evaluations. It won't be used if it's ``None``. '''
         self.max_personal_guides: int | np.integer
         ''' Maximum number of personal guides. '''
         self.random_state: int | Optional[np.integer]
@@ -145,13 +145,13 @@ class MeshParameters:
         is_between_inclusive(mutation_rate, 'mutation_rate', 0, 1)
         self.mutation_rate = mutation_rate
         # Set the maximum number of generations
-        assert_type(max_gen, 'max_gen', (int, np.integer))
-        self.max_gen = max(max_gen, 0)
+        assert_type(max_gen, 'max_gen', (int, np.integer), is_optional=True)
+        self.max_gen = max_gen
         # Set the maximum number of fitness evaluations
-        assert_type(max_fit_eval, 'max_fit_eval', (int, np.integer))
-        self.max_fit_eval = max(max_fit_eval, 0)
-        if self.max_gen == 0 and self.max_fit_eval == 0:
-            raise ValueError('At least one of the parameters max_gen and max_fit_eval must be greater than zero.')
+        assert_type(max_fit_eval, 'max_fit_eval', (int, np.integer), is_optional=True)
+        self.max_fit_eval = max_fit_eval
+        if self.max_gen == None and self.max_fit_eval == None:
+            raise ValueError('At least one of the parameters max_gen and max_fit_eval must be not None.')
         # Set the number of personal guides
         is_greater_in_type(max_personal_guides, 'max_personal_guides', (int, np.integer), 0)
         self.max_personal_guides = max_personal_guides
