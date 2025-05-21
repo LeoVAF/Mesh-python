@@ -20,6 +20,7 @@ def run_mesh(experiment_name,
 						dm_pool_type,
 						dm_operation_type):
 
+	num_final_solutions = 200
 	func, position_min_value, position_max_value = problem
 	max_iterations = None # Maximum number of iterations (not used if it less than one)
 	max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
@@ -68,7 +69,7 @@ def run_mesh(experiment_name,
 				ndf = [[0]]
 		else:
 				ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_F)
-		n = len(ndf[0])
+		n = min(len(ndf[0]), num_final_solutions)
 		# Get the best indexes based on number of final solutions
 		pareto_front = unique_combined_F[ndf[0]]
 		best_idx = select_best_N_mo(pareto_front, n)

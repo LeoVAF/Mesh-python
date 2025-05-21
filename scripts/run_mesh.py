@@ -51,16 +51,17 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid/seasonal_data/loadres.txt')
     
-    num_runs = 1 # Number of runs
+    num_runs = 10 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
+    num_final_solutions = 200
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 0
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'wfg2'
+    experiment_name = 'zdt1'
 
-    objective_dim = 3 # Number of objectives
+    objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
     
@@ -123,7 +124,7 @@ def main():
         ndf = [[0]]
     else:
         ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_F)
-    n = len(ndf[0])
+    n = min(len(ndf[0]), num_final_solutions)
     # Get the best indexes based on number of final solutions
     pareto_front = unique_combined_F[ndf[0]]
     best_idx = select_best_N_mo(pareto_front, n)
