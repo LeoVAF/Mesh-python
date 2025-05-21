@@ -286,6 +286,6 @@ def get_pareto(name, N, n_var, n_obj):
   elif name == 'wfg8':
     return WFG8(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
   elif name == 'wfg9':
-    return WFG9(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
+    return WFG9(n_var=n_var, n_obj=n_obj).pareto_front()
   else:
     raise ValueError(f"Pareto front for {name} not found.")
