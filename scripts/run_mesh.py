@@ -58,9 +58,9 @@ def main():
     select_bat = 0
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'zdt4'
+    experiment_name = 'wfg2'
 
-    objective_dim = 2 # Number of objectives
+    objective_dim = 3 # Number of objectives
     position_dim = 10 # Design space dimension
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
     
