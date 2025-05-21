@@ -244,15 +244,16 @@ def dtlz7_pareto(N, n_obj=3):
     all_points = np.column_stack((f1, f2(f1)))
     ndf, _, _, _ = fast_non_dominated_sorting(all_points)
     non_dominated_points = all_points[ndf[0]]
-    non_dominated_points = non_dominated_points[np.argsort(non_dominated_points[:, 0])]
-    points = []
-    step = 1/(N-1)
-    for i in range(len(non_dominated_points) - 1):
-      points.append(non_dominated_points[i])
-      if np.linalg.norm(non_dominated_points[i] - non_dominated_points[i + 1]) > np.linalg.norm(non_dominated_points[i] - np.array([(i+1)*step, f2((i+1)*step)])):
-        points.append(np.array([None]*n_obj))
-    points.append(non_dominated_points[-1])
-    return np.array(points)
+    return non_dominated_points
+    # non_dominated_points = non_dominated_points[np.argsort(non_dominated_points[:, 0])]
+    # points = []
+    # step = 1/(N-1)
+    # for i in range(len(non_dominated_points) - 1):
+    #   points.append(non_dominated_points[i])
+    #   if np.linalg.norm(non_dominated_points[i] - non_dominated_points[i + 1]) > np.linalg.norm(non_dominated_points[i] - np.array([(i+1)*step, f2((i+1)*step)])):
+    #     points.append(np.array([None]*n_obj))
+    # points.append(non_dominated_points[-1])
+    # return np.array(points)
   elif n_obj == 3:
     f = np.linspace(0, 1, N)
     f1, f2 = np.meshgrid(f, f)
