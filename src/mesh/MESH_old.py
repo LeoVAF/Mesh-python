@@ -164,9 +164,9 @@ class MESH_old:
             args_and_initial_state = []
             args_and_initial_state.append(args[0])
             args_and_initial_state.extend(self.params.initial_state)
-            return function(args_and_initial_state)
+            return function(np.array(args_and_initial_state))
         else:
-            return function(*args)
+            return function(np.array(*args))
 
     def fast_nondominated_sort(self, first_front_only=False, use_copy_population=False, specific_population=None):
         population = []

@@ -1,12 +1,16 @@
-import numpy as np
+from microgrid.techno_ka import techno_ka
+from problems import get_problem
 from mesh.MESH_old import *
-import pygmo as pg
-import pickle
+
 from tqdm import tqdm
 from pathlib import Path
-from microgrid.techno_ka import *
 
-from pymoo.problems import get_problem
+from pathlib import Path
+from tqdm import tqdm
+from pygmo import fast_non_dominated_sorting, select_best_N_mo
+from pickle import dump
+
+import numpy as np
 
 def main():
     Path("result").mkdir(parents=False, exist_ok=True)
@@ -16,32 +20,30 @@ def main():
     load_res = np.genfromtxt('scripts/microgrid/seasonal_data/loadres.txt')
     
     num_runs = 1 # Number of runs
+    num_final_solutions = 300
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 1
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
-    experiment_name = 'dtlz1'
+    experiment_name = 'zdt4'
 
     objectives_dim = 2 # Number of objectives
     optimizations_type = [False]*objectives_dim # Maximization (True) | Minimization (False) [LOLP, Price, RF]
     position_dim = 10 # Design space dimension
-    #func = lambda args : techno_ka(args[0], args[1], args[2], args[3], select_bat, solar_data, wind_data, load_ind)[:objectives_dim]
-    position_min_value = np.array([0]*position_dim) #[10, 1, 100] #, 0.2, 100] # Lower bound of problem [max PV generation, number of wind turbines, DoD, battery capacity]
-    position_max_value = np.array([1]*position_dim) #[450, 5, 500] #, 0.8, 500] # Upper bound of problem [max PV generation, number of wind turbines, DoD, battery capacity]
+
+    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objectives_dim)
+
+    # position_min_value = np.array([0]*position_dim) #[10, 1, 100] #, 0.2, 100] # Lower bound of problem [max PV generation, number of wind turbines, DoD, battery capacity]
+    # position_max_value = np.array([1]*position_dim) #[450, 5, 500] #, 0.8, 500] # Upper bound of problem [max PV generation, number of wind turbines, DoD, battery capacity]
     # def func(args):
     #     #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[:objectives_dim]
     #     r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
     #     r[-1] = -r[-1] # Maximizando o fator renovável
     #     return r
 
-    if experiment_name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}:
-        func = lambda x: get_problem(experiment_name, n_var=position_dim).evaluate(np.array(x))
-    else:
-        func = lambda x: get_problem(experiment_name, n_var=position_dim, n_obj=objectives_dim).evaluate(np.array(x))
-
     max_iterations = 0 #0 # Maximum number of iterations (not used if it is zero)
     max_fitness_eval = 15000 #100 # Maximum fitness evaluations
-    population_size = 50 #10 # Population size
+    population_size = 100 #10 # Population size
     num_final_solutions = population_size # Number of final solutions
     memory_size = population_size # Number of particles in memory
     memory_update_type = 1 # Not used yet
@@ -90,20 +92,22 @@ def main():
             combined_F = np.vstack((combined_F, Fit))
             combined_P = np.vstack((combined_P, Pos))
 
+    # Getting the unique points
+    unique_combined_P, unique_idxs = np.unique(combined_P, axis=0, return_index=True)
+    unique_combined_F = combined_F[unique_idxs]
     # Sorting the vector Fit
     # Return: (non dominated front, domination list, domination counter, non domination ranks)
-    ndf, dl, dc, ndr = pg.fast_non_dominated_sorting(points=combined_F)
-    n = num_final_solutions
-    if len(ndf[0]) < num_final_solutions:
-        n = len(ndf[0])
+    if len(unique_combined_F) == 1:
+        ndf = [[0]]
+    else:
+        ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_F)
+    n = min(len(ndf[0]), num_final_solutions)
     # Get the best indexes based on number of final solutions
-    best_idx = pg.sort_population_mo(points = combined_F)[:n]
-    result['combined'] = (combined_P[best_idx], combined_F[best_idx])
-
-    ########################### Possible critical section ###########################
-    with open(f'result/{config}-MG.pkl', 'wb') as file:
-        pickle.dump(result, file)
-    #################################################################################
+    pareto_front = unique_combined_F[ndf[0]]
+    best_idx = select_best_N_mo(pareto_front, n)
+    result['combined'] = (unique_combined_P[ndf[0]][best_idx], pareto_front[best_idx])
+    with open(f'result/{config}.pkl', 'wb') as file:
+        dump(result, file)
 
 if __name__ == '__main__':
     main()
