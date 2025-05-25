@@ -1,6 +1,6 @@
 from mesh.core import *
 from mesh.parameters import MeshParameters
-from microgrid.techno_ka import techno_ka
+from microgrid_old.techno_ka import techno_ka
 from problems import get_problem
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -20,11 +20,11 @@ def run_mesh(experiment_name,
 						dm_pool_type,
 						dm_operation_type):
 
-	num_final_solutions = 200
+	num_final_solutions = 300
 	func, position_min_value, position_max_value = problem
 	max_iterations = None # Maximum number of iterations (not used if it less than one)
 	max_fitness_eval = 15000 # Maximum fitness evaluations (not used if it is less than one)
-	population_size = 50 # Population size
+	population_size = 100 # Population size
 	memory_size = population_size # Maximum number of particles in memory
 	communication_probability = 0.7 # Communication probability
 	mutation_rate = 0.4 # Mutation rate
@@ -97,10 +97,10 @@ def execute_with_parallelism(func, params_list, max_workers=4):
 
 #################### Microgrid function #######################
 Path("result").mkdir(parents=False, exist_ok=True)
-solar_data = np.genfromtxt('scripts/microgrid/seasonal_data/solreal.txt')
-wind_data = np.genfromtxt('scripts/microgrid/seasonal_data/wind_data.txt')
-load_ind = np.genfromtxt('scripts/microgrid/seasonal_data/loadind.txt')
-load_res = np.genfromtxt('scripts/microgrid/seasonal_data/loadres.txt')
+solar_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/solreal.txt')
+wind_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/wind_data.txt')
+load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
+load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
 def microgrid_func(args, bat_number, objective_dim):
 	r = techno_ka(args[0], args[1], 0.8, args[2], bat_number, solar_data, wind_data, load_ind)[:objective_dim]
 	#r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]

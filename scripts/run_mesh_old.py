@@ -1,4 +1,4 @@
-from microgrid.techno_ka import techno_ka
+from microgrid_old.techno_ka import techno_ka
 from problems import get_problem
 from mesh.MESH_old import *
 
@@ -14,10 +14,10 @@ import numpy as np
 
 def main():
     Path("result").mkdir(parents=False, exist_ok=True)
-    solar_data = np.genfromtxt('scripts/microgrid/seasonal_data/solreal.txt')
-    wind_data = np.genfromtxt('scripts/microgrid/seasonal_data/wind_data.txt')
-    load_ind = np.genfromtxt('scripts/microgrid/seasonal_data/loadind.txt')
-    load_res = np.genfromtxt('scripts/microgrid/seasonal_data/loadres.txt')
+    solar_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/solreal.txt')
+    wind_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/wind_data.txt')
+    load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
+    load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
     num_runs = 1 # Number of runs
     num_final_solutions = 300
