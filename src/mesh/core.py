@@ -354,9 +354,9 @@ class Mesh():
             
             .. math::
                 
-                x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot r),
+                x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot \vec{r}),
             
-            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution.
+            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\vec{r} \sim \mathcal{N}(0, 1)^m` is a number sampled from the Standard Gaussian Distribution.
         '''
 
         # Get the parameters
