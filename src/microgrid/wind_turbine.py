@@ -4,7 +4,7 @@ class WindTurbine:
   
   Args:
     n_turbines (:type:`int`): Number of wind turbines.
-    rated_power (:type:`int` | :type:`float`): Rated power of the wind turbine in kW.
+    rated_power (:type:`int | float`): Rated power of the wind turbine in kW.
 
   Raises:
     TypeError: If the input is not the expected type.

@@ -5,12 +5,12 @@ class Battery:
   Battery object for microgrid simulation.
 
   Args:
-    capacity (:type:`int` | :type:`float`): Battery capacity in kWh.
-    cost_per_kwh (:type:`int` | :type:`float`): Cost per kWh of the battery.
-    efficiency (:type:`int` | :type:`float`): Battery efficiency between 0 and 1.
-    lifetime (:type:`int` | :type:`float`): Battery lifetime in years.
+    capacity (:type:`int | float`): Battery capacity in kWh.
+    cost_per_kwh (:type:`int | float`): Cost per kWh of the battery.
+    efficiency (:type:`int | float`): Battery efficiency between 0 and 1.
+    lifetime (:type:`int | float`): Battery lifetime in years.
     number_of_cycles (:type:`int`): Number of cycles the battery can perform. 
-    depth_of_discharge (:type:`int` | :type:`float`): Depth of discharge between 0 and 1.
+    depth_of_discharge (:type:`int | float`): Depth of discharge between 0 and 1.
 
   Raises:
     TypeError: If the input is not the expected type.

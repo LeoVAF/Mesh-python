@@ -3,7 +3,7 @@ class PhotovoltaicPanel:
   Class representing a photovoltaic panel in a microgrid system.
   
   Args:
-    rated_power (:type:`int` | :type:`float`): The maximum power output of the photovoltaic panel in kilowatts (kW).
+    rated_power (:type:`int | float`): The maximum power output of the photovoltaic panel in kilowatts (kW).
   
   Raises:
     TypeError: If the input is not the expected type.

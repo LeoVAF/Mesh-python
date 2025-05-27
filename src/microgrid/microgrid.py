@@ -1,7 +1,7 @@
-from mesh.microgrid.photovoltaic_panel import PhotovoltaicPanel
-from mesh.microgrid.wind_turbine import WindTurbine
-from mesh.microgrid.battery import Battery
-from mesh.microgrid.public_grid import PublicGrid
+from microgrid.photovoltaic_panel import PhotovoltaicPanel
+from microgrid.wind_turbine import WindTurbine
+from microgrid.battery import Battery
+from microgrid.public_grid import PublicGrid
 
 import numpy as np
 
@@ -14,7 +14,10 @@ class Microgrid:
     temperature (:type:`np.ndarray[np.float64]`): A numpy array with the temperature in ºC.
     solar_radiation (:type:`np.ndarray[np.float64]`): A numpy array with solar radiation in Wh/m^2.
     wind_velocity (:type:`np.ndarray[np.float64]`): A numpy array with the wind velocity in m/s.
-    metering_compensation (:type:`float`): Compensation percentage when sending energy to the public grid between 0 and 1.
+    photovoltaic_panel (:class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` :type:`| None`): A :class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` instance.
+    wind_turbine (:class:`~microgrid.wind_turbine.WindTurbine` :type:`| None`): A :class:`~microgrid.wind_turbine.WindTurbine` instance.
+    battery (:class:`~microgrid.battery.Battery` :type:`| None`): A :class:`~microgrid.battery.Battery` instance.
+    public_grid (:class:`~microgrid.public_grid.PublicGrid` :type:`| None`): A :class:`~microgrid.public_grid.PublicGrid` instance.
 
   Raises:
     TypeError: If the input is not the expected type.
@@ -57,13 +60,13 @@ class Microgrid:
     self.wind_velocity = wind_velocity
     ''' Numpy array with wind velocity in m/s. '''
     self.photovoltaic_panel = photovoltaic_panel
-    ''' :class:`~mesh.microgrid.photovoltaic_panel.PhotovoltaicPanel` instance. '''
+    ''' :class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` instance. '''
     self.wind_turbine = wind_turbine
-    ''' :class:`~mesh.microgrid.wind_turbine.WindTurbine` instance. '''
+    ''' :class:`~microgrid.wind_turbine.WindTurbine` instance. '''
     self.battery = battery
-    ''' :class:`~mesh.microgrid.battery.Battery` instance. '''
+    ''' :class:`~microgrid.battery.Battery` instance. '''
     self.public_grid = public_grid
-    ''' :class:`~mesh.microgrid.PublicGrid` instance. '''
+    ''' :class:`~microgrid.PublicGrid` instance. '''
 
   def generate_energy():
     pass
