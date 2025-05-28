@@ -1,5 +1,8 @@
 from microgrid.microgrid import Microgrid
 from microgrid.photovoltaic_panel import PhotovoltaicPanel
+from microgrid.wind_turbine import WindTurbine
+from microgrid.battery import Battery
+from microgrid.public_grid import PublicGrid
 from microgrid_old.techno_ka import techno_ka
 
 import numpy as np
@@ -15,19 +18,22 @@ wind_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/wind_data.txt')
 load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
 
 # Economic input
+metering_compensation = 0
 exchange_rate = 1.14
 pv_cost = 1500 * exchange_rate
 
 temperature = np.repeat(np.array([12, 13, 15, 16, 19, 22, 24, 24, 23, 20, 16, 13]), 720)
 photovoltaic_panel = PhotovoltaicPanel(cost_per_kw=pv_cost, rated_power=max_pv)
-
+wind_turbine = WindTurbine()
+# battery = Battery()
+# public_grid = PublicGrid(metering_compensation=metering_compensation)
 
 microgrid = Microgrid(load=load_ind[:8640],
                       temperature=temperature[:8640],
                       solar_radiation=solar_data[:8640],
                       wind_velocity=wind_data[:8640],
                       photovoltaic_panel=photovoltaic_panel,
-                      wind_turbine=None,
+                      wind_turbine=wind_turbine,
                       battery=None,
                       public_grid=None)
 

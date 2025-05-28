@@ -30,8 +30,6 @@ def techno_ka(max_pv, num_wt, bat_DoD, bat_cap, select_bat, solar_data, wind_dat
     tc = solar_data * tc # MATLAB -> tc = g'.*tc';
     upv = 0.986 # PV efficiency with tilted angle>>98.6#
     p_pvout_hourly = upv * (max_pv * (solar_data / gref)) * (1 + kt * (tc - tref)) #output power(kw)_hourly
-    
-    print(p_pvout_hourly[:50])
 
     del tc
     del solar_data

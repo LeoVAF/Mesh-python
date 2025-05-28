@@ -29,6 +29,13 @@ class PhotovoltaicPanel:
     self.output_power = None
 
   def generate_energy(self, temperature, solar_radiation):
+    ''' Generate energy.
+    
+      Args:
+        temperature (np.ndarray[np.float64]): Numpy array with the temperature in ºC at the time.
+        solar_radiation (np.ndarray[np.float64]): Numpy array with the solar radiation in kWh/m^2 at the time.
+    '''
+
     irradiance_ref = 1 # Reference irradiance kWh/m^2
     temperature_ref = 25 # Reference temperature in ºC
     temperature_coefficient = 3.7e-3 # Temperature coefficient of maximum power in 1/°C

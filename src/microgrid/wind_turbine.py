@@ -1,3 +1,5 @@
+import numpy as np
+
 class WindTurbine:
   '''
   Wind turbine simulation.
@@ -22,3 +24,6 @@ class WindTurbine:
 
     self.n_turbines = n_turbines
     self.rated_power = rated_power
+  
+  def generate_energy(self, wind_velocity: np.ndarray[np.float64]):
+    pass
