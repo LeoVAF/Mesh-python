@@ -65,5 +65,5 @@ class PhotovoltaicPanel:
     temperature_ref = 25 # Reference temperature in [ºC]
     power_temperature_coefficient = 3.7e-3 # Power temperature coefficient of maximum power in [1/°C]
     cell_temperature = temperature + 0.03125 * solar_radiation # Cell temperature
-    self.output_power = self.rated_power * (solar_radiation/irradiance_ref) * (1 + power_temperature_coefficient*(cell_temperature - temperature_ref))
+    self.output_power = np.minimum(self.rated_power * (solar_radiation/irradiance_ref) * (1 + power_temperature_coefficient*(cell_temperature - temperature_ref)), self.rated_power)
     return self.output_power

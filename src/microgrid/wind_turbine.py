@@ -93,7 +93,7 @@ class WindTurbine:
     self.output_power = np.zeros(len(wind_speed))
     mask = (self.cut_in <= wind_speed_hub) & (wind_speed_hub <= self.cut_out)
     turbine_power = self.rated_power * (wind_speed_hub[mask]**3 - self.cut_in**3)/(self.rated_wind_speed**3 - self.cut_in**3)
-    self.output_power[mask] = np.minimum(turbine_power, self.rated_power)
+    self.output_power[mask] = self.n_turbines * np.minimum(turbine_power, self.rated_power)
 
     # if wind_direction is not None:
     #   theta = np.abs(wind_direction - self.turbine_direction)
