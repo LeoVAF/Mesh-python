@@ -18,6 +18,7 @@ dependencies:
   - cython=3.0
   - pytest=8.2
   - pytest-cov=6.0
+  - optuna=4.3
   # Project management
   # - poetry=2.1
   - make=4.4
