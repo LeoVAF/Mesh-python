@@ -305,6 +305,10 @@ class Mesh():
         
         # Mutate the weights using a number sampled under the Standard Gaussian Distribution
         self.weights += np.random.normal(0, 1, (3, self.params.population_size)) * self.params.mutation_rate
+        # Clip the weights to the allowed values
+        np.clip(self.weights[0, :], 0.0, 1.0, out=self.weights[0, :])
+        np.clip(self.weights[1, :], 0.0, 0.5, out=self.weights[1, :])
+        np.clip(self.weights[2, :], 0.0, 2.0, out=self.weights[2, :])
 
     def reflect_velocity_at_bounds(self, velocity_input: np.ndarray[np.number, 2], position_input: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
         ''' Reverses the direction of each component of the velocity that took the particle out of its respective boundaries.

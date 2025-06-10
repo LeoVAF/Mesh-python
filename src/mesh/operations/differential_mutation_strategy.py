@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from mesh.parameters import MeshParameters
 
 def binomial_crossover(X1: np.ndarray[np.any, 2], X2: np.ndarray[np.any, 2], params: MeshParameters) -> np.ndarray[np.bool, 2]:
-  ''' Apply the binomial crossover in the numpy matrix ``X1``.
+  ''' Apply the binomial crossover in ``X1`` in-place from information in ``X2``.
   
   Args:
     X1 (:type:`np.ndarray[np.any, 2]`): The numpy matrix to apply the crossover.
@@ -17,13 +17,13 @@ def binomial_crossover(X1: np.ndarray[np.any, 2], X2: np.ndarray[np.any, 2], par
     params (:class:`~mesh.parameters.MeshParameters`): The parameters :attr:`~mesh.parameters.MeshParameters.position_dim` and :attr:`~mesh.parameters.MeshParameters.mutation_rate` are used to apply the crossover.
     
   Returns:
-    :type:`np.ndarray[np.any, 2]`: The matrix ``X1`` after applying the crossover.
+    :type:`np.ndarray[np.any, 2]`: ``X1`` after applying the binomial crossover.
   '''
 
   # Get the size of the X1 to apply the crossover
   size = X1.shape[0]
   # Get the crossover weight
-  crossover_weight = truncnorm.rvs(0, 0.5, size=(size, 1)) * params.mutation_rate
+  crossover_weight = truncnorm.rvs(0, 1, size=(size, 1)) * params.mutation_rate
   # Make the crossover index for each particle
   crossover_index = np.random.randint(0, params.position_dim, size=size)
   # Calculate the crossover chance to apply the binomial crossover
@@ -76,8 +76,7 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
+    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -125,8 +124,7 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
+    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -175,8 +173,7 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
+    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -229,8 +226,7 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
+    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -281,8 +277,7 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    self.pre_allocated.matrix_for_operations[:valid_idx_size, :] = self.population.personal_best_pos[valid_idxs, random_indices, :]
-    Xst = binomial_crossover(Xst, self.pre_allocated.matrix_for_operations[:valid_idx_size, :], self.params)
+    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
