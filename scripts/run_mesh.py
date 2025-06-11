@@ -51,35 +51,35 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
-    num_runs = 10 # Number of runs
+    num_runs = 30 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
     num_final_solutions = 300
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 3
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
-    experiment_name = bat_name[select_bat]
-    # experiment_name = 'zdt4'
+    # experiment_name = bat_name[select_bat]
+    experiment_name = 'wfg1'
 
     objective_dim = 3 # Number of objectives
-    position_dim = 3 # Design space dimension
-    # func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
+    position_dim = 10 # Design space dimension
+    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
     
-    position_min_value = np.array([10, 1, 50]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
-    position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
-    def func(args):
-        r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[:objective_dim]
-        #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
-        r[-1] = -r[-1] # Maximizing renewable factor
-        return r
+    # position_min_value = np.array([10, 1, 50]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
+    # position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
+    # def func(args):
+    #     r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[:objective_dim]
+    #     #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
+    #     r[-1] = -r[-1] # Maximizing renewable factor
+    #     return r
 
     max_iterations = None # Maximum number of iterations
-    max_fitness_eval = 6000 # Maximum fitness evaluations
+    max_fitness_eval = 15000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability =  0.2 # Communication probability
-    mutation_rate = 0.05 # Mutation rate
-    personal_guide_array_size = 3 # Number of personal guides
+    communication_probability =  0.33 # Communication probability
+    mutation_rate = 0.1 # Mutation rate
+    personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
     global_best_attribution_type = 0 # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
