@@ -54,7 +54,7 @@ class PublicGrid:
       t (:type:`int`): The time step at which the energy is bought.
 
     Returns:
-      int | float: The cost of the energy bought in [US$].
+      :type:`int | float`: The cost of the energy bought in [US$].
     '''
     
     pass

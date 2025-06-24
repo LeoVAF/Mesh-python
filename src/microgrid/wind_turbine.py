@@ -82,7 +82,7 @@ class WindTurbine:
       height_reference (:type:`int | float`): The height where the wind speed was measured in [m].
 
     Returns:
-      np.ndarray[np.float64]: The output power of the wind turbine in [kW].
+      :type:`np.ndarray[np.float64]`: The output power of the wind turbine in [kW].
     '''
 
     # Applicates the power law
