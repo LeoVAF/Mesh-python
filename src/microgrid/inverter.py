@@ -5,7 +5,7 @@ class Inverter():
   
   Args:
     efficiency (:type:`int | float`): Inverter efficiency between 0 and 1.
-    lifetime (:type:`int | float`): Inverter lifetime in years.
+    lifetime (:type:`int | float`): Inverter lifetime in [year].
   
   Raises:
     TypeError: If the input is not the expected type.
@@ -16,7 +16,7 @@ class Inverter():
     self.efficiency: int | float
     ''' Inverter efficiency between 0 and 1. '''
     self.lifetime: int | float
-    ''' Inverter lifetime in years. '''
+    ''' Inverter lifetime in [year]. '''
 
     self.efficiency = efficiency
     self.lifetime = lifetime

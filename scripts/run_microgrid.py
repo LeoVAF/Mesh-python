@@ -4,7 +4,6 @@ from microgrid.wind_turbine import WindTurbine
 from microgrid.inverter import Inverter
 from microgrid.battery import Battery
 from microgrid.public_grid import PublicGrid
-from microgrid_old.techno_ka import techno_ka
 
 import numpy as np
 
@@ -25,6 +24,7 @@ cut_in = 2.5
 cut_out = 40
 wt_efficiency = 0.95
 wt_lifetime = 24
+wt_height = 30
 
 # Inverter input
 inverter_efficiency = 0.95
@@ -34,6 +34,13 @@ inverter_lifetime = 24
 bat_dod = 0.8
 bat_cap = 150
 select_bat = 0
+bat_efficiency_list = [0.765,0.90,0.92,0.96,0.94,0.938,0.9155,0.95,0.86,0.855,0.70,0.80,0.75,0.70]
+# Each battery capacity cost in [€$]
+bat_cap_cost_list = [7.31393,28.575,28.575,9.8066225,20.67004375,7.540625,10.1099133,6.746875,38.1,6.99371645,9.55675,31.40075,45.10395475,14.5415,12.4139325]
+# Each battery lifetime in [years]
+bat_lf_list = [18,17.5,7,15,10,10,10,20,14,13.5,20,3,15,6.5]
+# Each battery cycle number
+bat_cycle_list = [1400,8000,600,5000,1500,4000,3000,1000,3000,3250,1250,1000,10000,2000]
 
 # Public grid input
 metering_compensation = 0
@@ -46,9 +53,13 @@ wind_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/wind_data.txt')
 wind_height = 10
 microgrid_lifetime = 24
 photovoltaic_panel = PhotovoltaicPanel(cost_per_kw=pv_cost, rated_power=max_pv, lifetime=pv_lifetime)
-wind_turbine = WindTurbine(n_turbines=num_wt, rated_power=wt_rated_power, cut_in=cut_in, cut_out=cut_out, efficiency=wt_efficiency, lifetime=wt_lifetime)
+wind_turbine = WindTurbine(n_turbines=num_wt, rated_power=wt_rated_power, cut_in=cut_in, cut_out=cut_out, height=wt_height, efficiency=wt_efficiency, lifetime=wt_lifetime)
 inverter = Inverter(efficiency=inverter_efficiency, lifetime=inverter_lifetime)
-# battery = Battery()
+battery = Battery(capacity=bat_cap,
+                  cost_per_kwh=bat_cap_cost_list[select_bat] * exchange_rate,
+                  efficiency=bat_efficiency_list[select_bat],
+                  lifetime=bat_lf_list[select_bat],
+                  number_of_cycles=bat_cycle_list[select_bat])
 # public_grid = PublicGrid(metering_compensation=metering_compensation)
 
 microgrid = Microgrid(load=load_ind[:8640],
@@ -60,9 +71,8 @@ microgrid = Microgrid(load=load_ind[:8640],
                       photovoltaic_panel=photovoltaic_panel,
                       wind_turbine=wind_turbine,
                       inverter=inverter,
-                      battery=None,
+                      battery=battery,
                       public_grid=None)
 
 # Run microgrid
-techno_ka(max_pv, num_wt, bat_dod, bat_cap, select_bat, solar_data, wind_data, load_ind)
 microgrid.run()
