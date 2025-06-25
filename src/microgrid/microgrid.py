@@ -62,9 +62,21 @@ class Microgrid:
     ''' A :class:`~microgrid.battery.Battery` instance. '''
     self.public_grid: PublicGrid | None
     ''' A :class:`~microgrid.public_grid.PublicGrid` instance. '''
-    self.generated_energy: np.ndarray[np.float64]
-    ''' Numpy array to store the accumulated generated power by generators in [kWh]. '''
-    
+    self.hour_steps: int
+    ''' Number of hour steps in the simulation. '''
+    self.generated_by_pv: np.ndarray[np.float64]
+    ''' Numpy array to store the generated power by photovoltaic panels at each time step in [kWh]. '''
+    self.generated_by_wt: np.ndarray[np.float64]
+    ''' Numpy array to store the generated power by wind turbines at each time step in [kWh]. '''
+    self.battery_charge: np.ndarray[np.float64]
+    ''' Numpy array to store the battery charge at each time step in [kWh]. '''
+    self.battery_discharge: np.ndarray[np.float64]
+    ''' Numpy array to store the battery discharge at each time step in [kWh]. '''
+    self.energy_surplus: np.ndarray[np.float64]
+    ''' Numpy array to store the energy surplus at each time step in [kWh]. '''
+    self.compensated_energy: np.ndarray[np.float64]
+    ''' Numpy array to store the compensated energy at each time step in [kWh]. '''
+
     self.load = load
     self.temperature = temperature
     self.solar_radiation = solar_radiation
@@ -76,53 +88,57 @@ class Microgrid:
     self.inverter = inverter
     self.battery = battery
     self.public_grid = public_grid
-    self.generated_energy = np.zeros(len(load))
+    self.hour_steps = len(load)
+    self.generated_by_pv = np.zeros(self.hour_steps)
+    self.generated_by_wt = np.zeros(self.hour_steps)
+    self.battery_charge = np.zeros(self.hour_steps)
+    self.battery_discharge = np.zeros(self.hour_steps)
+    self.energy_surplus = np.zeros(self.hour_steps)
+    self.compensated_energy = np.zeros(self.hour_steps)
 
   def initialize(self) -> None:
     ''' Initializes the variables. '''
     
-    hour_steps = len(self.load)
     # Initialize the battery state of charge
     if self.battery is not None:
-      self.battery.initialize_state_of_charge(hour_steps)
+      self.battery.initialize_state_of_charge(self.hour_steps)
     if self.public_grid is not None:
-      self.public_grid.initialize_power_array(hour_steps)
+      self.public_grid.initialize_power_array(self.hour_steps)
 
   def generate_energy(self) -> None:
     ''' Generates energy by generators. '''
 
     # Get the generated energy by photovoltaic panels
     if self.photovoltaic_panel is not None:
-      self.generated_energy += self.photovoltaic_panel.generate_power(self.temperature, self.solar_radiation)
+      self.generated_by_pv = self.photovoltaic_panel.generate_power(self.temperature, self.solar_radiation)
     # Get the generated energy by wind_turbines
     if self.wind_turbine is not None:
-      self.generated_energy += self.wind_turbine.generate_power(self.wind_velocity, self.wind_height)
+      self.generated_by_wt = self.wind_turbine.generate_power(self.wind_velocity, self.wind_height)
 
-  def run_battery(self) -> None:
-    ''' Initializes the battery state of charge. '''
+  def run_hourly_simulation(self) -> None:
+    ''' Runs the hourly simulation of the microgrid.'''
 
-    if self.battery is not None:
-      hour_steps = len(self.load)
-      # Initialize the battery state of charge
-      self.battery.initialize_state_of_charge(hour_steps)
-
-
-
-      ''' ############################################### '''
-      for i in range(hour_steps):
-        generated_energy = self.generated_energy[i]
-        load = self.load[i]
-        if generated_energy > load:
-          # Charge the battery with the generated power
-          power_to_net = self.battery.charge(generated_energy - load, i)
-          # Send the surplus power to the grid
-          if self.public_grid is not None:
-            self.public_grid.store_credit(power_to_net)
-        elif generated_energy < load:
-          # Discharge the battery to meet the load
-          remaining_power = self.battery.discharge(load - generated_energy, i)
-          if self.public_grid is not None:
-            self.public_grid.buy_energy(remaining_power)
+    # Calculate the total generated energy by all generators
+    generated_energy = self.generated_by_pv + self.generated_by_wt
+    # Calculate the time steps in which there is energy surplus
+    surplus_mask = np.where(generated_energy > self.load, True, False)
+    # Calculate the difference between generated energy and load
+    difference_at_time = np.abs(generated_energy - self.load)
+    for t, there_is_surplus in enumerate(surplus_mask):
+      # If there is surplus energy
+      if there_is_surplus:
+        remaining_energy_surplus = difference_at_time[t]
+        if self.battery is not None:
+          # Charge the battery with the surplus energy
+          remaining_energy_surplus = self.battery.charge(remaining_energy_surplus, t)
+          
+        ''' ############ If there is surplus energy, send it to the public grid ############# '''
+        if self.public_grid is not None:
+          # Store the surplus energy in the public grid
+          self.public_grid.store_credit(remaining_energy_surplus, t)
+      # If there is deficit
+      else:
+        pass
 
   def run(self) -> None:
     ''' Runs the Microgrid simulation. '''
@@ -130,5 +146,5 @@ class Microgrid:
 
     # Generate energy by generators
     self.generate_energy()
-    # Run battery
-    self.run_battery()
+    # Run hourly simulation
+    self.run_hourly_simulation()

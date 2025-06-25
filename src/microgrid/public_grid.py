@@ -37,24 +37,22 @@ class PublicGrid:
     
     self.grid_power = np.zeros(hour_steps)
 
-  def store_credit(self, energy: np.ndarray[np.float64], indexes: np.ndarray[np.integer]) -> None:
+  def store_credit(self, surplus_energy: np.ndarray[np.float64], indexes: np.ndarray[np.integer]) -> None:
     ''' Stores the credit in the public grid.
 
     Args:
-      energy (:type:`int | float`): The amount of energy to store in [kWh].
+      surplus_energy (:type:`np.ndarray[np.float64]`): The amount of surplus energy to store in [kWh].
+      indexes (:type:`np.ndarray[np.integer]`): The time steps at which the energy is stored.
     '''
 
     pass
 
-  def buy_energy(self, energy: np.ndarray[np.float64], indexes: np.ndarray[np.integer]) -> None:
+  def buy_energy(self, demanding_energy: np.ndarray[np.float64], indexes: np.ndarray[np.integer]) -> None:
     ''' Buys energy from the public grid.
 
     Args:
-      energy (:type:`int | float`): The amount of energy to buy in [kWh].
-      t (:type:`int`): The time step at which the energy is bought.
-
-    Returns:
-      :type:`int | float`: The cost of the energy bought in [US$].
+      demanding_energy (:type:`np.ndarray[np.float64]`): The amount of energy to buy in [kWh].
+      indexes (:type:`np.ndarray[np.integer]`): The time steps at which the energy is bought.
     '''
     
     pass
