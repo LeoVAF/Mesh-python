@@ -1,7 +1,7 @@
 import numpy as np
 
 class WindTurbine:
-  ''' Wind turbine simulation.
+  ''' Class representing a DC wind turbine in a microgrid system.
   
   Args:
     n_turbines (:type:`int`): Number of wind turbines.

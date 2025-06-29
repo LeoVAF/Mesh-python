@@ -1,7 +1,7 @@
 import numpy as np
 
 class PublicGrid:
-  ''' Represents a public grid in the microgrid system. This class is used to manage the public grid's properties and behaviors.
+  ''' Represents a AC public grid in the microgrid system. This class is used to manage the public grid's properties and behaviors.
   
   Args:
     cost_per_kwh (:type:`int | float`): Cost per kWh of the public grid in [US$].

@@ -1,7 +1,7 @@
 import numpy as np
 
 class PhotovoltaicPanel:
-  ''' Class representing a photovoltaic panel in a microgrid system.
+  ''' Class representing a DC photovoltaic panel in a microgrid system.
   
   Args:
     cost_per_kw (:type:`int | float`): Photovoltaic panels cost per kW maximum power.
