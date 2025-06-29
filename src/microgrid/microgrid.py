@@ -64,18 +64,8 @@ class Microgrid:
     ''' A :class:`~microgrid.public_grid.PublicGrid` instance. '''
     self.hour_steps: int
     ''' Number of hour steps in the simulation. '''
-    self.generated_by_pv: np.ndarray[np.float64]
-    ''' Numpy array to store the generated power by photovoltaic panels at each time step in [kWh]. '''
-    self.generated_by_wt: np.ndarray[np.float64]
-    ''' Numpy array to store the generated power by wind turbines at each time step in [kWh]. '''
-    self.battery_charge: np.ndarray[np.float64]
-    ''' Numpy array to store the battery charge at each time step in [kWh]. '''
-    self.battery_discharge: np.ndarray[np.float64]
-    ''' Numpy array to store the battery discharge at each time step in [kWh]. '''
-    self.energy_surplus: np.ndarray[np.float64]
-    ''' Numpy array to store the energy surplus at each time step in [kWh]. '''
-    self.compensated_energy: np.ndarray[np.float64]
-    ''' Numpy array to store the compensated energy at each time step in [kWh]. '''
+    self.surplus_energy: np.ndarray[np.float64]
+    ''' Numpy array to store the energy surplus that will be throw away at each time step in [kWh]. '''
 
     self.load = load
     self.temperature = temperature
@@ -89,62 +79,101 @@ class Microgrid:
     self.battery = battery
     self.public_grid = public_grid
     self.hour_steps = len(load)
-    self.generated_by_pv = np.zeros(self.hour_steps)
-    self.generated_by_wt = np.zeros(self.hour_steps)
-    self.battery_charge = np.zeros(self.hour_steps)
-    self.battery_discharge = np.zeros(self.hour_steps)
-    self.energy_surplus = np.zeros(self.hour_steps)
-    self.compensated_energy = np.zeros(self.hour_steps)
+    self.surplus_energy = np.zeros(self.hour_steps)
 
   def initialize(self) -> None:
-    ''' Initializes the variables. '''
+    ''' Initializes the microgrid components. '''
     
-    # Initialize the battery state of charge
+    if self.photovoltaic_panel is not None:
+      self.photovoltaic_panel.initialize(self.hour_steps)
+    if self.wind_turbine is not None:
+      self.wind_turbine.initialize(self.hour_steps)
     if self.battery is not None:
-      self.battery.initialize_state_of_charge(self.hour_steps)
+      self.battery.initialize(self.hour_steps)
     if self.public_grid is not None:
-      self.public_grid.initialize_power_array(self.hour_steps)
+      self.public_grid.initialize(self.hour_steps)
 
   def generate_energy(self) -> None:
     ''' Generates energy by generators. '''
 
     # Get the generated energy by photovoltaic panels
     if self.photovoltaic_panel is not None:
-      self.generated_by_pv = self.photovoltaic_panel.generate_power(self.temperature, self.solar_radiation)
+      self.photovoltaic_panel.generate_power(self.temperature, self.solar_radiation)
     # Get the generated energy by wind_turbines
     if self.wind_turbine is not None:
-      self.generated_by_wt = self.wind_turbine.generate_power(self.wind_velocity, self.wind_height)
+      self.wind_turbine.generate_power(self.wind_velocity, self.wind_height)
 
   def run_hourly_simulation(self) -> None:
     ''' Runs the hourly simulation of the microgrid.'''
 
+
+    ''' Where do we consider the inverter? '''
     # Calculate the total generated energy by all generators
-    generated_energy = self.generated_by_pv + self.generated_by_wt
+    generated_energy = self.photovoltaic_panel.output_power + self.wind_turbine.output_power
     # Calculate the time steps in which there is energy surplus
     surplus_mask = np.where(generated_energy > self.load, True, False)
     # Calculate the difference between generated energy and load
     difference_at_time = np.abs(generated_energy - self.load)
+
+    # Get the functions to charge and discharge the battery
+    if self.battery is not None:
+      charge = self.battery.charge
+      discharge = self.battery.discharge
+    else:
+      charge = lambda x, t: x
+      discharge = lambda x, t: x
+    # # Get the functions to compensate and buy energy from the public grid
+    # if self.public_grid is not None:
+    #   compensate = self.public_grid.store_credit
+    #   buy = self.public_grid.buy_energy
+    # else:
+    #   compensate = lambda x, t: x
+
+
     for t, there_is_surplus in enumerate(surplus_mask):
       # If there is surplus energy
       if there_is_surplus:
-        remaining_energy_surplus = difference_at_time[t]
-        if self.battery is not None:
-          # Charge the battery with the surplus energy
-          remaining_energy_surplus = self.battery.charge(remaining_energy_surplus, t)
-          
-        ''' ############ If there is surplus energy, send it to the public grid ############# '''
-        if self.public_grid is not None:
-          # Store the surplus energy in the public grid
-          self.public_grid.store_credit(remaining_energy_surplus, t)
-      # If there is deficit
+        remaining_surplus_energy = difference_at_time[t]
+        # Charge the battery with the surplus energy (if the battery is connected)
+        remaining_surplus_energy_after_charge = charge(remaining_surplus_energy, t)
+        # Send the surplus energy to the public grid (if the public grid is connected)
+        ''' Send surplus energy for net metering or throw it away. '''
+      # If there is deficit energy
       else:
-        pass
+        remaining_deficit_energy = difference_at_time[t]
+        # Discharge the battery to cover the deficit (if the battery is connected)
+        remaining_deficit_energy_after_discharge = discharge(remaining_deficit_energy, t)
+        # If there is still deficit, buy energy from the public grid (if the public grid is connected)
+        ''' Buy energy from the public grid if it exists or throw an error. '''
+
+  def economic_analysis(self) -> None:
+    ''' Performs the economic analysis of the microgrid and its components. '''
+
+    pass
+    # # Perform economic analysis for photovoltaic panels
+    # if self.photovoltaic_panel is not None:
+    #   self.photovoltaic_panel.economic_analysis(self.hour_steps)
+    # # Perform economic analysis for wind turbines
+    # if self.wind_turbine is not None:
+    #   self.wind_turbine.economic_analysis(self.hour_steps)
+    # # Perform economic analysis for inverter
+    # if self.inverter is not None:
+    #   self.inverter.economic_analysis(self.hour_steps)
+    # # Perform economic analysis for battery
+    # if self.battery is not None:
+    #   self.battery.economic_analysis(self.hour_steps)
+    # # Perform economic analysis for public grid
+    # if self.public_grid is not None:
+    #   self.public_grid.economic_analysis(self.hour_steps)
 
   def run(self) -> None:
     ''' Runs the Microgrid simulation. '''
-    self.initialize()
 
+    # Initialize the microgrid components
+    self.initialize()
     # Generate energy by generators
     self.generate_energy()
     # Run hourly simulation
     self.run_hourly_simulation()
+    # Perform economic analysis
+    self.economic_analysis()

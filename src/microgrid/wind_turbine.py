@@ -55,8 +55,17 @@ class WindTurbine:
     self.height = height
     self.efficiency = efficiency
     self.lifetime = lifetime
+
+  def initialize(self, hour_steps: int) -> None:
+    ''' Initializes the components of the wind turbine.
+
+    Args:
+      hour_steps (:type:`int`): Number of hour steps in the simulation.
+    '''
+
+    self.output_power = np.zeros(hour_steps)
   
-  def generate_power(self, wind_speed: np.ndarray[np.float64], height_reference: int | float) -> np.ndarray[np.float64]:
+  def generate_power(self, wind_speed: np.ndarray[np.float64], height_reference: int | float) -> None:
     r''' Generates the output power according to the following cubic interpolation model:
 
     .. math::
@@ -80,16 +89,12 @@ class WindTurbine:
     Args:
       wind_speed (:type:`np.ndarray[np.float64]`): A numpy array with the wind speed measurements at the reference height.
       height_reference (:type:`int | float`): The height where the wind speed was measured in [m].
-
-    Returns:
-      :type:`np.ndarray[np.float64]`: The output power of the wind turbine in [kW].
     '''
 
     # Applicates the power law
     alpha = 1/7 # Hellman exponent assumed to be 1/7
     wind_speed_hub = wind_speed * (self.height/height_reference)**alpha # Estimate the wind speed in the hub
     # Calculate the output power using power curve
-    self.output_power = np.zeros(len(wind_speed))
     mask = (self.cut_in <= wind_speed_hub) & (wind_speed_hub <= self.cut_out)
     turbine_power = self.rated_power * (wind_speed_hub[mask]**3 - self.cut_in**3)/(self.rated_wind_speed**3 - self.cut_in**3)
     self.output_power[mask] = self.n_turbines * np.minimum(turbine_power, self.rated_power)
@@ -99,5 +104,3 @@ class WindTurbine:
     #   theta = np.deg2rad(theta)
     #   adjustment_factor = np.cos(theta) ** 3
     #   turbine_power *= adjustment_factor[mask]
-    
-    return self.output_power

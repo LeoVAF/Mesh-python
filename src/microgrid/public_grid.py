@@ -22,37 +22,40 @@ class PublicGrid:
     ''' Compensation percentage when sending energy to the public grid between 0 and 1. '''
     self.grid_cost: int | float = 0
     ''' Total public grid cost in [US$]. '''
-    self.grid_power: np.ndarray[np.float64] | None = None
-    ''' Power array for the public grid in [kWh]. '''
+    self.bought_energy: np.ndarray[np.float64] | None = None
+    ''' Numpy array to store the bought energy at each time step in [kWh]. '''
+    self.compensated_energy: np.ndarray[np.float64] | None = None
+    ''' Numpy array to store the compensated energy at each time step in [kWh]. '''
 
     self.cost_per_kwh = cost_per_kwh
     self.metering_compensation = metering_compensation
 
-  def initialize_power_array(self, hour_steps: int) -> None:
-    ''' Initializes the power array for the public grid. 
+  def initialize(self, hour_steps: int) -> None:
+    ''' Initializes the components of the public grid.
     
     Args:
       hour_steps (:type:`int`): Number of hour steps in the simulation.
     '''
     
-    self.grid_power = np.zeros(hour_steps)
+    self.bought_energy = np.zeros(hour_steps)
+    self.compensated_energy = np.zeros(hour_steps)
 
-  def store_credit(self, surplus_energy: np.ndarray[np.float64], indexes: np.ndarray[np.integer]) -> None:
+  def store_credit(self, surplus_energy: int | float, t: int) -> int | float:
     ''' Stores the credit in the public grid.
 
     Args:
-      surplus_energy (:type:`np.ndarray[np.float64]`): The amount of surplus energy to store in [kWh].
-      indexes (:type:`np.ndarray[np.integer]`): The time steps at which the energy is stored.
+      surplus_energy (:type:`int | float`): The amount of surplus energy to store in [kWh].
+      indexes (:type:`int`): The time step at which the energy is stored.
     '''
 
     pass
 
-  def buy_energy(self, demanding_energy: np.ndarray[np.float64], indexes: np.ndarray[np.integer]) -> None:
+  def buy_energy(self, demanding_energy: int | float, t: int) -> int | float:
     ''' Buys energy from the public grid.
 
     Args:
-      demanding_energy (:type:`np.ndarray[np.float64]`): The amount of energy to buy in [kWh].
-      indexes (:type:`np.ndarray[np.integer]`): The time steps at which the energy is bought.
+      demanding_energy (:type:`int | float`): The amount of energy to buy in [kWh].
+      indexes (:type:`int`): The time step at which the energy is bought.
     '''
     
     pass

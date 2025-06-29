@@ -31,7 +31,16 @@ class PhotovoltaicPanel:
     self.rated_power = rated_power
     self.lifetime = lifetime
 
-  def generate_power(self, temperature: np.ndarray[np.float64], solar_radiation: np.ndarray[np.float64]) -> np.ndarray[np.float64]:
+  def initialize(self, hour_steps: int) -> None:
+    ''' Initializes the components of the photovoltaic panel.
+
+    Args:
+      hour_steps (:type:`int`): Number of hour steps in the simulation.
+    '''
+
+    self.output_power = np.zeros(hour_steps)
+
+  def generate_power(self, temperature: np.ndarray[np.float64], solar_radiation: np.ndarray[np.float64]) -> None:
     r''' Generates the output power according to the following equation:
       
       .. math::
@@ -55,14 +64,10 @@ class PhotovoltaicPanel:
       Args:
         temperature (np.ndarray[np.float64]): Numpy array with the temperature in [ºC] at the time.
         solar_radiation (np.ndarray[np.float64]): Numpy array with the solar radiation in [kW/m^2] at the time.
-      
-      Returns:
-        :type:`np.ndarray[np.float64]`: The output power of the wind turbine in [kW].
     '''
 
     irradiance_ref = 1 # Reference irradiance [kWh/m^2]
     temperature_ref = 25 # Reference temperature in [ºC]
     power_temperature_coefficient = 3.7e-3 # Power temperature coefficient of maximum power in [1/°C]
     cell_temperature = temperature + 0.03125 * solar_radiation # Cell temperature
-    self.output_power = np.minimum(self.rated_power * (solar_radiation/irradiance_ref) * (1 + power_temperature_coefficient*(cell_temperature - temperature_ref)), self.rated_power)
-    return self.output_power
+    self.output_power[:] = np.minimum(self.rated_power * (solar_radiation/irradiance_ref) * (1 + power_temperature_coefficient*(cell_temperature - temperature_ref)), self.rated_power)
