@@ -38,6 +38,8 @@ class Battery:
     ''' Depth of discharge as a fraction between 0 and 1. '''
     self.state_of_charge: np.array[np.float64] | None = None
     ''' Current state of charge in [kWh]. '''
+    self.min_soc: int | float
+    ''' Minimum battery state of charge in [kWh]. '''
     self.energy_charged: np.ndarray[np.float64] | None = None
     ''' Numpy array to store the energy charged at each time step in [kWh]. '''
     self.energy_discharged: np.ndarray[np.float64] | None = None
@@ -49,6 +51,7 @@ class Battery:
     self.lifetime = lifetime
     self.number_of_cycles = number_of_cycles
     self.depth_of_discharge = depth_of_discharge
+    self.min_soc = capacity * depth_of_discharge
 
   def initialize(self, hour_steps: int) -> None:
     ''' Initializes the components of the battery.
@@ -62,12 +65,11 @@ class Battery:
     self.energy_charged = np.zeros(hour_steps)
     self.energy_discharged = np.zeros(hour_steps)
 
-  def charge(self, surplus: int | float, converter_efficiency: int | float, t: int) -> int | float:
+  def charge(self, surplus: int | float, t: int) -> int | float:
     ''' Charges the battery with surplus power.
     
     Args:
-      surplus (:type:`int | float`):  [kWh].
-      converter_efficiency (:type:`int | float`): Efficiency of the converter between 0 and 1.
+      surplus (:type:`int | float`): Surplus energy to charge the battery in [kWh].
       t (:type:`int`): Index of the time step.
 
     Returns:
@@ -76,28 +78,41 @@ class Battery:
 
     # Adjust the state of charge array index to avoid out of bounds error
     t_soc = t + 1
-    # Calculate the energy charged at this time step
-    state_of_charge = self.state_of_charge[t] + surplus * converter_efficiency
-    # Check the battery capacity
-    if state_of_charge > self.capacity:
-      self.state_of_charge[t_soc] = self.capacity
-      self.energy_charged[t] = self.capacity - self.state_of_charge[t]
-      return surplus - (self.energy_charged[t] / converter_efficiency)
-    else:
-      self.state_of_charge[t_soc] = state_of_charge
-      self.energy_charged[t] = surplus * converter_efficiency
+    available_capacity = self.capacity - self.state_of_charge[t]
+    if surplus <= available_capacity:
+      # Charge normally
+      self.state_of_charge[t_soc] = self.state_of_charge[t] + surplus
+      self.energy_charged[t] = surplus
       return 0
+    else:
+      # Only carry what fits
+      self.state_of_charge[t_soc] = self.capacity
+      self.energy_charged[t] = available_capacity
+      # Calculate the remaining surplus after charging
+      return surplus - available_capacity
 
-  def discharge(self, demand: int | float, inverter_efficiency: int | float, t: int) -> int | float:
+  def discharge(self, demand: int | float, t: int) -> int | float:
     ''' Discharges the battery to meet demand.
     
     Args:
-      demand (:type:`np.ndarray[np.float64]`): Demand array in [kWh].
-      inverter_efficiency (:type:`int | float`): Efficiency of the inverter between 0 and 1.
-      t (:type:`np.ndarray[np.integer]`): Indexes of the demand array to discharge.
+      demand (:type:`int | float`): Energy demand to discharge the battery in [kWh].
+      t (:type:`int`): Index of the time step.
 
     Returns:
       :type:`int | float`: Amount of remaining demand after discharging the battery in [kWh].
     '''
     
-    return 0 * inverter_efficiency
+    # Adjust the state of charge array index to avoid out of bounds error
+    t_soc = t + 1
+    adjusted_demand_by_bat_efficiency = demand / self.efficiency
+    available_energy = self.state_of_charge[t] - self.min_soc
+    if available_energy >= adjusted_demand_by_bat_efficiency:
+      # Meets all demand
+      self.state_of_charge[t_soc] = self.state_of_charge[t] - adjusted_demand_by_bat_efficiency
+      self.energy_discharged[t] = adjusted_demand_by_bat_efficiency
+      return 0
+    else:
+      # Uses everything available up to the minimum SoC
+      self.state_of_charge[t_soc] = self.min_soc
+      self.energy_discharged[t] = available_energy
+      return demand - available_energy * self.efficiency

@@ -121,14 +121,14 @@ class Microgrid:
         converter_efficiency = self.converter.efficiency
       else:
         converter_efficiency = 1.0
-      # Check if the battery has an inverter to discharge energy and get its efficiency
-      if self.inverter is not None:
-        inverter_efficiency = self.inverter.efficiency
-      else:
-        inverter_efficiency = 1.0
     else:
-      charge = lambda x, y, z: x
-      discharge = lambda x, y, z: x
+      charge = lambda x, y: x
+      discharge = lambda x, y: x
+    # Check if the microgrid inverter is connected and get its efficiency
+    if self.inverter is not None:
+      inverter_efficiency = self.inverter.efficiency
+    else:
+      inverter_efficiency = 1.0
     # # Get the functions to compensate and buy energy from the public grid
     # if self.public_grid is not None:
     #   compensate = self.public_grid.store_credit
@@ -139,24 +139,24 @@ class Microgrid:
     # Calculate the total generated energy by all generators
     generated_energy = self.photovoltaic_panel.output_power + self.wind_turbine.output_power
     # Adjust demanding load for inverter efficiency
-    demanding_load_adjusted = self.load / inverter_efficiency
+    adjusted_demanding_load = self.load / inverter_efficiency
     # Calculate the time steps in which there is energy surplus
-    surplus_mask = np.where(generated_energy > demanding_load_adjusted, True, False)
+    surplus_mask = np.where(generated_energy > adjusted_demanding_load, True, False)
     # Calculate the difference between generated energy and load
-    difference_at_time = np.abs(generated_energy - demanding_load_adjusted)
+    adjusted_difference_at_time = np.abs(generated_energy - adjusted_demanding_load)
     for t, there_is_surplus in enumerate(surplus_mask):
       # If there is surplus energy
       if there_is_surplus:
-        remaining_surplus_energy = difference_at_time[t]
+        remaining_surplus_energy = adjusted_difference_at_time[t]
         # Charge the battery with the surplus energy (if the battery is connected)
-        remaining_surplus_energy_after_charging = charge(remaining_surplus_energy, converter_efficiency, t)
+        remaining_surplus_energy_after_charging = charge(remaining_surplus_energy * converter_efficiency, t) / converter_efficiency
         # Send the surplus energy to the public grid (if the public grid is connected)
         ''' Send surplus energy for net metering or throw it away. '''
       # If there is deficit energy
       else:
-        remaining_deficit_energy = difference_at_time[t]
+        remaining_deficit_energy = adjusted_difference_at_time[t]
         # Discharge the battery to cover the deficit (if the battery is connected)
-        remaining_deficit_energy_after_discharging = discharge(remaining_deficit_energy, inverter_efficiency, t)
+        remaining_deficit_energy_after_discharging = discharge(remaining_deficit_energy, t) * inverter_efficiency
         # If there is still deficit, buy energy from the public grid (if the public grid is connected)
         ''' Buy energy from the public grid if it exists. '''
 

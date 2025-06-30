@@ -5,7 +5,7 @@ class PublicGrid:
   
   Args:
     cost_per_kwh (:type:`int | float`): Cost per kWh of the public grid in [US$].
-    metering_compensation (:type:`int | float`): Compensation percentage when sending energy to the public grid between 0 and 1.
+    credit-rate (:type:`int | float`): Credit rate when sending energy to the public grid between 0 and 1.
 
   Raises:
     TypeError: If the input is not the expected type.
@@ -14,11 +14,11 @@ class PublicGrid:
 
   def __init__(self,
                cost_per_kwh: int | float = 0.2,
-               metering_compensation: int | float = 0):
+               credit_rate: int | float = 0):
     
     self.cost_per_kwh: int | float
     ''' Cost per kWh of the public grid in [US$]. '''
-    self.metering_compensation: int | float
+    self.credit_rate: int | float
     ''' Compensation percentage when sending energy to the public grid between 0 and 1. '''
     self.grid_cost: int | float = 0
     ''' Total public grid cost in [US$]. '''
@@ -28,7 +28,7 @@ class PublicGrid:
     ''' Numpy array to store the compensated energy at each time step in [kWh]. '''
 
     self.cost_per_kwh = cost_per_kwh
-    self.metering_compensation = metering_compensation
+    self.credit_rate = credit_rate
 
   def initialize(self, hour_steps: int) -> None:
     ''' Initializes the components of the public grid.
