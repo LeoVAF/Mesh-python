@@ -29,8 +29,8 @@ wt_height = 30
 
 # Battery input
 bat_dod = 0.8
-bat_cap = 150
-select_bat = 0
+bat_cap = 200
+select_bat = 0 # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
 bat_efficiency_list = [0.765,0.90,0.92,0.96,0.94,0.938,0.9155,0.95,0.86,0.855,0.70,0.80,0.75,0.70]
 # Each battery capacity cost in [€$]
 bat_cap_cost_list = [7.31393,28.575,28.575,9.8066225,20.67004375,7.540625,10.1099133,6.746875,38.1,6.99371645,9.55675,31.40075,45.10395475,14.5415,12.4139325]
@@ -85,7 +85,7 @@ microgrid = Microgrid(load=load_ind[:8640],
                       photovoltaic_panel=photovoltaic_panel,
                       wind_turbine=wind_turbine,
                       battery=battery,
-                      public_grid=None,
+                      public_grid=public_grid,
                       inverter=inverter,
                       converter=converter)
 

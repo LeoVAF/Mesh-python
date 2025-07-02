@@ -69,6 +69,8 @@ class Microgrid:
     ''' A :class:`microgrid.converter.Converter` instance. '''
     self.hour_steps: int
     ''' Number of hour steps in the simulation. '''
+    self.energy_generated: np.ndarray[np.float64] | None = None
+    ''' Energy generated at each time step in [kWh]. '''
     self.surplus_energy: np.ndarray[np.float64]
     ''' Numpy array to store the energy surplus that will be throw away at each time step in [kWh]. '''
     # Objectives
@@ -115,6 +117,7 @@ class Microgrid:
     # Get the generated energy by wind_turbines
     if self.wind_turbine is not None:
       self.wind_turbine.generate_power(self.wind_velocity, self.wind_height)
+    self.energy_generated = self.photovoltaic_panel.output_power + self.wind_turbine.output_power
 
   def dispatch_energy(self) -> None:
     ''' Runs the hourly simulation of the microgrid.'''
@@ -139,19 +142,19 @@ class Microgrid:
     # Get the functions to compensate and buy energy from the public grid
     if self.public_grid is not None and self.public_grid.credit_rate > 0:
       compensate = self.public_grid.store_energy_credit
-      buy = self.public_grid.buy_energy
+      buy = self.public_grid.purchase_energy
+    elif self.public_grid is not None:
+      compensate = lambda x: x
+      buy = self.public_grid.purchase_energy
     else:
       compensate = lambda x: x
       buy = lambda x, t: None
-
-    # Calculate the total generated energy by all generators
-    generated_energy = self.photovoltaic_panel.output_power + self.wind_turbine.output_power
     # Adjust demanding load for inverter efficiency
     adjusted_demanding_load = self.load / inverter_efficiency
     # Calculate the time steps in which there is energy surplus
-    surplus_mask = np.where(generated_energy > adjusted_demanding_load, True, False)
+    surplus_mask = np.where(self.energy_generated > adjusted_demanding_load, True, False)
     # Calculate the difference between generated energy and load
-    adjusted_difference_at_time = np.abs(generated_energy - adjusted_demanding_load)
+    adjusted_difference_at_time = np.abs(self.energy_generated - adjusted_demanding_load)
     for t, there_is_surplus in enumerate(surplus_mask):
       # If there is surplus energy
       if there_is_surplus:
@@ -188,6 +191,24 @@ class Microgrid:
     # if self.public_grid is not None:
     #   self.public_grid.economic_analysis(self.hour_steps)
 
+  def calculate_rf(self) -> None:
+    ''' Calculates the renewable factor. '''
+
+    if self.public_grid is not None:
+      if self.battery is not None:
+        renewable_energy = self.energy_generated + self.battery.energy_discharged
+        self.RF = np.sum(renewable_energy) / np.sum((renewable_energy + self.public_grid.energy_purchased + self.public_grid.energy_compensated))
+      else:
+        self.RF = np.sum(self.energy_generated) / np.sum(self.energy_generated + self.public_grid.energy_purchased + self.public_grid.energy_compensated)
+    else:
+      self.RF = 1
+
+  def calculate_lolp(self) -> None:
+    ''' Calculates the load of loss probability. '''
+    
+    pass
+
+
   def run(self) -> tuple:
     ''' Runs the Microgrid simulation. '''
 
@@ -199,8 +220,19 @@ class Microgrid:
     self.dispatch_energy()
     # Performs economic analysis
     self.economic_analysis()
-
+    # Calculate the renewable factor
+    self.calculate_rf()
+    # Calculate the load of loss probability
+    self.calculate_lolp()
     # Disconsider the first time step for the battery state of charge
     self.battery.state_of_charge = self.battery.state_of_charge[1:]
-
     return self.cost, self.LOLP, self.RF
+
+  def logging(self, file_name: str) -> None:
+    ''' Logs the microgrid information into a excel file.
+    
+    Args:
+      file_name (:type:`str`): The name of the excel file that the information will be recorded.
+    '''
+
+    pass

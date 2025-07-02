@@ -70,7 +70,7 @@ class Battery:
     
     Args:
       surplus_energy (:type:`int | float`): Surplus energy to charge the battery in [kWh].
-      t (:type:`int`): Index of the time step.
+      t (:type:`int`): Time step.
 
     Returns:
       :type:`int | float`: Amount of remaining surplus energy after charging the battery in [kWh].
@@ -91,7 +91,7 @@ class Battery:
     
     Args:
       demanding_energy (:type:`int | float`): Demanding energy to discharge the battery in [kWh].
-      t (:type:`int`): Index of the time step.
+      t (:type:`int`): Time step.
 
     Returns:
       :type:`int | float`: Amount of remaining demand after discharging the battery in [kWh].
