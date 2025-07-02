@@ -119,21 +119,30 @@ class Microgrid:
       self.wind_turbine.generate_power(self.wind_velocity, self.wind_height)
     self.energy_generated = self.photovoltaic_panel.output_power + self.wind_turbine.output_power
 
+  def dispatch_energy_by_generators(self, energy_demanded: int | float) -> None:
+    ''' Calculates the energy dispatched by generators that effectively met demand.
+      
+      Args:
+        energy_demanded (:type:`int | float`): The energy demanded in [kWh].
+    '''
+
+    pass
+
   def dispatch_energy(self) -> None:
-    ''' Runs the hourly simulation of the microgrid.'''
+    ''' Runs the hourly simulation of the microgrid. '''
 
     # Get the functions to charge and discharge the battery
     if self.battery is not None:
-      charge = self.battery.charge
-      discharge = self.battery.discharge
+      charge_battery = self.battery.charge
+      discharge_battery = self.battery.discharge
       # Check if the battery has a converter to charge energy and get its efficiency
       if self.converter is not None:
         converter_efficiency = self.converter.efficiency
       else:
         converter_efficiency = 1.0
     else:
-      charge = lambda x, y: x
-      discharge = lambda x, y: x
+      charge_battery = lambda x, y: x
+      discharge_battery = lambda x, y: x
     # Check if the microgrid inverter is connected and get its efficiency
     if self.inverter is not None:
       inverter_efficiency = self.inverter.efficiency
@@ -151,6 +160,8 @@ class Microgrid:
       buy = lambda x, t: None
     # Adjust demanding load for inverter efficiency
     adjusted_demanding_load = self.load / inverter_efficiency
+    # Calculate the energy dispatched by generators that met demand
+    self.dispatch_energy_by_generators(adjusted_demanding_load)
     # Calculate the time steps in which there is energy surplus
     surplus_mask = np.where(self.energy_generated > adjusted_demanding_load, True, False)
     # Calculate the difference between generated energy and load
@@ -160,16 +171,21 @@ class Microgrid:
       if there_is_surplus:
         remaining_surplus_energy = adjusted_difference_at_time[t]
         # Charge the battery with the surplus energy (if the battery is connected)
-        remaining_surplus_energy_after_charging = charge(remaining_surplus_energy * converter_efficiency, t) / converter_efficiency
+        remaining_surplus_energy_after_charging = charge_battery(remaining_surplus_energy * converter_efficiency, t) / converter_efficiency
         # Send the surplus energy to the public grid (if the public grid is connected)
         self.surplus_energy[t] = compensate(remaining_surplus_energy_after_charging * inverter_efficiency) / inverter_efficiency
       # If there is deficit energy
       else:
         remaining_deficit_energy = adjusted_difference_at_time[t]
         # Discharge the battery to cover the deficit (if the battery is connected)
-        remaining_deficit_energy_after_discharging = discharge(remaining_deficit_energy, t) * inverter_efficiency
+        remaining_deficit_energy_after_discharging = discharge_battery(remaining_deficit_energy, t) * inverter_efficiency
         # If there is still deficit, buy energy from the public grid (if the public grid is connected)
         buy(remaining_deficit_energy_after_discharging, t)
+    
+      # Sanity check
+      if abs(self.load[t] - (self.energy_generated[t] + self.battery.energy_discharged[t] + self.public_grid.energy_compensated[t] + self.public_grid.energy_purchased[t])) > 1e-10:
+        print('ERRO')
+        exit()
 
   def economic_analysis(self) -> None:
     ''' Performs the economic analysis of the microgrid and its components. '''

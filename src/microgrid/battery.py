@@ -86,11 +86,11 @@ class Battery:
     # Return the remaining surplus energy after charging
     return surplus_energy - self.energy_charged[t]
 
-  def discharge(self, demanding_energy: int | float, t: int) -> int | float:
+  def discharge(self, energy_demanded: int | float, t: int) -> int | float:
     ''' Discharges the battery to meet demand.
     
     Args:
-      demanding_energy (:type:`int | float`): Demanding energy to discharge the battery in [kWh].
+      energy_demanded (:type:`int | float`): Energy demanded to discharge the battery in [kWh].
       t (:type:`int`): Time step.
 
     Returns:
@@ -102,7 +102,7 @@ class Battery:
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
     # Discharge the battery
-    self.state_of_charge[t_soc] = max(state_of_charge - demanding_energy, self.min_soc)
+    self.state_of_charge[t_soc] = max(state_of_charge - energy_demanded, self.min_soc)
     self.energy_discharged[t] = state_of_charge - self.state_of_charge[t_soc]
     # Return the remaining demand after discharging
-    return demanding_energy - self.energy_discharged[t]
+    return energy_demanded - self.energy_discharged[t]

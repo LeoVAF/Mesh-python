@@ -56,11 +56,11 @@ class PublicGrid:
 
     self.energy_to_compensate += surplus_energy * self.credit_rate
 
-  def purchase_energy(self, demanding_energy: int | float, t: int) -> int | float:
+  def purchase_energy(self, energy_demanded: int | float, t: int) -> int | float:
     ''' Purchases energy from the public grid, compensating with available credits.
 
     Args:
-      demanding_energy (:type:`int | float`): Energy demand in [kWh].
+      energy_demanded (:type:`int | float`): Energy demanded in [kWh].
       t (:type:`int`): Time step.
     '''
     
@@ -72,10 +72,10 @@ class PublicGrid:
         self.energy_credit += self.energy_to_compensate
         self.energy_to_compensate = 0.0
     # Compensate as much as possible
-    compensated = min(demanding_energy, self.energy_credit)
+    compensated = min(energy_demanded, self.energy_credit)
     self.energy_compensated[t] = compensated
     self.energy_credit -= compensated
     # Buy the remaining energy
-    energy_to_purchase = demanding_energy - compensated
+    energy_to_purchase = energy_demanded - compensated
     self.energy_purchased[t] = energy_to_purchase
     self.grid_cost += energy_to_purchase * self.cost_per_kwh
