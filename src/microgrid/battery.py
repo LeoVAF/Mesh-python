@@ -65,11 +65,11 @@ class Battery:
     self.energy_charged = np.zeros(hour_steps)
     self.energy_discharged = np.zeros(hour_steps)
 
-  def charge(self, surplus: int | float, t: int) -> int | float:
+  def charge(self, surplus_energy: int | float, t: int) -> int | float:
     ''' Charges the battery with surplus power.
     
     Args:
-      surplus (:type:`int | float`): Surplus energy to charge the battery in [kWh].
+      surplus_energy (:type:`int | float`): Surplus energy to charge the battery in [kWh].
       t (:type:`int`): Index of the time step.
 
     Returns:
@@ -78,24 +78,19 @@ class Battery:
 
     # Adjust the state of charge array index to avoid out of bounds error
     t_soc = t + 1
-    available_capacity = self.capacity - self.state_of_charge[t]
-    if surplus <= available_capacity:
-      # Charge normally
-      self.state_of_charge[t_soc] = self.state_of_charge[t] + surplus
-      self.energy_charged[t] = surplus
-      return 0
-    else:
-      # Only carry what fits
-      self.state_of_charge[t_soc] = self.capacity
-      self.energy_charged[t] = available_capacity
-      # Calculate the remaining surplus after charging
-      return surplus - available_capacity
+    # Get the state of charge
+    state_of_charge = self.state_of_charge[t]
+    # Charge the battery
+    self.state_of_charge[t_soc] = min(state_of_charge + surplus_energy, self.capacity)
+    self.energy_charged[t] = self.state_of_charge[t_soc] - state_of_charge
+    # Return the remaining surplus energy after charging
+    return surplus_energy - self.energy_charged[t]
 
-  def discharge(self, demand: int | float, t: int) -> int | float:
+  def discharge(self, demanding_energy: int | float, t: int) -> int | float:
     ''' Discharges the battery to meet demand.
     
     Args:
-      demand (:type:`int | float`): Energy demand to discharge the battery in [kWh].
+      demanding_energy (:type:`int | float`): Demanding energy to discharge the battery in [kWh].
       t (:type:`int`): Index of the time step.
 
     Returns:
@@ -104,15 +99,10 @@ class Battery:
     
     # Adjust the state of charge array index to avoid out of bounds error
     t_soc = t + 1
-    adjusted_demand_by_bat_efficiency = demand / self.efficiency
-    available_energy = self.state_of_charge[t] - self.min_soc
-    if available_energy >= adjusted_demand_by_bat_efficiency:
-      # Meets all demand
-      self.state_of_charge[t_soc] = self.state_of_charge[t] - adjusted_demand_by_bat_efficiency
-      self.energy_discharged[t] = adjusted_demand_by_bat_efficiency
-      return 0
-    else:
-      # Uses everything available up to the minimum SoC
-      self.state_of_charge[t_soc] = self.min_soc
-      self.energy_discharged[t] = available_energy
-      return demand - available_energy * self.efficiency
+    # Get the state of charge
+    state_of_charge = self.state_of_charge[t]
+    # Discharge the battery
+    self.state_of_charge[t_soc] = max(state_of_charge - demanding_energy, self.min_soc)
+    self.energy_discharged[t] = state_of_charge - self.state_of_charge[t_soc]
+    # Return the remaining demand after discharging
+    return demanding_energy - self.energy_discharged[t]

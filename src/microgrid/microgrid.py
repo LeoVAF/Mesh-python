@@ -71,6 +71,13 @@ class Microgrid:
     ''' Number of hour steps in the simulation. '''
     self.surplus_energy: np.ndarray[np.float64]
     ''' Numpy array to store the energy surplus that will be throw away at each time step in [kWh]. '''
+    # Objectives
+    self.cost: float | None = None
+    ''' Cost of electricity in [US$/kWh]. '''
+    self.LOLP: float | None = None
+    ''' Loss of load probability between 0 and 1. '''
+    self.RF: float | None = None
+    ''' Renewable factor between 0 and 1. '''
 
     self.load = load
     self.temperature = temperature
@@ -129,12 +136,13 @@ class Microgrid:
       inverter_efficiency = self.inverter.efficiency
     else:
       inverter_efficiency = 1.0
-    # # Get the functions to compensate and buy energy from the public grid
-    # if self.public_grid is not None:
-    #   compensate = self.public_grid.store_credit
-    #   buy = self.public_grid.buy_energy
-    # else:
-    #   compensate = lambda x, t: x
+    # Get the functions to compensate and buy energy from the public grid
+    if self.public_grid is not None and self.public_grid.credit_rate > 0:
+      compensate = self.public_grid.store_energy_credit
+      buy = self.public_grid.buy_energy
+    else:
+      compensate = lambda x: x
+      buy = lambda x, t: None
 
     # Calculate the total generated energy by all generators
     generated_energy = self.photovoltaic_panel.output_power + self.wind_turbine.output_power
@@ -151,14 +159,14 @@ class Microgrid:
         # Charge the battery with the surplus energy (if the battery is connected)
         remaining_surplus_energy_after_charging = charge(remaining_surplus_energy * converter_efficiency, t) / converter_efficiency
         # Send the surplus energy to the public grid (if the public grid is connected)
-        ''' Send surplus energy for net metering or throw it away. '''
+        self.surplus_energy[t] = compensate(remaining_surplus_energy_after_charging * inverter_efficiency) / inverter_efficiency
       # If there is deficit energy
       else:
         remaining_deficit_energy = adjusted_difference_at_time[t]
         # Discharge the battery to cover the deficit (if the battery is connected)
         remaining_deficit_energy_after_discharging = discharge(remaining_deficit_energy, t) * inverter_efficiency
         # If there is still deficit, buy energy from the public grid (if the public grid is connected)
-        ''' Buy energy from the public grid if it exists. '''
+        buy(remaining_deficit_energy_after_discharging, t)
 
   def economic_analysis(self) -> None:
     ''' Performs the economic analysis of the microgrid and its components. '''
@@ -180,7 +188,7 @@ class Microgrid:
     # if self.public_grid is not None:
     #   self.public_grid.economic_analysis(self.hour_steps)
 
-  def run(self) -> None:
+  def run(self) -> tuple:
     ''' Runs the Microgrid simulation. '''
 
     # Initialize the microgrid components
@@ -194,3 +202,5 @@ class Microgrid:
 
     # Disconsider the first time step for the battery state of charge
     self.battery.state_of_charge = self.battery.state_of_charge[1:]
+
+    return self.cost, self.LOLP, self.RF

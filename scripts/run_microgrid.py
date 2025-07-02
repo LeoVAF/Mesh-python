@@ -40,7 +40,8 @@ bat_lf_list = [18,17.5,7,15,10,10,10,20,14,13.5,20,3,15,6.5]
 bat_cycle_list = [1400,8000,600,5000,1500,4000,3000,1000,3000,3250,1250,1000,10000,2000]
 
 # Public grid input
-credit_rate = 0
+grid_cost_per_kwh = 0.2
+grid_credit_rate = 0
 
 # Inverter input
 inverter_cost = 15000
@@ -71,7 +72,7 @@ battery = Battery(capacity=bat_cap,
                   efficiency=bat_efficiency_list[select_bat],
                   lifetime=bat_lf_list[select_bat],
                   number_of_cycles=bat_cycle_list[select_bat])
-# public_grid = PublicGrid(credit_rate=credit_rate)
+public_grid = PublicGrid(cost_per_kwh=grid_cost_per_kwh, credit_rate=grid_credit_rate)
 inverter = Inverter(cost=inverter_cost, efficiency=inverter_efficiency, lifetime=inverter_lifetime)
 converter = Converter(cost=converter_cost, efficiency=converter_efficiency, lifetime=converter_lifetime)  # Assuming converter is not used in this simulation
 
@@ -89,4 +90,4 @@ microgrid = Microgrid(load=load_ind[:8640],
                       converter=converter)
 
 # Run microgrid
-microgrid.run()
+print(microgrid.run())
