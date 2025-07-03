@@ -44,6 +44,8 @@ class Battery:
     ''' Numpy array to store the energy charged at each time step in [kWh]. '''
     self.energy_discharged: np.ndarray[np.float64] | None = None
     ''' Numpy array to store the energy discharged at each time step in [kWh]. '''
+    self.meet_demand: np.ndarray[np.float64] | None = None
+    ''' Energy that will effectively meet demand in [kWh]. '''
 
     self.capacity = capacity
     self.cost_per_kwh = cost_per_kwh
@@ -61,9 +63,11 @@ class Battery:
     '''
 
     self.state_of_charge = np.zeros(hour_steps + 1)
-    self.state_of_charge[0] = self.capacity
     self.energy_charged = np.zeros(hour_steps)
     self.energy_discharged = np.zeros(hour_steps)
+    self.meet_demand = np.zeros(hour_steps)
+    # Start the state of charge with maximum capacity
+    self.state_of_charge[0] = self.capacity
 
   def charge(self, surplus_energy: int | float, t: int) -> int | float:
     ''' Charges the battery with surplus power.
@@ -86,15 +90,16 @@ class Battery:
     # Return the remaining surplus energy after charging
     return surplus_energy - self.energy_charged[t]
 
-  def discharge(self, energy_demanded: int | float, t: int) -> int | float:
+  def discharge(self, energy_demanded_adjusted: int | float, inverter_efficiency: int | float, t: int) -> int | float:
     ''' Discharges the battery to meet demand.
     
     Args:
-      energy_demanded (:type:`int | float`): Energy demanded to discharge the battery in [kWh].
+      energy_demanded_adjusted (:type:`int | float`): Energy demanded adjusted by the microgrid inverter to discharge the battery in [kWh].
+      inverter_efficiency (:type:`int | float`): The efficiency of the inverter between 0 and 1.
       t (:type:`int`): Time step.
 
     Returns:
-      :type:`int | float`: Amount of remaining demand after discharging the battery in [kWh].
+      :type:`int | float`: Amount of remaining demand adjusted after discharging the battery in [kWh].
     '''
     
     # Adjust the state of charge array index to avoid out of bounds error
@@ -102,7 +107,9 @@ class Battery:
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
     # Discharge the battery
-    self.state_of_charge[t_soc] = max(state_of_charge - energy_demanded, self.min_soc)
-    self.energy_discharged[t] = state_of_charge - self.state_of_charge[t_soc]
-    # Return the remaining demand after discharging
-    return energy_demanded - self.energy_discharged[t]
+    self.state_of_charge[t_soc] = max(state_of_charge - energy_demanded_adjusted, self.min_soc)
+    energy_to_discharge = state_of_charge - self.state_of_charge[t_soc]
+    self.energy_discharged[t] = energy_to_discharge
+    self.meet_demand[t] = energy_to_discharge * inverter_efficiency
+    # Return the remaining demand adjusted after discharging
+    return energy_demanded_adjusted - self.energy_discharged[t]

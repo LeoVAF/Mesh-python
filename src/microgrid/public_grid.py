@@ -46,15 +46,15 @@ class PublicGrid:
     self.energy_purchased = np.zeros(hour_steps)
     self.energy_compensated = np.zeros(hour_steps)
 
-  def store_energy_credit(self, surplus_energy: int | float) -> None:
+  def store_energy_credit(self, surplus_energy_adjusted: int | float) -> None:
     ''' Stores the energy credit to compensate.
 
     Args:
-      surplus_energy (:type:`int | float`): The amount of surplus energy to store in [kWh].
+      surplus_energy_adjusted (:type:`int | float`): The amount of surplus energy adjusted by the microgrid inverter to store in [kWh].
       indexes (:type:`int`): The time step at which the energy is stored.
     '''
 
-    self.energy_to_compensate += surplus_energy * self.credit_rate
+    self.energy_to_compensate += surplus_energy_adjusted * self.credit_rate
 
   def purchase_energy(self, energy_demanded: int | float, t: int) -> int | float:
     ''' Purchases energy from the public grid, compensating with available credits.
@@ -65,7 +65,7 @@ class PublicGrid:
     '''
     
     # Get month number
-    month_number = t // 30
+    month_number = t // 720
     # Update credit if new month started
     if self.next_month < month_number:
         self.next_month = month_number

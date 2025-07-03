@@ -69,7 +69,7 @@ class PhotovoltaicPanel:
         solar_radiation (np.ndarray[np.float64]): Numpy array with the solar radiation in [kW/m^2] at the time.
     '''
 
-    irradiance_ref = 1 # Reference irradiance [kWh/m^2]
+    irradiance_ref = 1 # Reference irradiance [kW/m^2]
     temperature_ref = 25 # Reference temperature in [ºC]
     power_temperature_coefficient = 3.7e-3 # Power temperature coefficient of maximum power in [1/°C]
     cell_temperature = temperature + 0.03125 * solar_radiation # Cell temperature

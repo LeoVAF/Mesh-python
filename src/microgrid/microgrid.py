@@ -119,14 +119,20 @@ class Microgrid:
       self.wind_turbine.generate_power(self.wind_velocity, self.wind_height)
     self.energy_generated = self.photovoltaic_panel.output_power + self.wind_turbine.output_power
 
-  def dispatch_energy_by_generators(self, energy_demanded: int | float) -> None:
+  def dispatch_energy_by_generators(self, energy_demanded_adjusted: np.ndarray[np.float64], inverter_efficiency: int | float) -> None:
     ''' Calculates the energy dispatched by generators that effectively met demand.
       
       Args:
-        energy_demanded (:type:`int | float`): The energy demanded in [kWh].
+        energy_demanded_adjusted (:type:`np.ndarray[np.float64]`): The energy demanded adjusted by the microgrid inverter in [kWh].
+        inverter_efficiency (:type:`int | float`): The efficiency of the inverter between 0 and 1.
     '''
 
-    pass
+    # Calculate the energy from generators that will supply the demand equaly
+    self.photovoltaic_panel.meet_demand[:] = np.minimum(self.photovoltaic_panel.output_power, energy_demanded_adjusted - np.minimum(self.wind_turbine.output_power, energy_demanded_adjusted / 2))
+    self.wind_turbine.meet_demand[:] = np.minimum(self.wind_turbine.output_power, energy_demanded_adjusted - self.photovoltaic_panel.meet_demand)
+    # Calculate the energy that effectively was sent to demand
+    self.photovoltaic_panel.meet_demand *= inverter_efficiency
+    self.wind_turbine.meet_demand *= inverter_efficiency
 
   def dispatch_energy(self) -> None:
     ''' Runs the hourly simulation of the microgrid. '''
@@ -142,7 +148,7 @@ class Microgrid:
         converter_efficiency = 1.0
     else:
       charge_battery = lambda x, y: x
-      discharge_battery = lambda x, y: x
+      discharge_battery = lambda x, y, z: x
     # Check if the microgrid inverter is connected and get its efficiency
     if self.inverter is not None:
       inverter_efficiency = self.inverter.efficiency
@@ -158,34 +164,31 @@ class Microgrid:
     else:
       compensate = lambda x: x
       buy = lambda x, t: None
-    # Adjust demanding load for inverter efficiency
-    adjusted_demanding_load = self.load / inverter_efficiency
+    # Adjust load demanded by inverter efficiency
+    energy_demanded_adjusted = self.load / inverter_efficiency
     # Calculate the energy dispatched by generators that met demand
-    self.dispatch_energy_by_generators(adjusted_demanding_load)
+    self.dispatch_energy_by_generators(energy_demanded_adjusted, inverter_efficiency)
     # Calculate the time steps in which there is energy surplus
-    surplus_mask = np.where(self.energy_generated > adjusted_demanding_load, True, False)
-    # Calculate the difference between generated energy and load
-    adjusted_difference_at_time = np.abs(self.energy_generated - adjusted_demanding_load)
+    surplus_mask = np.where(self.energy_generated > energy_demanded_adjusted, True, False)
+    # Calculate the difference between generated energy and load adjusted
+    energy_flow_adjusted = np.abs(self.energy_generated - energy_demanded_adjusted)
     for t, there_is_surplus in enumerate(surplus_mask):
       # If there is surplus energy
       if there_is_surplus:
-        remaining_surplus_energy = adjusted_difference_at_time[t]
+        remaining_surplus_energy = energy_flow_adjusted[t]
         # Charge the battery with the surplus energy (if the battery is connected)
         remaining_surplus_energy_after_charging = charge_battery(remaining_surplus_energy * converter_efficiency, t) / converter_efficiency
         # Send the surplus energy to the public grid (if the public grid is connected)
         self.surplus_energy[t] = compensate(remaining_surplus_energy_after_charging * inverter_efficiency) / inverter_efficiency
       # If there is deficit energy
       else:
-        remaining_deficit_energy = adjusted_difference_at_time[t]
-        # Discharge the battery to cover the deficit (if the battery is connected)
-        remaining_deficit_energy_after_discharging = discharge_battery(remaining_deficit_energy, t) * inverter_efficiency
+        remaining_deficit_energy_adjusted = energy_flow_adjusted[t]
+        # Discharge the battery to cover the deficit adjusted (if the battery is connected)
+        remaining_deficit_energy_after_discharging = discharge_battery(remaining_deficit_energy_adjusted, inverter_efficiency, t) * inverter_efficiency
         # If there is still deficit, buy energy from the public grid (if the public grid is connected)
         buy(remaining_deficit_energy_after_discharging, t)
-    
-      # Sanity check
-      if abs(self.load[t] - (self.energy_generated[t] + self.battery.energy_discharged[t] + self.public_grid.energy_compensated[t] + self.public_grid.energy_purchased[t])) > 1e-10:
-        print('ERRO')
-        exit()
+    # Disconsider the first time step for the battery state of charge
+    self.battery.state_of_charge = self.battery.state_of_charge[1:]
 
   def economic_analysis(self) -> None:
     ''' Performs the economic analysis of the microgrid and its components. '''
@@ -212,7 +215,7 @@ class Microgrid:
 
     if self.public_grid is not None:
       if self.battery is not None:
-        renewable_energy = self.energy_generated + self.battery.energy_discharged
+        renewable_energy = self.photovoltaic_panel.meet_demand + self.wind_turbine.meet_demand + self.battery.meet_demand
         self.RF = np.sum(renewable_energy) / np.sum((renewable_energy + self.public_grid.energy_purchased + self.public_grid.energy_compensated))
       else:
         self.RF = np.sum(self.energy_generated) / np.sum(self.energy_generated + self.public_grid.energy_purchased + self.public_grid.energy_compensated)
@@ -222,7 +225,28 @@ class Microgrid:
   def calculate_lolp(self) -> None:
     ''' Calculates the load of loss probability. '''
     
-    pass
+    if self.photovoltaic_panel is not None:
+      if self.wind_turbine is not None:
+        if self.battery is not None:
+          self.LOLP = np.sum(self.load > self.photovoltaic_panel.output_power + self.wind_turbine.output_power + (self.battery.state_of_charge - self.battery.min_soc) + self.public_grid.energy_compensated + self.public_grid.energy_purchased) / self.hour_steps
+        else:
+          self.LOLP = None
+      else:
+        if self.battery is not None:
+          self.LOLP = None
+        else:
+          self.LOLP = None
+    else:
+      if self.wind_turbine is not None:
+        if self.battery is not None:
+          self.LOLP = None
+        else:
+          self.LOLP = None
+      else:
+        if self.battery is not None:
+          self.LOLP = None
+        else:
+          self.LOLP = None
 
 
   def run(self) -> tuple:
@@ -240,8 +264,6 @@ class Microgrid:
     self.calculate_rf()
     # Calculate the load of loss probability
     self.calculate_lolp()
-    # Disconsider the first time step for the battery state of charge
-    self.battery.state_of_charge = self.battery.state_of_charge[1:]
     return self.cost, self.LOLP, self.RF
 
   def logging(self, file_name: str) -> None:
