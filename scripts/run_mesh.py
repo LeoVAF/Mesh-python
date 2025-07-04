@@ -62,7 +62,7 @@ def main():
     experiment_name = 'wfg1'
 
     objective_dim = 3 # Number of objectives
-    position_dim = 1000 # Design space dimension
+    position_dim = 10 # Design space dimension
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
     
     # position_min_value = np.array([10, 1, 50]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
