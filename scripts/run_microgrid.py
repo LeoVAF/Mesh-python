@@ -91,3 +91,5 @@ microgrid = Microgrid(load=load_ind[:8640],
 
 # Run microgrid
 print(microgrid.run())
+
+# microgrid.logging('result/microgrid_results')

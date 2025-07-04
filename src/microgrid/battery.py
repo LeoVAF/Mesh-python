@@ -53,7 +53,7 @@ class Battery:
     self.lifetime = lifetime
     self.number_of_cycles = number_of_cycles
     self.depth_of_discharge = depth_of_discharge
-    self.min_soc = capacity * depth_of_discharge
+    self.min_soc = capacity * (1 - depth_of_discharge)
 
   def initialize(self, hour_steps: int) -> None:
     ''' Initializes the components of the battery.

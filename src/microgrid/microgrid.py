@@ -6,6 +6,7 @@ from microgrid.inverter import Inverter
 from microgrid.converter import Converter
 
 import numpy as np
+import pandas as pd
 
 class Microgrid:
   ''' Microgrid simulation.
@@ -99,23 +100,23 @@ class Microgrid:
   def initialize(self) -> None:
     ''' Initializes the microgrid components. '''
     
-    if self.photovoltaic_panel is not None:
+    if self.photovoltaic_panel:
       self.photovoltaic_panel.initialize(self.hour_steps)
-    if self.wind_turbine is not None:
+    if self.wind_turbine:
       self.wind_turbine.initialize(self.hour_steps)
-    if self.battery is not None:
+    if self.battery:
       self.battery.initialize(self.hour_steps)
-    if self.public_grid is not None:
+    if self.public_grid:
       self.public_grid.initialize(self.hour_steps)
 
   def generate_energy(self) -> None:
     ''' Generates energy by generators. '''
 
     # Get the generated energy by photovoltaic panels
-    if self.photovoltaic_panel is not None:
+    if self.photovoltaic_panel:
       self.photovoltaic_panel.generate_power(self.temperature, self.solar_radiation)
     # Get the generated energy by wind_turbines
-    if self.wind_turbine is not None:
+    if self.wind_turbine:
       self.wind_turbine.generate_power(self.wind_velocity, self.wind_height)
     self.energy_generated = self.photovoltaic_panel.output_power + self.wind_turbine.output_power
 
@@ -138,11 +139,11 @@ class Microgrid:
     ''' Runs the hourly simulation of the microgrid. '''
 
     # Get the functions to charge and discharge the battery
-    if self.battery is not None:
+    if self.battery:
       charge_battery = self.battery.charge
       discharge_battery = self.battery.discharge
       # Check if the battery has a converter to charge energy and get its efficiency
-      if self.converter is not None:
+      if self.converter:
         converter_efficiency = self.converter.efficiency
       else:
         converter_efficiency = 1.0
@@ -150,15 +151,15 @@ class Microgrid:
       charge_battery = lambda x, y: x
       discharge_battery = lambda x, y, z: x
     # Check if the microgrid inverter is connected and get its efficiency
-    if self.inverter is not None:
+    if self.inverter:
       inverter_efficiency = self.inverter.efficiency
     else:
       inverter_efficiency = 1.0
     # Get the functions to compensate and buy energy from the public grid
-    if self.public_grid is not None and self.public_grid.credit_rate > 0:
+    if self.public_grid and self.public_grid.credit_rate > 0:
       compensate = self.public_grid.store_energy_credit
       buy = self.public_grid.purchase_energy
-    elif self.public_grid is not None:
+    elif self.public_grid:
       compensate = lambda x: x
       buy = self.public_grid.purchase_energy
     else:
@@ -195,55 +196,73 @@ class Microgrid:
 
     pass
     # # Perform economic analysis for photovoltaic panels
-    # if self.photovoltaic_panel is not None:
+    # if self.photovoltaic_panel:
     #   self.photovoltaic_panel.economic_analysis(self.hour_steps)
     # # Perform economic analysis for wind turbines
-    # if self.wind_turbine is not None:
+    # if self.wind_turbine:
     #   self.wind_turbine.economic_analysis(self.hour_steps)
     # # Perform economic analysis for inverter
-    # if self.inverter is not None:
+    # if self.inverter:
     #   self.inverter.economic_analysis(self.hour_steps)
     # # Perform economic analysis for battery
-    # if self.battery is not None:
+    # if self.battery:
     #   self.battery.economic_analysis(self.hour_steps)
     # # Perform economic analysis for public grid
-    # if self.public_grid is not None:
+    # if self.public_grid:
     #   self.public_grid.economic_analysis(self.hour_steps)
 
   def calculate_rf(self) -> None:
-    ''' Calculates the renewable factor. '''
+    r''' Calculates the Renewable Factor (RF) according to the following equation:
 
-    if self.public_grid is not None:
-      if self.battery is not None:
-        renewable_energy = self.photovoltaic_panel.meet_demand + self.wind_turbine.meet_demand + self.battery.meet_demand
-        self.RF = np.sum(renewable_energy) / np.sum((renewable_energy + self.public_grid.energy_purchased + self.public_grid.energy_compensated))
-      else:
-        self.RF = np.sum(self.energy_generated) / np.sum(self.energy_generated + self.public_grid.energy_purchased + self.public_grid.energy_compensated)
+    .. math::
+      RF = \frac{\sum^H_{h=1} P_{pv}(h) + P_{wt}(h) + P_{bat}(h)}{\sum^H_{h=1} P_l(h)},
+
+    where:
+
+      - :math:`P_{pv}(h)` is the power effectively supplied to the load by the photovoltaic generator at hour :math:`h` [kWh];
+      - :math:`P_{wt}(h)` is the power effectively supplied to the load by the wind turbine at hour :math:`h` [kWh];
+      - :math:`P_{bat}(h)` is the power discharged from the battery to the load at hour :math:`h` [kWh];
+      - :math:`P_l(h)` is the power demanded by the load at hour :math:`h` [kWh].
+
+    The Renewable Factor represents the fraction of the total demand met by renewable sources and battery storage over the simulation period.
+    '''
+
+    if self.photovoltaic_panel:
+      pv_meet = self.photovoltaic_panel.meet_demand
     else:
-      self.RF = 1
+      pv_meet = 0
+    if self.wind_turbine:
+      wt_meet = self.wind_turbine.meet_demand
+    else:
+      wt_meet = 0
+    if self.battery:
+      bat_meet = self.battery.meet_demand
+    else:
+      bat_meet = 0
+    self.RF = np.sum(pv_meet + wt_meet + bat_meet) / np.sum(self.load)
 
   def calculate_lolp(self) -> None:
     ''' Calculates the load of loss probability. '''
     
-    if self.photovoltaic_panel is not None:
-      if self.wind_turbine is not None:
-        if self.battery is not None:
+    if self.photovoltaic_panel:
+      if self.wind_turbine:
+        if self.battery:
           self.LOLP = np.sum(self.load > self.photovoltaic_panel.output_power + self.wind_turbine.output_power + (self.battery.state_of_charge - self.battery.min_soc) + self.public_grid.energy_compensated + self.public_grid.energy_purchased) / self.hour_steps
         else:
           self.LOLP = None
       else:
-        if self.battery is not None:
+        if self.battery:
           self.LOLP = None
         else:
           self.LOLP = None
     else:
-      if self.wind_turbine is not None:
-        if self.battery is not None:
+      if self.wind_turbine:
+        if self.battery:
           self.LOLP = None
         else:
           self.LOLP = None
       else:
-        if self.battery is not None:
+        if self.battery:
           self.LOLP = None
         else:
           self.LOLP = None
@@ -273,4 +292,18 @@ class Microgrid:
       file_name (:type:`str`): The name of the excel file that the information will be recorded.
     '''
 
-    pass
+    df = pd.DataFrame({
+      'Load [kWh]': self.load,
+      'Photovoltaic Panel Generation [kWh]': self.photovoltaic_panel.output_power if self.photovoltaic_panel else np.zeros(self.hour_steps),
+      'Wind Turbine Generation [kWh]': self.wind_turbine.output_power if self.wind_turbine else np.zeros(self.hour_steps),
+      'Photovoltaic Panel Supply [kWh]': self.photovoltaic_panel.meet_demand if self.photovoltaic_panel else np.zeros(self.hour_steps),
+      'Wind Turbine Supply [kWh]': self.wind_turbine.meet_demand if self.wind_turbine else np.zeros(self.hour_steps),
+      'Battery State of Charge [kWh]': self.battery.state_of_charge if self.battery else np.zeros(self.hour_steps),
+      'Battery Charge [kWh]': self.battery.energy_charged if self.battery else np.zeros(self.hour_steps),
+      'Battery Discharge [kWh]': self.battery.energy_discharged if self.battery else np.zeros(self.hour_steps),
+      'Energy Compensated [kWh]': self.public_grid.energy_compensated if self.public_grid else np.zeros(self.hour_steps),
+      'Energy Purchased [kWh]': self.public_grid.energy_purchased if self.public_grid else np.zeros(self.hour_steps),
+      'Energy Surplus [kWh]': self.surplus_energy
+    })
+
+    df.to_excel(file_name + '.xlsx', sheet_name='Microgrid Power Flow', index=False)
