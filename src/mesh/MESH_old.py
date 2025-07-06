@@ -768,3 +768,6 @@ class MESH_old:
 
                 self.generation_count = self.generation_count + 1
                 self.check_stopping_criteria()
+            
+            # Return the results (Position, Fitness)
+            return np.array([m.position for m in self.memory]), np.array([m.fitness for m in self.memory])
