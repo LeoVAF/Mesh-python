@@ -45,13 +45,13 @@ from pickle import dump
 import numpy as np
 
 def main():
-    Path("result").mkdir(parents=False, exist_ok=True)
+    Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
     solar_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/solreal.txt')
     wind_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/wind_data.txt')
     load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
-    num_runs = 30 # Number of runs
+    num_runs = 1 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
     num_final_solutions = 300
 
@@ -59,9 +59,9 @@ def main():
     select_bat = 3
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'wfg1'
+    experiment_name = 'zdt4'
 
-    objective_dim = 3 # Number of objectives
+    objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
     
@@ -82,12 +82,12 @@ def main():
     personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
-    global_best_attribution_type = 0 # 0 -> E1 | 1 -> E2 | 2 -> E3 | 3 -> E4
-    dm_pool_type = 1 # 0 -> V1 | 1 -> V2 | 2 -> V3
+    global_best_attribution_type = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
+    dm_pool_type = 0 # 0 -> Sampling from memory (S1) | 1 -> Sampling from population (S2) | 2 -> Sampling from memory and population (S3)
     dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
-    config = f"E{global_best_attribution_type+1}V{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
-    print(f"Running E{global_best_attribution_type+1}V{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name} on MG")
+    config = f"MESH_G{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
+    print(f"Running MESH S{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
     result = {}
     combined_F = None
     combined_P = None
@@ -129,7 +129,7 @@ def main():
     pareto_front = unique_combined_F[ndf[0]]
     best_idx = select_best_N_mo(pareto_front, n)
     result['combined'] = (unique_combined_P[ndf[0]][best_idx], pareto_front[best_idx])
-    with open(f'result/{config}.pkl', 'wb') as file:
+    with open(f'./scripts/results/{config}.pkl', 'wb') as file:
         dump(result, file)
 
 if __name__ == '__main__':

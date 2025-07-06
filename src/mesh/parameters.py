@@ -16,9 +16,9 @@ class MeshParameters:
 
         position_dim (:type:`int | np.integer`): Number of problem variables. Must be a positive integer (> 0).
 
-        position_max_value (:type:`numpy.ndarray[np.number]`): A array with each upper bound of problem. Must be a numpy array of numbers (without NaN values) and size equal to ``position_dim``. Each element must be greater than the respective element from ``position_min_value``.
-            
-        position_min_value (:type:`numpy.ndarray[np.number]`): A array with each lower bound of problem. Must be a numpy array of numbers (without NaN values) and size equal to ``position_dim``. Each element must be less than the respective element from ``position_max_value``.
+        lower_bound_array (:type:`numpy.ndarray[np.number]`): A array with each lower bound of problem. Must be a numpy array of numbers (without NaN values) and size equal to ``position_dim``. Each element must be less than the respective element from ``upper_bound_array``.
+
+        upper_bound_array (:type:`numpy.ndarray[np.number]`): A array with each upper bound of problem. Must be a numpy array of numbers (without NaN values) and size equal to ``position_dim``. Each element must be greater than the respective element from ``lower_bound_array``.
             
         population_size (:type:`int | np.integer`): Population size. Must be a positive integer (> 0).
         
@@ -50,8 +50,8 @@ class MeshParameters:
     def __init__(self,
                  objective_dim: int | np.integer,
                  position_dim: int | np.integer,
-                 position_min_value: np.ndarray[np.number],
-                 position_max_value: np.ndarray[np.number],
+                 lower_bound_array: np.ndarray[np.number],
+                 upper_bound_array: np.ndarray[np.number],
                  population_size: int | np.integer,
                  memory_size: int | Optional[np.integer] = None,
                  global_best_attribution_type: {0,1,2,3} = 0,
@@ -68,9 +68,9 @@ class MeshParameters:
         ''' Number of problem objectives. '''
         self.position_dim: int | np.integer
         ''' Number of problem variables. '''
-        self.position_min_value: np.ndarray[np.number]
+        self.lower_bound_array: np.ndarray[np.number]
         ''' Numpy array with the lower bound of the problem for each variable. '''
-        self.position_max_value: np.ndarray[np.number]
+        self.upper_bound_array: np.ndarray[np.number]
         ''' Numpy array with the upper bound of the problem for each variable. '''
         self.velocity_max_value: np.ndarray[np.float64]
         ''' Numpy array with the upper bound of the velocity calculated by:
@@ -89,11 +89,11 @@ class MeshParameters:
         self.memory_size: int | Optional[np.integer]
         ''' Maximum size of MESH memory. If it is ``None``, so the memory size will be equal to :attr:`population_size`. '''
         self.global_best_attribution_type: {0,1,2,3}
-        ''' Global best selection method. '''
+        ''' Global best selection method. See :attr:`~mesh.operations.global_best_attribution.global_best_attribution_options` '''
         self.dm_pool_type: {0,1,2}
-        ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. '''
+        ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options` '''
         self.dm_operation_type: {0,1,2,3,4}
-        ''' Differential mutation operation. '''
+        ''' Differential mutation operation. See :attr:`~mesh.operations.differential_mutation_strategy.differential_mutation_strategy_options`. '''
         self.communication_probability: int | float
         ''' Communication/cooperation probability. It must be a number between 0 and 1. '''
         self.mutation_rate: int | float
@@ -114,11 +114,11 @@ class MeshParameters:
         is_greater_in_type(position_dim, 'position_dim', (int, np.integer), 0)
         self.position_dim = position_dim
         # Set the maximum and the minimum boundaries for positions
-        assert_np_vectors_for_boundary(position_min_value, 'position_min_value', position_max_value, 'position_max_value', position_dim)
-        self.position_min_value = position_min_value
-        self.position_max_value = position_max_value
+        assert_np_vectors_for_boundary(lower_bound_array, 'lower_bound_array', upper_bound_array, 'upper_bound_array', position_dim)
+        self.lower_bound_array = lower_bound_array
+        self.upper_bound_array = upper_bound_array
         # Set the maximum and minimum boundaries for velocities
-        self.velocity_min_value =  self.position_min_value - self.position_max_value
+        self.velocity_min_value =  self.lower_bound_array - self.upper_bound_array
         self.velocity_max_value = - self.velocity_min_value
         # Set the population size
         is_greater_in_type(population_size, 'population_size', (int, np.integer), 0)

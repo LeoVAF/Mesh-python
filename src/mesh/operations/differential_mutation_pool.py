@@ -6,29 +6,6 @@ import numpy as np
 if TYPE_CHECKING:
     from mesh.core import Mesh
 
-def pool_from_population(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
-  ''' Makes a pool list of particle position from population according to differential mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
-  
-  Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-
-  Returns:
-    :type:`list[np.ndarray[np.float64, 2]]`: The pool list of particles from population.
-  '''
-
-  # Get the positions
-  positions = self.population.position
-  # A array with each position as a matrix with just one row vector
-  position_tensor = positions[:, np.newaxis]
-  # Get the pool masks
-  pool_masks = np.any(position_tensor != positions, axis=2)
-  # Get the indices to generate the pool with subarrays
-  split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
-  # Get the indices of the positions for each row of pool masks
-  _, col_indices = np.where(pool_masks)
-  # Return the pool list of particle position
-  return np.split(positions[col_indices], split_indices)
-
 def pool_from_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
   ''' Returns a pool list of particle position from memory according to differential mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
@@ -53,6 +30,29 @@ def pool_from_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
   _, col_indices = np.where(pool_masks)
   # Return the pool list of particle position
   return np.split(mem_positions[col_indices], split_indices)
+
+def pool_from_population(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
+  ''' Makes a pool list of particle position from population according to differential mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
+  
+  Args:
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+
+  Returns:
+    :type:`list[np.ndarray[np.float64, 2]]`: The pool list of particles from population.
+  '''
+
+  # Get the positions
+  positions = self.population.position
+  # A array with each position as a matrix with just one row vector
+  position_tensor = positions[:, np.newaxis]
+  # Get the pool masks
+  pool_masks = np.any(position_tensor != positions, axis=2)
+  # Get the indices to generate the pool with subarrays
+  split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
+  # Get the indices of the positions for each row of pool masks
+  _, col_indices = np.where(pool_masks)
+  # Return the pool list of particle position
+  return np.split(positions[col_indices], split_indices)
 
 def pool_from_population_and_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
   ''' Makes a pool list of particle position from population and memory according to differential mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
@@ -81,14 +81,14 @@ def pool_from_population_and_memory(self: Mesh) -> list[np.ndarray[np.float64, 2
 
 # The options of Differential Mutation pool
 differential_mutation_pool_options = {
-    0: pool_from_population,
-    1: pool_from_memory,
+    0: pool_from_memory,
+    1: pool_from_population,
     2: pool_from_population_and_memory
 }
 ''' The options of Differential Mutation pool. They are:
 
-  - :type:`0`: Pool from population.
-  - :type:`1`: Pool from memory.
+  - :type:`0`: Pool from memory.
+  - :type:`1`: Pool from population.
   - :type:`2`: Pool from population and memory.
 '''
 

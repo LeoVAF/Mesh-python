@@ -322,8 +322,8 @@ class Mesh():
         '''
 
         neg_velocity = (velocity_input < 0)
-        return np.where(((position_input == self.params.position_min_value) & neg_velocity) |
-                        ((position_input == self.params.position_max_value) & (~ neg_velocity)),
+        return np.where(((position_input == self.params.lower_bound_array) & neg_velocity) |
+                        ((position_input == self.params.upper_bound_array) & (~ neg_velocity)),
                         -velocity_input,
                         velocity_input)
 
@@ -402,7 +402,7 @@ class Mesh():
         np.clip(velocities, params.velocity_min_value, params.velocity_max_value, out=velocities)
         # Calculate the new position (clipped)
         np.add(positions, velocities, out=positions)
-        np.clip(positions, params.position_min_value, params.position_max_value, out=positions)
+        np.clip(positions, params.lower_bound_array, params.upper_bound_array, out=positions)
         # Reflect the velocity at the bounds
         self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
         # Evaluate the positions with the fitness function

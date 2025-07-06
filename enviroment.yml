@@ -19,7 +19,7 @@ dependencies:
   - pytest=8.2
   - pytest-cov=6.0
   - optuna=4.3
-  - hyperopt=0.2
+  # - hyperopt=0.2
   # Project management
   # - poetry=2.1
   - make=4.4

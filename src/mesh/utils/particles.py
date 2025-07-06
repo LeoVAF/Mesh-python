@@ -45,7 +45,7 @@ class Population:
     """ Represents the MESH population.
 
     Args:
-        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.position_min_value`, :attr:`~mesh.parameters.MeshParameters.position_max_value`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.global_best_attribution_type` and :attr:`~mesh.parameters.MeshParameters.max_personal_guides` are used to initialize the population.
+        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.lower_bound_array`, :attr:`~mesh.parameters.MeshParameters.upper_bound_array`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.global_best_attribution_type` and :attr:`~mesh.parameters.MeshParameters.max_personal_guides` are used to initialize the population.
     
     Raises:
         TypeError: If the input is not an instance of :class:`~mesh.parameters.MeshParameters`.
@@ -72,7 +72,7 @@ class Population:
         self.personal_best_fit: np.ndarray[np.float64, 3]
         ''' Numpy tensor with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` fitnesses. '''
 
-        self.position = np.random.uniform(params.position_min_value, params.position_max_value, (params.population_size, params.position_dim))
+        self.position = np.random.uniform(params.lower_bound_array, params.upper_bound_array, (params.population_size, params.position_dim))
         self.velocity = np.random.uniform(params.velocity_min_value, params.velocity_max_value, (params.population_size, params.position_dim))
         self.fitness = np.full((params.population_size, params.objective_dim), np.inf)
         self.rank= np.empty(params.population_size, dtype=int)

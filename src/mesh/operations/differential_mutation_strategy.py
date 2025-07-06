@@ -73,7 +73,7 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xst *= operation_weight
     Xst += Xr[:, 0]
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
+    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
     Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
@@ -121,7 +121,7 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xst *= operation_weight
     Xst += Xr[:, 0]
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
+    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
     Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
@@ -170,7 +170,7 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xst *= operation_weight
     Xst += self.population.global_best[valid_idxs]
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
+    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
     Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
@@ -223,7 +223,7 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xst *= operation_weight
     Xst += X
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
+    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
     Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
@@ -274,7 +274,7 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xst *= operation_weight
     Xst += X
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_min_value, self.params.position_max_value, out=Xst)
+    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     # Apply the crossover operator in the personal best position
     random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
     Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
