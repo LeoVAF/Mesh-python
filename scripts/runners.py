@@ -18,13 +18,27 @@ import os
 
 def get_tuned_parameters(file_name: str, file_folder: str) -> dict:
 	dictionary = {}
-	file_path = f'{file_folder}/{file_name}.txt'
-	if os.path.exists(file_path):	
-		with open(file_path, 'r') as f:
+	file_path = f"{file_folder}/{file_name}.txt"
+	if os.path.exists(file_path):
+		with open(file_path, 'r', encoding='utf-8') as f:
 			for line in f:
 				if line.strip():
-					key, value = line.strip().split(':')
-					dictionary[key.strip()] = float(value.strip())
+					# Divide into "key" and "value (type)"
+					key, value_and_type = line.strip().split(':', 1)
+					key = key.strip()
+					value_and_type = value_and_type.strip()
+					# Separates value and type — expects type to be enclosed in parentheses at the end
+					value_part, type_part = value_and_type.rsplit('(', 1)
+					value = value_part.strip()
+					value_type = type_part.strip(') ').lower()
+					# Convert the value to the correct type
+					if value_type == 'float':
+						value = float(value)
+					elif value_type == 'int':
+						value = int(value)
+					elif value_type == 'bool':
+						value = value == 'True'
+					dictionary[key] = value
 	return dictionary
 
 def dump_results(file_name: str, file_folder: str, results: dict, combined_pos: np.ndarray[np.float64, 2], combined_fit: np.ndarray[np.float64, 2], num_solutions: int) -> None:
@@ -51,7 +65,8 @@ def dump_results(file_name: str, file_folder: str, results: dict, combined_pos: 
 	with open(f'{file_path}/{file_name}.pkl', 'wb') as file:
 		dump(results, file)
 
-def run_mesh(experiment: tuple, # Information to run the experiments (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
+def run_mesh(experiment: tuple, # Information to run the experiments
+						 										# (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
 			       problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
 			       fixed_parameters: tuple, # MESH fixed parameters
 			       tunable_parameters: tuple # MESH tunable parameters
@@ -77,26 +92,25 @@ def run_mesh(experiment: tuple, # Information to run the experiments (experiment
 	combined_F = None
 	combined_P = None
 	for i in tqdm(range(num_runs)):
-		params = MeshParameters(
-								objective_dim = objective_dim,
-								position_dim = position_dim,
-								lower_bound_array = lower_bound_array,
-								upper_bound_array = upper_bound_array, 
-								population_size = population_size,
-								memory_size = memory_size,
-								global_best_attribution_type = global_best_attribution_type,
-								dm_pool_type = dm_pool_type,
-								dm_operation_type = dm_operation_type,
-								communication_probability = communication_probability,
-								mutation_rate = mutation_rate,
-								max_gen = None,
-								max_fit_eval = max_fitness_eval,
-								max_personal_guides = personal_guide_array_size,
-								random_state = random_state)
+		params = MeshParameters(objective_dim = objective_dim,
+														position_dim = position_dim,
+														lower_bound_array = lower_bound_array,
+														upper_bound_array = upper_bound_array, 
+														population_size = population_size,
+														memory_size = memory_size,
+														global_best_attribution_type = global_best_attribution_type,
+														dm_pool_type = dm_pool_type,
+														dm_operation_type = dm_operation_type,
+														communication_probability = communication_probability,
+														mutation_rate = mutation_rate,
+														max_gen = None,
+														max_fit_eval = max_fitness_eval,
+														max_personal_guides = personal_guide_array_size,
+														random_state = random_state)
 		mesh = Mesh(params = params, fitness_function = fit_function)
 		mesh.run()
 
-		# Accumulates the results at each step
+		# Accumulate the results at each step
 		Pos, Fit = mesh.get_results()
 		results[i+1] = {"P":Pos, "F":Fit,}
 		if combined_F is None:
@@ -158,7 +172,7 @@ def run_mesh_old(experiment: tuple, # Information to run the experiments
 		old_mesh.log_memory = None
 		Pos, Fit = old_mesh.run()
 
-		# Accumulates the results at each step
+		# Accumulate the results at each step
 		results[i+1] = {"P":Pos, "F":Fit,}
 		if combined_F is None:
 			combined_P = Pos
@@ -217,7 +231,7 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
 									 seed=random_state,
                 	 verbose=False)
 
-		# Accumulates the results at each step
+		# Accumulate the results at each step
 		Pos, Fit = res.X, res.F
 		results[i+1] = {"P":Pos, "F":Fit,}
 		if combined_F is None:
