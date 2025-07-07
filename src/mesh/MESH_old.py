@@ -383,17 +383,17 @@ class MESH_old:
     def differential_mutation(self,particle,particle_index):
         Xr_pool = []
         personal_best = particle.personal_best[np.random.choice(len(particle.personal_best))]
-
-        if self.params.Xr_pool_type == 0: # Apenas Populacao
-            for p in self.population:
-                if not personal_best == p or not particle == p:
-                    if not particle >> p:
-                        Xr_pool.append(p)
-        elif self.params.Xr_pool_type == 1: # Apenas Memoria
+        
+        if self.params.Xr_pool_type == 0: # Apenas Memoria
             for m in self.memory:
                 if not personal_best == m or not particle == m:
                     if not particle >> m:
                         Xr_pool.append(m)
+        elif self.params.Xr_pool_type == 1: # Apenas Populacao
+            for p in self.population:
+                if not personal_best == p or not particle == p:
+                    if not particle >> p:
+                        Xr_pool.append(p)
         elif self.params.Xr_pool_type == 2: # Combinacao Memoria e Populacao
             for m in self.memory:
                 if not personal_best == m and not particle == m:
