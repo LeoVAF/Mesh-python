@@ -146,6 +146,8 @@ def run_mesh_old(experiment: tuple, # Information to run the experiments
 	mutation_rate = tuned_parameters_dict['mutation_rate'] if ('mutation_rate' in tuned_parameters_dict) else tunable_parameters[1]
 	personal_guide_array_size = tuned_parameters_dict['personal_guide_array_size'] if ('personal_guide_array_size' in tuned_parameters_dict) else tunable_parameters[2]
 
+	print(communication_probability, mutation_rate, personal_guide_array_size)
+
 	results = {}
 	combined_F = None
 	combined_P = None
@@ -211,6 +213,8 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
 	eta_recombination = tuned_parameters_dict['eta_recombination'] if ('eta_recombination' in tuned_parameters_dict) else tunable_parameters[1]
 	mutation_probability = tuned_parameters_dict['mutation_probability'] if ('mutation_probability' in tuned_parameters_dict) else tunable_parameters[2]
 	eta_mutation = tuned_parameters_dict['eta_mutation'] if ('eta_mutation' in tuned_parameters_dict) else tunable_parameters[3]
+
+	print(recombination_probability, eta_recombination, mutation_probability, eta_mutation)
 
 	# Instantiate NSGA2
 	crossover = SBX(prob=recombination_probability, prob_var=1.0, eta=eta_recombination)
