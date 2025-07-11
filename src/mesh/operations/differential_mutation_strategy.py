@@ -60,8 +60,7 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   # Set the valid size of each pool
   valid_size = 3
   # Get the mask for the pools with valid length
-  valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
-  valid_idxs = np.flatnonzero(valid_mask)
+  valid_idxs = np.flatnonzero([len(x) >= valid_size for x in Xr_pool_list])
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get three random indices for particle positions from pool
@@ -106,8 +105,7 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   # Set the valid size of each pool
   valid_size = 5
   # Get the mask for the pools with valid length
-  valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
-  valid_idxs = np.flatnonzero(valid_mask)
+  valid_idxs = np.flatnonzero([len(x) >= valid_size for x in Xr_pool_list])
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get five random indices for particle positions from pool
@@ -157,8 +155,7 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   # Set the valid size of each pool
   valid_size = 2
   # Get the mask for the pools with valid length
-  valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
-  valid_idxs = np.flatnonzero(valid_mask)
+  valid_idxs = np.flatnonzero([len(x) >= valid_size for x in Xr_pool_list])
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get two random indices for particle positions from pool
@@ -207,8 +204,7 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   # Set the valid size of each pool
   valid_size = 2
   # Get the mask for the pools with valid length
-  valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
-  valid_idxs = np.flatnonzero(valid_mask)
+  valid_idxs = np.flatnonzero([len(x) >= valid_size for x in Xr_pool_list])
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get two random indices for particle positions from pool
@@ -258,8 +254,7 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   # Set the valid size of each pool
   valid_size = 3
   # Get the mask for the pools with valid length
-  valid_mask = [len(x) >= valid_size for x in Xr_pool_list]
-  valid_idxs = np.flatnonzero(valid_mask)
+  valid_idxs = np.flatnonzero([len(x) >= valid_size for x in Xr_pool_list])
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get three random indices for particle positions from pool
