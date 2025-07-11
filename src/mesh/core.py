@@ -48,12 +48,6 @@ from joblib import Parallel, delayed
 
 import numpy as np
 
-# import tracemalloc
-# tracemalloc.start()
-# current, peak = tracemalloc.get_traced_memory()
-# print(f"Memória atual: {current / 10**6:.2f} MB; Pico de memória: {peak / 10**6:.2f} MB")
-# tracemalloc.stop()
-
 class Mesh():
     ''' MESH algorithm.
     

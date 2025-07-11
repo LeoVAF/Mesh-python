@@ -18,18 +18,20 @@ def pool_from_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
 
   # Get the positions
   positions = self.population.position
-  # A array with each position as a matrix with just one row vector
-  position_tensor = positions[:, np.newaxis]
-  # Get the memory positions
-  mem_positions = self.memory.position
-  # Get the pool masks
-  pool_masks = np.any(position_tensor != mem_positions, axis=2)
-  # Get the indices to generate the pool with subarrays
-  split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
-  # Get the indices of the positions for each row of pool masks
-  _, col_indices = np.where(pool_masks)
-  # Return the pool list of particle position
-  return np.split(mem_positions[col_indices], split_indices)
+  pb_positions = self.population.personal_best_pos
+  pool_positions = self.memory.position
+  # Compare with the current population positions
+  pool_mask_from_pop = np.any(positions[:, np.newaxis, :] != pool_positions, axis=2)
+  # Compare with the personal best positions
+  pool_mask_from_pb = np.all(np.any(pb_positions[:, :, np.newaxis, :] != pool_positions, axis=3), axis=1)
+  # Combine the two masks
+  final_pool_mask = pool_mask_from_pop & pool_mask_from_pb
+  # Indices to generate the pool with subarrays
+  split_indices = np.cumsum(np.sum(final_pool_mask, axis=1)[:-1])
+  # Indices of the positions for each row of final pool masks
+  _, col_indices = np.where(final_pool_mask)
+  # Generate the pool list of positions
+  return np.split(pool_positions[col_indices], split_indices)
 
 def pool_from_population(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
   ''' Makes a pool list of particle position from population according to differential mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
@@ -43,16 +45,20 @@ def pool_from_population(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
 
   # Get the positions
   positions = self.population.position
-  # A array with each position as a matrix with just one row vector
-  position_tensor = positions[:, np.newaxis]
-  # Get the pool masks
-  pool_masks = np.any(position_tensor != positions, axis=2)
-  # Get the indices to generate the pool with subarrays
-  split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
-  # Get the indices of the positions for each row of pool masks
-  _, col_indices = np.where(pool_masks)
-  # Return the pool list of particle position
-  return np.split(positions[col_indices], split_indices)
+  pb_positions = self.population.personal_best_pos
+  pool_positions = np.unique(self.population.position, axis=0)
+  # Compare with the current population positions
+  pool_mask_from_pop = np.any(positions[:, np.newaxis, :] != pool_positions, axis=2)
+  # Compare with the personal best positions
+  pool_mask_from_pb = np.all(np.any(pb_positions[:, :, np.newaxis, :] != pool_positions, axis=3), axis=1)
+  # Combine the two masks
+  final_pool_mask = pool_mask_from_pop & pool_mask_from_pb
+  # Indices to generate the pool with subarrays
+  split_indices = np.cumsum(np.sum(final_pool_mask, axis=1)[:-1])
+  # Indices of the positions for each row of final pool masks
+  _, col_indices = np.where(final_pool_mask)
+  # Generate the pool list of positions
+  return np.split(pool_positions[col_indices], split_indices)
 
 def pool_from_population_and_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
   ''' Makes a pool list of particle position from population and memory according to differential mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
@@ -66,18 +72,20 @@ def pool_from_population_and_memory(self: Mesh) -> list[np.ndarray[np.float64, 2
 
   # Get the positions
   positions = self.population.position
-  # A array with each position as a matrix with just one row vector
-  position_tensor = positions[:, np.newaxis]
-  # Concatenate the population position and the memory position
-  pop_and_mem_positions = np.concatenate((positions, self.memory.position), axis=0)
-  # Get the pool masks
-  pool_masks = np.any(position_tensor != pop_and_mem_positions, axis=2)
-  # Get the indices to generate the pool with subarrays
-  split_indices = np.cumsum(np.sum(pool_masks, axis=1)[:-1])
-  # Get the indices of the positions for each row of pool masks
-  _, col_indices = np.where(pool_masks)
-  # Return the pool list of particle position
-  return np.split(pop_and_mem_positions[col_indices], split_indices)
+  pb_positions = self.population.personal_best_pos
+  pool_positions = np.unique(np.concatenate((positions, self.memory.position), axis=0), axis=0)
+  # Compare with the current population positions
+  pool_mask_from_pop = np.any(positions[:, np.newaxis, :] != pool_positions, axis=2)
+  # Compare with the personal best positions
+  pool_mask_from_pb = np.all(np.any(pb_positions[:, :, np.newaxis, :] != pool_positions, axis=3), axis=1)
+  # Combine the two masks
+  final_pool_mask = pool_mask_from_pop & pool_mask_from_pb
+  # Indices to generate the pool with subarrays
+  split_indices = np.cumsum(np.sum(final_pool_mask, axis=1)[:-1])
+  # Indices of the positions for each row of final pool masks
+  _, col_indices = np.where(final_pool_mask)
+  # Generate the pool list of positions
+  return np.split(pool_positions[col_indices], split_indices)
 
 # The options of Differential Mutation pool
 differential_mutation_pool_options = {
