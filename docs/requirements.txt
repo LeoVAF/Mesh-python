@@ -1,0 +1,7 @@
+myst-nb
+sphinx-autoapi
+<<<<<<< HEAD
+sphinx-book-theme
+=======
+sphinx-book-theme
+>>>>>>> c7a8c0212b5af121c6db2ac84337f2cdb183efe0

@@ -1,0 +1,136 @@
+###########################################################################
+# Lucas Braga, MS.c. (email: lucas.braga.deo@gmail.com )
+# Gabriel Matos Leite, PhD candidate (email: gmatos@cos.ufrj.br)
+# Carolina Marcelino, PhD (email: carolimarc@ic.ufrj.br)
+# June 16, 2021
+###########################################################################
+# Copyright (c) 2021, Lucas Braga, Gabriel Matos Leite, Carolina Marcelino
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in
+#      the documentation and/or other materials provided with the
+#      distribution
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS USING 
+# THE CREATIVE COMMONS LICENSE: CC BY-NC-ND "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+from mesh.core import Mesh
+from mesh.parameters import MeshParameters
+from microgrid_old.techno_ka import techno_ka
+from problems import get_problem
+
+from pathlib import Path
+# from pymoo.problems import get_problem
+from tqdm import tqdm
+from pygmo import fast_non_dominated_sorting, select_best_N_mo
+from pickle import dump
+
+import numpy as np
+
+def main():
+    Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
+    solar_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/solreal.txt')
+    wind_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/wind_data.txt')
+    load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
+    load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
+    
+    num_runs = 1 # Number of runs
+    num_proc = None # Number of processes to execute the fitness function in parallel
+    num_final_solutions = 300
+
+    # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
+    select_bat = 3
+    bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
+    # experiment_name = bat_name[select_bat]
+    experiment_name = 'zdt4'
+
+    objective_dim = 2 # Number of objectives
+    position_dim = 10 # Design space dimension
+    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
+    
+    # position_min_value = np.array([10, 1, 50]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
+    # position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
+    # def func(args):
+    #     r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[:objective_dim]
+    #     #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
+    #     r[-1] = -r[-1] # Maximizing renewable factor
+    #     return r
+
+    max_iterations = None # Maximum number of iterations
+    max_fitness_eval = 15000 # Maximum fitness evaluations
+    population_size = 100 # Population size
+    memory_size = population_size # Maximum number of particles in memory
+    communication_probability =  0.33 # Communication probability
+    mutation_rate = 0.1 # Mutation rate
+    personal_guide_array_size = 1 # Number of personal guides
+    random_state = None # Defines a seed for random numbers (not used if it is None)
+
+    global_best_attribution_type = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
+    dm_pool_type = 0 # 0 -> Sampling from memory (S1) | 1 -> Sampling from population (S2) | 2 -> Sampling from memory and population (S3)
+    dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
+
+    config = f"MESH_G{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
+    print(f"Running MESH S{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
+    result = {}
+    combined_F = None
+    combined_P = None
+    for i in tqdm(range(num_runs)):
+        params = MeshParameters(objective_dim,
+                                position_dim, position_min_value, position_max_value, 
+                                population_size, memory_size=memory_size,
+                                global_best_attribution_type=global_best_attribution_type,
+                                dm_pool_type=dm_pool_type,
+                                dm_operation_type=dm_operation_type,
+                                communication_probability=communication_probability, mutation_rate=mutation_rate,
+                                max_gen=max_iterations, max_fit_eval=max_fitness_eval,
+                                max_personal_guides=personal_guide_array_size,
+                                random_state=random_state)
+        
+        log = None # f"result/{config}_run{i+1}"
+        mesh = Mesh(params, func, log_memory=log, num_proc=num_proc)
+        mesh.run()
+        Pos, Fit = mesh.get_results()
+        result[i+1] = {"F":Fit, "P":Pos}
+        # Accumulates the results of all executions
+        if combined_F is None:
+            combined_P = Pos
+            combined_F = Fit
+        else:
+            combined_P = np.vstack((combined_P, Pos))
+            combined_F = np.vstack((combined_F, Fit))
+    # Getting the unique points
+    unique_combined_P, unique_idxs = np.unique(combined_P, axis=0, return_index=True)
+    unique_combined_F = combined_F[unique_idxs]
+    # Sorting the vector Fit
+    # Return: (non dominated front, domination list, domination counter, non domination ranks)
+    if len(unique_combined_F) == 1:
+        ndf = [[0]]
+    else:
+        ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_F)
+    n = min(len(ndf[0]), num_final_solutions)
+    # Get the best indexes based on number of final solutions
+    pareto_front = unique_combined_F[ndf[0]]
+    best_idx = select_best_N_mo(pareto_front, n)
+    result['combined'] = (unique_combined_P[ndf[0]][best_idx], pareto_front[best_idx])
+    with open(f'./scripts/results/{config}.pkl', 'wb') as file:
+        dump(result, file)
+
+if __name__ == '__main__':
+    main()
