@@ -255,8 +255,8 @@ class Mesh():
         non_dominated_fronts, _, _, ranks = fast_non_dominated_sorting(points=fitness_matrix)
         return non_dominated_fronts, ranks
 
-    def differential_mutation(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
-        ''' Applies a differential mutation operation decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type` in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`.
+    def differential_evolution(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
+        ''' Generates solutions by Differential Evolution algorithm according to a differential mutation operation decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type` in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`.
         
         Returns:
             :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]`: A tuple with the position and fitness used to update the memory the second time at the generation (for efficiency).
@@ -525,7 +525,7 @@ class Mesh():
                     # Count generations if it is a stopping criterion
                     self.count_generation()
                     # Calculate Xst for each particle
-                    update_memory_pos, update_memory_fit = self.differential_mutation()
+                    update_memory_pos, update_memory_fit = self.differential_evolution()
                     # Mutate the weights
                     self.mutate_weights()
                     # Update global best

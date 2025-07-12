@@ -51,9 +51,8 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
-    num_runs = 1 # Number of runs
+    num_runs = 15 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
-    num_final_solutions = 300
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 3
@@ -77,8 +76,8 @@ def main():
     max_fitness_eval = 15000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability =  0.33 # Communication probability
-    mutation_rate = 0.1 # Mutation rate
+    communication_probability =  0.95 # Communication probability
+    mutation_rate = 0.78 # Mutation rate
     personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
@@ -124,12 +123,12 @@ def main():
         ndf = [[0]]
     else:
         ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_F)
-    n = min(len(ndf[0]), num_final_solutions)
+    n = min(len(ndf[0]), population_size)
     # Get the best indexes based on number of final solutions
     pareto_front = unique_combined_F[ndf[0]]
     best_idx = select_best_N_mo(pareto_front, n)
     result['combined'] = (unique_combined_P[ndf[0]][best_idx], pareto_front[best_idx])
-    with open(f'./scripts/results/{config}.pkl', 'wb') as file:
+    with open(f'./scripts/results/{config}_{objective_dim}_{position_dim}.pkl', 'wb') as file:
         dump(result, file)
 
 if __name__ == '__main__':

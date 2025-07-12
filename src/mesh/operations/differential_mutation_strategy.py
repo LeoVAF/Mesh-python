@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable
+
+from random import sample
 from scipy.stats import truncnorm
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
@@ -64,7 +66,7 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get three random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
+    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\1\bin strategy
@@ -109,7 +111,7 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get five random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
+    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\2\bin strategy
@@ -159,7 +161,7 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get two random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
+    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\1\bin strategy
@@ -208,7 +210,7 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get two random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
+    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\1\bin strategy
@@ -258,7 +260,7 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get three random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][np.random.permutation(len(Xr_pool_list[idx]))[:valid_size]] for idx in valid_idxs], order='F')
+    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
     # Apply the DE\rand\2\bin strategy
