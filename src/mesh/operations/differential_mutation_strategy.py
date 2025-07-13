@@ -12,6 +12,9 @@ if TYPE_CHECKING:
 
 def binomial_crossover(X1: np.ndarray[np.any, 2], X2: np.ndarray[np.any, 2], params: MeshParameters) -> np.ndarray[np.bool, 2]:
   ''' Apply the binomial crossover in ``X1`` in-place from information in ``X2``.
+
+  Note:
+    The crossover is applied in-place in ``X1``. The crossover probability is calculated by a truncated normal between 0 and 1 distribution with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
   
   Args:
     X1 (:type:`np.ndarray[np.any, 2]`): The numpy matrix to apply the crossover.
@@ -38,7 +41,7 @@ def binomial_crossover(X1: np.ndarray[np.any, 2], X2: np.ndarray[np.any, 2], par
   return X1
 
 def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
-  r''' Applies the DE/rand/1/bin strategy. The strategy is defined as follows:
+  r''' Applies the DE/rand/1 strategy. The strategy is defined as follows:
   
   .. math::
     x_{st} = x_{r1} + \alpha \cdot (x_{r2} - x_{r3}),
@@ -49,7 +52,7 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -75,15 +78,14 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xst += Xr[:, 0]
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the personal best position
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
+    # Apply the crossover operator in the particle positions
+    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
 
 def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
-  r''' Applies the DE/rand/2/bin strategy. The strategy is defined as follows:
+  r''' Applies the DE/rand/2 strategy. The strategy is defined as follows:
 
   .. math::
     x_{st} = x_{r1} + \alpha \cdot (x_{r2} - x_{r3}) + \alpha \cdot (x_{r4} - x_{r5}),
@@ -94,7 +96,7 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -122,15 +124,14 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xst += Xr[:, 0]
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the personal best position
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
+    # Apply the crossover operator in the particle positions
+    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
 
 def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
-  r''' Applies the DE/best/1/bin. The strategy is defined as follows:
+  r''' Applies the DE/best/1. The strategy is defined as follows:
   
   .. math::
     x_{st} = x_{gb} + \alpha \cdot (x_{r1} - x_{r2}),
@@ -142,7 +143,7 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -170,15 +171,14 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xst += self.population.global_best[valid_idxs]
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the personal best position
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
+    # Apply the crossover operator in the particle positions
+    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
 
 def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
-  r''' Applies the DE/current-to-best/1/bin. The strategy is defined as follows:
+  r''' Applies the DE/current-to-best/1. The strategy is defined as follows:
   
   .. math::
     x_{st} = x + \alpha \cdot (x_{gb} - x) + \alpha \cdot (x_{r1} - x_{r2}),
@@ -191,7 +191,7 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -222,15 +222,14 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xst += X
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the personal best position
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
+    # Apply the crossover operator in the particle positions
+    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
 
 def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
-  r''' Applies the DE/current-to-rand/1/bin. The strategy is defined as follows:
+  r''' Applies the DE/current-to-rand/1. The strategy is defined as follows:
 
   .. math::
 
@@ -243,7 +242,7 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution with mean 1 and standard deviation 0 between 0 and 2, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -272,9 +271,8 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xst += X
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the personal best position
-    random_indices = np.random.randint(0, self.params.max_personal_guides, size=valid_idx_size)
-    Xst = binomial_crossover(self.population.personal_best_pos[valid_idxs, random_indices, :], Xst, self.params)
+    # Apply the crossover operator in the particle positions
+    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])

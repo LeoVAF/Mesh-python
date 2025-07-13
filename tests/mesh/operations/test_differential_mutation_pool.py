@@ -32,8 +32,6 @@ class TestDifferentialMutationPool(TestCase):
     # Check if each particle or personal best position in the respective particle pool is not in the pool
     for i, pool in enumerate(pool_list):
       assert all([not np.array_equal(mesh.population.position[i], pos) for pos in pool])
-      for pb_pos in mesh.population.personal_best_pos[i]:
-        assert all([not np.array_equal(pb_pos, pos) for pos in pool])
 
   def test_pool_from_population(self):
     # Initialize a random Mesh instance
@@ -59,8 +57,6 @@ class TestDifferentialMutationPool(TestCase):
     # Check if each particle or personal best position in the respective particle pool is not in the pool
     for i, pool in enumerate(pool_list):
       assert all([not np.array_equal(mesh.population.position[i], pos) for pos in pool])
-      for pb_pos in mesh.population.personal_best_pos[i]:
-        assert all([not np.array_equal(pb_pos, pos) for pos in pool])
 
   def test_pool_from_population_and_memory(self):
     # Initialize a random Mesh instance
@@ -85,8 +81,6 @@ class TestDifferentialMutationPool(TestCase):
     # Check if each particle or personal best position in the respective particle pool is not in the pool
     for i, pool in enumerate(pool_list):
       assert all([not np.array_equal(mesh.population.position[i], pos) for pos in pool])
-      for pb_pos in mesh.population.personal_best_pos[i]:
-        assert all([not np.array_equal(pb_pos, pos) for pos in pool])
 
 
 if __name__ == '__main__':

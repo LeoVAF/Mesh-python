@@ -51,12 +51,13 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
-    num_runs = 15 # Number of runs
+    num_runs = 30 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 3
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
+    
     # experiment_name = bat_name[select_bat]
     experiment_name = 'zdt4'
 
@@ -76,9 +77,9 @@ def main():
     max_fitness_eval = 15000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability =  0.95 # Communication probability
-    mutation_rate = 0.78 # Mutation rate
-    personal_guide_array_size = 1 # Number of personal guides
+    communication_probability =  0.99 # Communication probability
+    mutation_rate = 0.72 # Mutation rate
+    personal_guide_array_size = 2 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
     global_best_attribution_type = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
@@ -86,7 +87,7 @@ def main():
     dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
     config = f"MESH_G{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
-    print(f"Running MESH S{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
+    print(f"Running MESH G{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
     result = {}
     combined_F = None
     combined_P = None

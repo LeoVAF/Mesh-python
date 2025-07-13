@@ -18,7 +18,7 @@ import statistics
 
 
 def tuning_fitness(value_list: list) -> float:
-	return -statistics.mean(value_list)
+	return -statistics.median(value_list)
 
 def dump_results(file_name: str, file_folder: str, results: dict) -> None:
     # Creates the folder if it does not exist

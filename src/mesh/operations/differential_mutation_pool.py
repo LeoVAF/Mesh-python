@@ -18,18 +18,13 @@ def pool_from_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
 
   # Get the positions
   positions = self.population.position
-  pb_positions = self.population.personal_best_pos
   pool_positions = self.memory.position
   # Compare with the current population positions
-  pool_mask_from_pop = np.any(positions[:, np.newaxis, :] != pool_positions, axis=2)
-  # Compare with the personal best positions
-  pool_mask_from_pb = np.all(np.any(pb_positions[:, :, np.newaxis, :] != pool_positions, axis=3), axis=1)
-  # Combine the two masks
-  final_pool_mask = pool_mask_from_pop & pool_mask_from_pb
+  pool_mask = np.any(positions[:, np.newaxis, :] != pool_positions, axis=2)
   # Indices to generate the pool with subarrays
-  split_indices = np.cumsum(np.sum(final_pool_mask, axis=1)[:-1])
+  split_indices = np.cumsum(np.sum(pool_mask, axis=1)[:-1])
   # Indices of the positions for each row of final pool masks
-  _, col_indices = np.where(final_pool_mask)
+  _, col_indices = np.where(pool_mask)
   # Generate the pool list of positions
   return np.split(pool_positions[col_indices], split_indices)
 
@@ -45,18 +40,13 @@ def pool_from_population(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
 
   # Get the positions
   positions = self.population.position
-  pb_positions = self.population.personal_best_pos
   pool_positions = np.unique(self.population.position, axis=0)
   # Compare with the current population positions
-  pool_mask_from_pop = np.any(positions[:, np.newaxis, :] != pool_positions, axis=2)
-  # Compare with the personal best positions
-  pool_mask_from_pb = np.all(np.any(pb_positions[:, :, np.newaxis, :] != pool_positions, axis=3), axis=1)
-  # Combine the two masks
-  final_pool_mask = pool_mask_from_pop & pool_mask_from_pb
+  pool_mask = np.any(positions[:, np.newaxis, :] != pool_positions, axis=2)
   # Indices to generate the pool with subarrays
-  split_indices = np.cumsum(np.sum(final_pool_mask, axis=1)[:-1])
+  split_indices = np.cumsum(np.sum(pool_mask, axis=1)[:-1])
   # Indices of the positions for each row of final pool masks
-  _, col_indices = np.where(final_pool_mask)
+  _, col_indices = np.where(pool_mask)
   # Generate the pool list of positions
   return np.split(pool_positions[col_indices], split_indices)
 
@@ -72,18 +62,13 @@ def pool_from_population_and_memory(self: Mesh) -> list[np.ndarray[np.float64, 2
 
   # Get the positions
   positions = self.population.position
-  pb_positions = self.population.personal_best_pos
   pool_positions = np.unique(np.concatenate((positions, self.memory.position), axis=0), axis=0)
   # Compare with the current population positions
-  pool_mask_from_pop = np.any(positions[:, np.newaxis, :] != pool_positions, axis=2)
-  # Compare with the personal best positions
-  pool_mask_from_pb = np.all(np.any(pb_positions[:, :, np.newaxis, :] != pool_positions, axis=3), axis=1)
-  # Combine the two masks
-  final_pool_mask = pool_mask_from_pop & pool_mask_from_pb
+  pool_mask = np.any(positions[:, np.newaxis, :] != pool_positions, axis=2)
   # Indices to generate the pool with subarrays
-  split_indices = np.cumsum(np.sum(final_pool_mask, axis=1)[:-1])
+  split_indices = np.cumsum(np.sum(pool_mask, axis=1)[:-1])
   # Indices of the positions for each row of final pool masks
-  _, col_indices = np.where(final_pool_mask)
+  _, col_indices = np.where(pool_mask)
   # Generate the pool list of positions
   return np.split(pool_positions[col_indices], split_indices)
 

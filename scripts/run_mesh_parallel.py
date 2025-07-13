@@ -74,7 +74,7 @@ def run_mesh(experiment_name,
 		pareto_front = unique_combined_F[ndf[0]]
 		best_idx = select_best_N_mo(pareto_front, n)
 		result['combined'] = (unique_combined_P[ndf[0]][best_idx], pareto_front[best_idx])
-		with open(f'result/{config}.pkl', 'wb') as file:
+		with open(f'./scripts/results/{config}.pkl', 'wb') as file:
 				dump(result, file)
 	return None
 
