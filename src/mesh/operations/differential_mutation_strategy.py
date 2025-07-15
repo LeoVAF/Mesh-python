@@ -27,14 +27,14 @@ def binomial_crossover(X1: np.ndarray[np.any, 2], X2: np.ndarray[np.any, 2], par
 
   # Get the size of the X1 to apply the crossover
   size = X1.shape[0]
-  # Get the crossover weight
-  crossover_weight = truncnorm.rvs(0, 1, size=(size, 1)) * params.mutation_rate
+  # Get the crossover rate
+  crossover_rate = truncnorm.rvs(0, 1, size=(size, 1)) * params.mutation_rate
   # Make the crossover index for each particle
   crossover_index = np.random.randint(0, params.position_dim, size=size)
   # Calculate the crossover chance to apply the binomial crossover
   crossover_chance = np.random.uniform(0.0, 1.0, size=(size, params.position_dim))
   # Get the crossover mask
-  crossover_mask = crossover_chance < crossover_weight
+  crossover_mask = crossover_chance < crossover_rate
   crossover_mask[np.arange(size), crossover_index] = True
   # Apply the crossover
   X1[crossover_mask] = X2[crossover_mask]

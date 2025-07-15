@@ -77,9 +77,9 @@ def main():
     max_fitness_eval = 15000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability =  0.99 # Communication probability
-    mutation_rate = 0.72 # Mutation rate
-    personal_guide_array_size = 2 # Number of personal guides
+    communication_probability =  0.92 # Communication probability
+    mutation_rate = 0.56 # Mutation rate
+    personal_guide_array_size = 3 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
     global_best_attribution_type = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
