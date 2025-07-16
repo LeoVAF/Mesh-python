@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from mesh.core import Mesh
 
 def pool_from_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
-  ''' Returns a pool list of particle position from memory according to differential mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
+  ''' Returns a pool list of particle position from memory according to Differential Mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -29,7 +29,7 @@ def pool_from_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
   return np.split(pool_positions[col_indices], split_indices)
 
 def pool_from_population(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
-  ''' Makes a pool list of particle position from population according to differential mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
+  ''' Makes a pool list of particle position from population according to Differential Mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -51,7 +51,7 @@ def pool_from_population(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
   return np.split(pool_positions[col_indices], split_indices)
 
 def pool_from_population_and_memory(self: Mesh) -> list[np.ndarray[np.float64, 2]]:
-  ''' Makes a pool list of particle position from population and memory according to differential mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
+  ''' Makes a pool list of particle position from population and memory according to Differential Mutation strategies. The pool list of particle position is a list of matrices with the respective pool for each particle.
   
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -85,14 +85,14 @@ differential_mutation_pool_options = {
   - :type:`2`: Pool from population and memory.
 '''
 
-def get_differential_mutation_pool(type: {0, 1, 2}) -> Callable[[Mesh], list[np.ndarray[np.float64, 2]]]:
-  ''' Chooses the Differential Mutation pool type.
+def get_differential_mutation_pool(option: {0, 1, 2}) -> Callable[[Mesh], list[np.ndarray[np.float64, 2]]]:
+  ''' Sets the Differential Mutation pool according to :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
   
   Args:
-    type (:type:`{0, 1, 2}`): The type of Differential Mutation pool.
+    option (:type:`{0, 1, 2}`): Defines the Differential Mutation pool.
   
   Returns:
-    :type:`Callable[[:class:`~mesh.core.Mesh`], list[np.ndarray[np.float64, 2]]]`: The respective function to make the differential mutation pool.
+    :type:`Callable[[Mesh], list[np.ndarray[np.float64, 2]]]`: The respective function to make the Differential Mutation pool.
   '''
 
-  return differential_mutation_pool_options[type]
+  return differential_mutation_pool_options[option]

@@ -51,7 +51,7 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
-    num_runs = 30 # Number of runs
+    num_runs = 1 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)

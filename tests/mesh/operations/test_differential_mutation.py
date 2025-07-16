@@ -1,14 +1,13 @@
-from mesh.operations import differential_mutation_strategy as dms
+from mesh.operations import differential_mutation as dm
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
 
-from pymoo.problems import get_problem
 from unittest import TestCase, main
 from unittest.mock import patch
 
 import numpy as np
 
-class TestDifferentialMutationStrategy(TestCase):
+class TestDifferentialMutation(TestCase):
   ######################## Constants to initialize the tests ########################
   test_params = MeshParameters(objective_dim=2,
                           position_dim=5, position_min_value=np.array([0]*5), position_max_value=np.array([1]*5), 
@@ -26,7 +25,7 @@ class TestDifferentialMutationStrategy(TestCase):
   @patch('numpy.random.randint', return_value=np.random.randint(0, test_params.position_dim, size=test_idx_size))
   @patch('numpy.random.uniform', return_value=np.random.uniform(0.0, 1.0, size=(test_idx_size, test_params.position_dim)))
   def test_binomial_mutation_mask(self, mock_uniform, mock_randint):
-    dms.binomial_mutation_mask(self.test_params, self.test_idx_size)
+    dm.binomial_mutation_mask(self.test_params, self.test_idx_size)
     
     # Check the call numbers
     self.assertEqual(mock_randint.call_count, 1)

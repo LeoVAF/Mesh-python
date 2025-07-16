@@ -59,7 +59,7 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
     
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent differential mutation.
+    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Set the valid size of each pool
@@ -103,7 +103,7 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
 
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent differential mutation.
+    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Set the valid size of each pool
@@ -150,7 +150,7 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
 
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent differential mutation.
+    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Update the global best
@@ -198,7 +198,7 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
 
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent differential mutation.
+    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Update the global best
@@ -249,7 +249,7 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
 
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent differential mutation.
+    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Set the valid size of each pool
@@ -277,7 +277,8 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   else:
     return np.array([]), np.array([])
 
-differential_mutation_strategy_options = {
+# The options of Differential Mutation operation
+differential_mutation_options = {
   0: rand_1_bin,
   1: rand_2_bin,
   2: best_1_bin,
@@ -293,14 +294,14 @@ differential_mutation_strategy_options = {
   - :type:`4`: Applies the DE/current-to-rand/1/bin strategy.
 '''
 
-def get_differential_mutation_strategy(type: {0, 1, 2, 3, 4}) -> Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]:
-  ''' Chooses the Differential Mutation operation. 
+def get_differential_mutation(option: {0, 1, 2, 3, 4}) -> Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]:
+  ''' Sets the Differential Mutation strategy from Differential Evolution according to :attr:`~mesh.operations.differential_mutation.differential_mutation_options`.
   
   Args:
-    type (:type:`{0, 1, 2, 3, 4}`): The type of Differential Mutation operation.
+    option (:type:`{0, 1, 2, 3, 4}`): Defines the Differential Mutation strategy.
 
   Returns:
-    :type:`Callable[[:class:`~mesh.core.Mesh`, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]`: The Differential Mutation operation function.
+    :type:`Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]`: The Differential Mutation strategy function.
   '''
 
-  return differential_mutation_strategy_options[type]
+  return differential_mutation_options[option]

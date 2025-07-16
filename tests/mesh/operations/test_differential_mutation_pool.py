@@ -2,12 +2,17 @@ from mesh.operations import differential_mutation_pool as dmp
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
 
-from pymoo.problems import get_problem
 from unittest import TestCase, main
 
 import numpy as np
 
 class TestDifferentialMutationPool(TestCase):
+
+  # Define a simple objective function for testing purposes
+  @staticmethod
+  def func(x):
+      return np.sum(x**2), -np.sum(x**2)
+
   def test_pool_from_memory(self):
     # Initialize a random Mesh instance
     params = MeshParameters(objective_dim=2,
@@ -20,8 +25,7 @@ class TestDifferentialMutationPool(TestCase):
                             max_gen=0, max_fit_eval=200,
                             max_personal_guides=3,
                             random_state=None)
-    func = get_problem('zdt1', n_var=5).evaluate
-    mesh = Mesh(params, func, log_memory=None)
+    mesh = Mesh(params, self.func, log_memory=None)
     # Initialize the algorithm
     mesh.initialize()
     mesh.run()
@@ -45,8 +49,7 @@ class TestDifferentialMutationPool(TestCase):
                             max_gen=0, max_fit_eval=200,
                             max_personal_guides=3,
                             random_state=None)
-    func = get_problem('zdt1', n_var=5).evaluate
-    mesh = Mesh(params, func, log_memory=None)
+    mesh = Mesh(params, self.func, log_memory=None)
     # Initialize the algorithm
     mesh.initialize()
     mesh.run()
@@ -70,8 +73,7 @@ class TestDifferentialMutationPool(TestCase):
                             max_gen=0, max_fit_eval=200,
                             max_personal_guides=3,
                             random_state=None)
-    func = get_problem('zdt1', n_var=5).evaluate
-    mesh = Mesh(params, func, log_memory=None)
+    mesh = Mesh(params, self.func, log_memory=None)
     # Initialize the algorithm
     mesh.initialize()
 

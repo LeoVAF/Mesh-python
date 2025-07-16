@@ -166,6 +166,7 @@ def random_in_fronts(self: Mesh) -> None:
     # Set the global best from previous front
     self.population.global_best[rank_non_zero_mask] = self.population.position[rank_non_zero_idxs]
 
+# The options of global best attribution operation
 global_best_attribution_options = {
   0: sigma_method_in_memory,
   1: sigma_method_in_fronts,
@@ -180,14 +181,14 @@ global_best_attribution_options = {
   - :type:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
 '''
 
-def get_global_best_attribution(type: {0, 1, 2, 3}) -> Callable[[Mesh], None]:
-  ''' Chooses the global best attribution operation.
+def get_global_best_attribution(option: {0, 1, 2, 3}) -> Callable[[Mesh], None]:
+  ''' Sets the global best attribution operation according to :attr:`~mesh.operations.global_best_attribution.global_best_attribution_options`.
   
   Args:
-    type (:type:`{0, 1, 2, 3}`): The type of global best attribution operation.
+    option (:type:`{0, 1, 2, 3}`): Defines the global best attribution operation.
 
   Returns:
-    :type:`Callable[[:class:`~mesh.core.Mesh`], None]`: The respective function to select the global best.
+    :type:`Callable[[Mesh], None]`: The respective function to select the global best.
   '''
 
-  return global_best_attribution_options[type]
+  return global_best_attribution_options[option]

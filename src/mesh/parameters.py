@@ -2,7 +2,7 @@ from mesh.validations.python_validations import assert_type, is_greater_in_type,
 from mesh.validations.numpy_validations import assert_np_vectors_for_boundary
 from mesh.operations.global_best_attribution import global_best_attribution_options
 from mesh.operations.differential_mutation_pool import differential_mutation_pool_options
-from mesh.operations.differential_mutation_strategy import differential_mutation_strategy_options
+from mesh.operations.differential_mutation import differential_mutation_options
 
 from typing import Optional
 
@@ -28,7 +28,7 @@ class MeshParameters:
         
         dm_pool_type (:type:`{0, 1, 2}`): Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
     
-        dm_operation_type (:type:`{0, 1, 2, 3, 4}`): Differential mutation operation type. See :attr:`~mesh.operations.differential_mutation_strategy.differential_mutation_strategy_options`.
+        dm_operation_type (:type:`{0, 1, 2, 3, 4}`): Differential mutation operation type. See :attr:`~mesh.operations.differential_mutation.differential_mutation_options`.
     
         communication_probability (:type:`int | float | np.number`): Communication/cooperation probability. Must be a number between 0 and 1, inclusive.
         
@@ -93,7 +93,7 @@ class MeshParameters:
         self.dm_pool_type: {0,1,2}
         ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options` '''
         self.dm_operation_type: {0,1,2,3,4}
-        ''' Differential mutation operation. See :attr:`~mesh.operations.differential_mutation_strategy.differential_mutation_strategy_options`. '''
+        ''' Differential mutation operation. See :attr:`~mesh.operations.differential_mutation.differential_mutation_options`. '''
         self.communication_probability: int | float
         ''' Communication/cooperation probability. It must be a number between 0 and 1. '''
         self.mutation_rate: int | float
@@ -133,7 +133,7 @@ class MeshParameters:
         is_in_options(global_best_attribution_type, 'global_best_attribution_type', global_best_attribution_options.keys())
         self.global_best_attribution_type = global_best_attribution_type
         # Set the differential mutation type
-        is_in_options(dm_operation_type, 'dm_operation_type', differential_mutation_strategy_options.keys())
+        is_in_options(dm_operation_type, 'dm_operation_type', differential_mutation_options.keys())
         self.dm_operation_type = dm_operation_type
         # Set the differential mutation pool type
         is_in_options(dm_pool_type, 'dm_pool_type', differential_mutation_pool_options.keys())

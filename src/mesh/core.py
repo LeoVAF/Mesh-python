@@ -37,7 +37,8 @@ from mesh.utils.particles import Population, Memory
 from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
 from mesh.operations.global_best_attribution import get_global_best_attribution
 from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
-from mesh.operations.differential_mutation_strategy import get_differential_mutation_strategy
+from mesh.operations.differential_mutation import get_differential_mutation
+from mesh.operations.differential_crossover import get_differential_crossover
 from mesh.validations.python_validations import assert_type, is_greater_in_type, is_function
 
 from tqdm import tqdm
@@ -77,7 +78,7 @@ class Mesh():
         ''' Function to attribute the global best to the particles. '''
         self.differential_mutation_pool: MethodType[Callable[[Mesh], list[np.ndarray[np.float64, 2]]]]
         ''' Function to make the differential mutation pool. '''
-        self.differential_mutation_strategy: MethodType[Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
+        self.differential_mutation: MethodType[Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
         ''' Function to do the differential mutation operation. '''
         self.population: Population
         ''' Population of particles. '''
@@ -116,7 +117,8 @@ class Mesh():
         # Chosing the operations just one time
         self.global_best_attribution = MethodType(get_global_best_attribution(params.global_best_attribution_type), self)
         self.differential_mutation_pool = MethodType(get_differential_mutation_pool(params.dm_pool_type), self)
-        self.differential_mutation_strategy = MethodType(get_differential_mutation_strategy(params.dm_operation_type), self)
+        self.differential_mutation = MethodType(get_differential_mutation(params.dm_operation_type), self)
+        self.differential_crossover = MethodType(get_differential_crossover('binomial'), self)
         # Use a random seed if there is
         np.random.seed(params.random_state)
         # Particles
@@ -256,7 +258,7 @@ class Mesh():
         return non_dominated_fronts, ranks
 
     def differential_evolution(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
-        ''' Generates solutions by Differential Evolution algorithm according to a differential mutation operation decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type` in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`.
+        ''' Generates solutions by Differential Evolution algorithm according to a differential mutation strategy decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type`, with solutions sampled in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`.
         
         Returns:
             :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]`: A tuple with the position and fitness used to update the memory the second time at the generation (for efficiency).
@@ -264,8 +266,8 @@ class Mesh():
         
         # A array of a matrix pool in each row
         Xr_pool_list = self.differential_mutation_pool()
-        # Apply a strategy
-        Xst, valid_idxs = self.differential_mutation_strategy(Xr_pool_list)
+        # Apply a differential mutation strategy
+        Xst, valid_idxs = self.differential_mutation(Xr_pool_list)
         # Get the position and fitness to update the memory
         update_memory_pos = self.population.position
         update_memory_fit = self.population.fitness
