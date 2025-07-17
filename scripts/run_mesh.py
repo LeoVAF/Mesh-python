@@ -51,7 +51,7 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
-    num_runs = 5 # Number of runs
+    num_runs = 1 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
@@ -59,9 +59,9 @@ def main():
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'dtlz3'
+    experiment_name = 'zdt4'
 
-    objective_dim = 3 # Number of objectives
+    objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
     
@@ -93,7 +93,7 @@ def main():
     combined_P = None
     for i in tqdm(range(num_runs)):
         params = MeshParameters(objective_dim,
-                                position_dim, position_min_value, position_max_value, 
+                                position_dim, position_min_value, position_max_value,
                                 population_size, memory_size=memory_size,
                                 global_best_attribution_type=global_best_attribution_type,
                                 dm_pool_type=dm_pool_type,

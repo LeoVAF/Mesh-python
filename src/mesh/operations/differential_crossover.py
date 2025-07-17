@@ -34,7 +34,7 @@ def binomial_crossover(self: Mesh, X1: np.ndarray[np.any, 2], X2: np.ndarray[np.
   # Get the size of the X1 to apply the crossover
   size = X1.shape[0]
   # Get the crossover rate
-  crossover_rate = truncnorm.rvs(0, 1, size=(size, 1)) * self.params.mutation_rate
+  crossover_rate = truncnorm.rvs(0, 1, size=(size, 1))
   # Make the crossover index for each particle
   crossover_index = np.random.randint(0, self.params.position_dim, size=size)
   # Calculate the crossover chance to apply the Binomial Crossover

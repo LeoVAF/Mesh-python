@@ -1,6 +1,8 @@
-from mesh.operations import differential_mutation as dm
+from mesh.operations import differential_crossover as dc
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
+
+from scipy.stats import truncnorm
 
 from unittest import TestCase, main
 from unittest.mock import patch
@@ -8,8 +10,61 @@ from unittest.mock import patch
 import numpy as np
 
 class TestDifferentialCrossover(TestCase):
-  pass
   
+  ######################## Constants to initialize the tests ########################
+  population_size = 20
+  objective_dim = 2
+  position_dim = 5
+  lower_bound = np.array([0]*position_dim)
+  upper_bound = np.array([1]*position_dim)
+  memory_size = population_size
+  global_best_attribution_type = 0
+  dm_pool_type = 0
+  dm_operation_type = 0
+  communication_probability = 0.5
+  mutation_rate = 0.5
+  max_iterations = None
+  max_fitness_eval = 200
+  personal_guide_array_size = 3
+  random_state = None
+  test_params = MeshParameters(objective_dim,
+                               position_dim, lower_bound, upper_bound, 
+                               population_size, memory_size=memory_size,
+                               global_best_attribution_type=global_best_attribution_type,
+                               dm_pool_type=dm_pool_type,
+                               dm_operation_type=dm_operation_type,
+                               communication_probability=communication_probability, mutation_rate=mutation_rate,
+                               max_gen=max_iterations, max_fit_eval=max_fitness_eval,
+                               max_personal_guides=personal_guide_array_size,
+                               random_state=random_state)
+  
+  test_idx_size = 10
+  ###################################################################################
+  
+  @patch('scipy.stats.truncnorm.rvs', return_value=truncnorm.rvs(0, 1, size=(test_idx_size, 1)))
+  @patch('numpy.random.randint', return_value=np.random.randint(0, test_params.position_dim, size=test_idx_size))
+  @patch('numpy.random.uniform', return_value=np.random.uniform(0.0, 1.0, size=(test_idx_size, test_params.position_dim)))
+  def test_binomial_crossover(self, mock_uniform, mock_randint, mock_truncnorm):
+    # Create a Mesh object
+    mesh = Mesh(self.test_params, lambda x: (np.sum(x), np.prod(x)))
+    
+    # Create test data
+    X1 = np.random.rand(self.test_idx_size, self.test_params.position_dim)
+    X2 = np.random.rand(self.test_idx_size, self.test_params.position_dim)
+    
+    # Apply the binomial crossover
+    result = dc.binomial_crossover(mesh, X1, X2)
+    
+    # Check if the result has the same shape as X1 and X2
+    self.assertEqual(result.shape, X1.shape)
+    
+    # Check if the crossover was applied correctly
+    for i in range(X1.shape[0]):
+      for j in range(X1.shape[1]):
+        if np.random.rand() < mesh.params.mutation_rate:
+          self.assertEqual(result[i, j], X2[i, j])
+        else:
+          self.assertEqual(result[i, j], X1[i, j])
 
 if __name__ == '__main__':
   main()

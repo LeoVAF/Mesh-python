@@ -40,7 +40,7 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     # Get three random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\1\bin strategy
     Xst = Xr[:, 1] - Xr[:, 2]
     Xst *= operation_weight
@@ -82,7 +82,7 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     # Get five random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\2\bin strategy
     Xst = Xr[:, 3] - Xr[:, 4]
     Xst += Xr[:, 1]
@@ -129,7 +129,7 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     # Get two random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\1\bin strategy
     Xst = Xr[:, 0] - Xr[:, 1]
     Xst *= operation_weight
@@ -175,7 +175,7 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     # Get two random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\1\bin strategy
     X = self.population.position[valid_idxs]
     Xst = Xr[:, 0] - Xr[:, 1]
@@ -222,7 +222,7 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     # Get three random indices for particle positions from pool
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1)) * self.params.mutation_rate
+    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\2\bin strategy
     X = self.population.position[valid_idxs]
     Xst = Xr[:, 1] - Xr[:, 2]
