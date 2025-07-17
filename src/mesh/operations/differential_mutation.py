@@ -8,37 +8,6 @@ import numpy as np
 
 if TYPE_CHECKING:
     from mesh.core import Mesh
-    from mesh.parameters import MeshParameters
-
-def binomial_crossover(X1: np.ndarray[np.any, 2], X2: np.ndarray[np.any, 2], params: MeshParameters) -> np.ndarray[np.bool, 2]:
-  ''' Apply the binomial crossover in ``X1`` in-place from information in ``X2``.
-
-  Note:
-    The crossover is applied in-place in ``X1``. The crossover probability is calculated by a truncated normal between 0 and 1 distribution with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
-  
-  Args:
-    X1 (:type:`np.ndarray[np.any, 2]`): The numpy matrix to apply the crossover.
-    X2 (:type:`np.ndarray[np.any, 2]`): The second numpy matrix that will share information in the crossover.
-    params (:class:`~mesh.parameters.MeshParameters`): The parameters :attr:`~mesh.parameters.MeshParameters.position_dim` and :attr:`~mesh.parameters.MeshParameters.mutation_rate` are used to apply the crossover.
-    
-  Returns:
-    :type:`np.ndarray[np.any, 2]`: ``X1`` after applying the binomial crossover.
-  '''
-
-  # Get the size of the X1 to apply the crossover
-  size = X1.shape[0]
-  # Get the crossover rate
-  crossover_rate = truncnorm.rvs(0, 1, size=(size, 1)) * params.mutation_rate
-  # Make the crossover index for each particle
-  crossover_index = np.random.randint(0, params.position_dim, size=size)
-  # Calculate the crossover chance to apply the binomial crossover
-  crossover_chance = np.random.uniform(0.0, 1.0, size=(size, params.position_dim))
-  # Get the crossover mask
-  crossover_mask = crossover_chance < crossover_rate
-  crossover_mask[np.arange(size), crossover_index] = True
-  # Apply the crossover
-  X1[crossover_mask] = X2[crossover_mask]
-  return X1
 
 def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/rand/1 strategy. The strategy is defined as follows:
@@ -78,8 +47,6 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xst += Xr[:, 0]
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the particle positions
-    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -124,8 +91,6 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xst += Xr[:, 0]
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the particle positions
-    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -171,8 +136,6 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xst += self.population.global_best[valid_idxs]
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the particle positions
-    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -222,8 +185,6 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xst += X
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the particle positions
-    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -271,8 +232,6 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xst += X
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
-    # Apply the crossover operator in the particle positions
-    Xst = binomial_crossover(self.population.position[valid_idxs], Xst, self.params)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])

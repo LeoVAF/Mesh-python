@@ -8,6 +8,7 @@ from unittest.mock import patch
 import numpy as np
 
 class TestDifferentialMutation(TestCase):
+  
   ######################## Constants to initialize the tests ########################
   test_params = MeshParameters(objective_dim=2,
                           position_dim=5, position_min_value=np.array([0]*5), position_max_value=np.array([1]*5), 

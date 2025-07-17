@@ -51,7 +51,7 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
-    num_runs = 1 # Number of runs
+    num_runs = 5 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
@@ -59,9 +59,9 @@ def main():
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'zdt4'
+    experiment_name = 'dtlz3'
 
-    objective_dim = 2 # Number of objectives
+    objective_dim = 3 # Number of objectives
     position_dim = 10 # Design space dimension
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
     
@@ -77,9 +77,9 @@ def main():
     max_fitness_eval = 15000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability =  0.92 # Communication probability
-    mutation_rate = 0.56 # Mutation rate
-    personal_guide_array_size = 3 # Number of personal guides
+    communication_probability =  0.86 # Communication probability
+    mutation_rate = 0.97 # Mutation rate
+    personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
     global_best_attribution_type = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)

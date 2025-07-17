@@ -131,20 +131,14 @@ def get_problem(name, n_var, n_obj):
     func = {'dtlz1':dtlz1, 'dtlz2':dtlz2, 'dtlz3':dtlz3, 'dtlz4':dtlz4, 'dtlz5':dtlz5, 'dtlz6':dtlz6, 'dtlz7':dtlz7}
     return partial(func[name], n_obj=n_obj), np.array([0.0]*n_var), np.array([1.0]*n_var)
   elif name in {'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
-    func = {'wfg1': problem(wfg(prob_id=1, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg2': problem(wfg(prob_id=2, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness,
-            'wfg3': problem(wfg(prob_id=3, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg4': problem(wfg(prob_id=4, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness,
+    func = {'wfg1': problem(wfg(prob_id=1, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg4': problem(wfg(prob_id=4, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness,
             'wfg5': problem(wfg(prob_id=5, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg6': problem(wfg(prob_id=6, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness,
             'wfg7': problem(wfg(prob_id=7, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg8': problem(wfg(prob_id=8, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness,
             'wfg9': problem(wfg(prob_id=9, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness}
     return func[name], np.array([0.0]*n_var), np.array([2.0*i for i in range(1, n_var+1)])
-  # elif name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
-  #   func = {'wfg1':WFG1(n_var=n_var, n_obj=n_obj).evaluate, 'wfg4':WFG4(n_var=n_var, n_obj=n_obj).evaluate, 'wfg5':WFG5(n_var=n_var, n_obj=n_obj).evaluate,
-  #           'wfg6':WFG6(n_var=n_var, n_obj=n_obj).evaluate, 'wfg7':WFG7(n_var=n_var, n_obj=n_obj).evaluate, 'wfg8':WFG8(n_var=n_var, n_obj=n_obj).evaluate,
-  #           'wfg9':WFG9(n_var=n_var, n_obj=n_obj).evaluate}
-  #   return func[name], np.array([0.0]*n_var), np.array([2.0*i for i in range(1, n_var+1)])
-  # elif name in {'wfg2', 'wfg3'}:
-  #   func = {'wfg2':WFG2(n_var=n_var, n_obj=n_obj).evaluate, 'wfg3':WFG3(n_var=n_var, n_obj=n_obj).evaluate}
-    # return func[name], np.array([0.0]*n_var), np.array([2.0*i for i in range(1, n_var+1)])
+  elif name in {'wfg2', 'wfg3'}:
+    func = {'wfg2': problem(wfg(prob_id=1, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg3': problem(wfg(prob_id=1, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness}
+    return func[name], np.array([0.0]*n_var), np.array([2.0*i for i in range(1, n_var+1)])
   else:
     raise ValueError(f"Problem {name} not found.")
 
