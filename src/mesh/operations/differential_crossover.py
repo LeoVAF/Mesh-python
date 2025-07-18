@@ -13,14 +13,14 @@ def binomial_crossover(self: Mesh, X1: np.ndarray[np.any, 2], X2: np.ndarray[np.
 
   .. math::
       X_{1{[i,\ j]}} = \begin{cases}
-                          X_{1{[i,\ j]}}, & \text{if } r_i \leq p_{cross}, \text{ with } r_i \sim \mathcal{U}(0,\ 1); \\
+                          X_{1{[i,\ j]}}, & \text{if } (r_i \leq p_{cross}) \lor (j = j_{rand}), \text{ with } r_i \sim \mathcal{U}(0,\ 1); \\
                           X_{2{[i,\ j]}}, & \text{otherwise};
                        \end{cases}
 
-  where :math:`p_{cross}` is the crossover probability.
+  where :math:`p_{cross}` is the crossover probability and :math:`j_{rand}` \in \{1,\ \ldots,\ m\} is a random index sampled under a Uniform Distribution.
   
   Note:
-    The crossover probability is calculated by a truncated normal between 0 and 1 distribution with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    The crossover probability is calculated by a Truncated Normal Distribution between 0 and 1 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
   
   Args:
     X1 (:type:`np.ndarray[np.any, 2]`): The numpy matrix to apply the crossover.

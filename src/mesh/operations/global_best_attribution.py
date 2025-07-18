@@ -129,7 +129,7 @@ def sigma_method_in_fronts(self: Mesh) -> None:
     self.population.global_best[current_front] = self.population.position[nearest_idxs]
 
 def random_in_memory(self: Mesh) -> None:
-  ''' Global best attribution with random choice in memory under an uniform distribution. The global best for each particle in the population will be a random particle in memory.
+  ''' Global best attribution with random choice in memory under an Uniform Distribution. The global best for each particle in the population will be a random particle in memory.
   
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -140,7 +140,7 @@ def random_in_memory(self: Mesh) -> None:
   self.population.global_best[:, :] = self.memory.position[random_indices]
 
 def random_in_fronts(self: Mesh) -> None:
-  ''' Global best attribution with random choice in fronts under an uniform distribution. The global best for each particle in the population will be a random particle in the previous front. Particles in the Pareto front will choose the global best from memory.
+  ''' Global best attribution with random choice in fronts under an Uniform Distribution. The global best for each particle in the population will be a random particle in the previous front. Particles in the Pareto front will choose the global best from memory.
 
   Note:
     The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
@@ -177,8 +177,8 @@ global_best_attribution_options = {
 
   - :type:`0`: Applies Sigma method in memory to select the global best.
   - :type:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
-  - :type:`2`: Chooses randomly under uniform distribution a particle from memory.
-  - :type:`3`: Chooses randomly under uniform distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+  - :type:`2`: Chooses randomly under Uniform Distribution a particle from memory.
+  - :type:`3`: Chooses randomly under Uniform Distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
 '''
 
 def get_global_best_attribution(option: {0, 1, 2, 3}) -> Callable[[Mesh], None]:

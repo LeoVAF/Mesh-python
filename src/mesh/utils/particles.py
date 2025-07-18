@@ -55,9 +55,9 @@ class Population:
         assert_type(params, 'params', MeshParameters)
 
         self.position: np.ndarray[np.float64, 2]
-        ''' Numpy matrix with the particle's positions initialized randomly under uniform distribution. '''
+        ''' Numpy matrix with the particle's positions initialized randomly under Uniform Distribution. '''
         self.velocity: np.ndarray[np.float64, 2]
-        ''' Numpy matrix with the particle's velocities initialized randomly under uniform distribution. '''
+        ''' Numpy matrix with the particle's velocities initialized randomly under Uniform Distribution. '''
         self.fitness: np.ndarray[np.float64, 2]
         ''' Numpy matrix with the particle's fitnesses initialized with ``np.inf`` values. '''
         self.rank: np.ndarray[np.integer]

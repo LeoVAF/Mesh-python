@@ -17,11 +17,11 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   
   where:
 
-  - :math:`x_{r1}`, :math:`x_{r2}` and :math:`x_{r3}` are three random particle positions chosen from the pool under uniform distribution;
+  - :math:`x_{r1}`, :math:`x_{r2}` and :math:`x_{r3}` are three random particle positions chosen from the pool under Uniform Distribution;
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -59,11 +59,11 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
 
   where:
   
-  - :math:`x_{r1}`, :math:`x_{r2}`, :math:`x_{r3}`, :math:`x_{r4}` and :math:`x_{r5}` are five random particle positions chosen from the pool under uniform distribution;
+  - :math:`x_{r1}`, :math:`x_{r2}`, :math:`x_{r3}`, :math:`x_{r4}` and :math:`x_{r5}` are five random particle positions chosen from the pool under Uniform Distribution;
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -104,11 +104,11 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
   where:
 
   - :math:`x_{gb}` is the global best position;
-  - :math:`x_{r1}` and :math:`x_{r2}` are two random particle positions chosen from the pool under uniform distribution;
+  - :math:`x_{r1}` and :math:`x_{r2}` are two random particle positions chosen from the pool under Uniform Distribution;
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -149,12 +149,12 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   where:
 
   - :math:`x` is the current particle position;
-  - :math:`x_{r1}` and :math:`x_{r2}` are two random particle positions chosen from the pool under uniform distribution;
+  - :math:`x_{r1}` and :math:`x_{r2}` are two random particle positions chosen from the pool under Uniform Distribution;
   - :math:`x_{gb}` is the global best position;
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -199,11 +199,11 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
   where:
 
   - :math:`x` is the current particle position;
-  - :math:`x_{r1}`, :math:`x_{r2}` and :math:`x_{r3}` are four random particle positions chosen from the pool under uniform distribution;
+  - :math:`x_{r1}`, :math:`x_{r2}` and :math:`x_{r3}` are four random particle positions chosen from the pool under Uniform Distribution;
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a truncated normal distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.

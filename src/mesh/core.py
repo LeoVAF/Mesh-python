@@ -352,7 +352,7 @@ class Mesh():
         - :math:`w_I` is the inertia weight;
         - :math:`w_A` is the assimilation weight;
         - :math:`w_C` is the cooperation weight;
-        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`r_i \sim \mathcal{U}(0,\ 1)` a number sampled under a uniform distribution between 0 and 1 for each line of :math:`C` and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
+        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`r_i \sim \mathcal{U}(0,\ 1)` a number sampled under a Uniform Distribution between 0 and 1 for each line of :math:`C` and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
 
         .. math::
 
