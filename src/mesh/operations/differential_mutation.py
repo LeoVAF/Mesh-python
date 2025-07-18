@@ -9,7 +9,7 @@ import numpy as np
 if TYPE_CHECKING:
     from mesh.core import Mesh
 
-def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def rand_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/rand/1 strategy. The strategy is defined as follows:
   
   .. math::
@@ -41,17 +41,15 @@ def rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
-    # Apply the DE\rand\1\bin strategy
-    Xst = Xr[:, 1] - Xr[:, 2]
-    Xst *= operation_weight
-    Xst += Xr[:, 0]
+    # Apply the DE\rand\1 strategy
+    Xst = Xr[:, 0, :] + operation_weight * (Xr[:, 1, :] - Xr[:, 2, :])
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
 
-def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def rand_2(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/rand/2 strategy. The strategy is defined as follows:
 
   .. math::
@@ -83,19 +81,15 @@ def rand_2_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
-    # Apply the DE\rand\2\bin strategy
-    Xst = Xr[:, 3] - Xr[:, 4]
-    Xst += Xr[:, 1]
-    Xst -= Xr[:, 2]
-    Xst *= operation_weight
-    Xst += Xr[:, 0]
+    # Apply the DE\rand\2 strategy
+    Xst = Xr[:, 0, :] + operation_weight * (Xr[:, 1, :] - Xr[:, 2, :]  + Xr[:, 3, :] - Xr[:, 4, :])
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
 
-def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/best/1. The strategy is defined as follows:
   
   .. math::
@@ -130,17 +124,15 @@ def best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tup
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
-    # Apply the DE\rand\1\bin strategy
-    Xst = Xr[:, 0] - Xr[:, 1]
-    Xst *= operation_weight
-    Xst += self.population.global_best[valid_idxs]
+    # Apply the DE\rand\1 strategy
+    Xst = self.population.global_best[valid_idxs] + operation_weight * (Xr[:, 0, :] - Xr[:, 1, :])
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
 
-def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def current_to_best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/current-to-best/1. The strategy is defined as follows:
   
   .. math::
@@ -176,20 +168,16 @@ def current_to_best_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
-    # Apply the DE\rand\1\bin strategy
+    # Apply the DE\rand\1 strategy
     X = self.population.position[valid_idxs]
-    Xst = Xr[:, 0] - Xr[:, 1]
-    Xst += self.population.global_best[valid_idxs]
-    Xst -= X
-    Xst *= operation_weight
-    Xst += X
+    Xst = X + operation_weight * (self.population.global_best[valid_idxs] - X + Xr[:, 0, :] - Xr[:, 1, :])
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
 
-def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def current_to_rand_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/current-to-rand/1. The strategy is defined as follows:
 
   .. math::
@@ -223,13 +211,9 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
     Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
-    # Apply the DE\rand\2\bin strategy
+    # Apply the DE\rand\2 strategy
     X = self.population.position[valid_idxs]
-    Xst = Xr[:, 1] - Xr[:, 2]
-    Xst += Xr[:, 0]
-    Xst -= X
-    Xst *= operation_weight
-    Xst += X
+    Xst = X + operation_weight * (Xr[:, 0, :] - X + Xr[:, 1, :] - Xr[:, 2, :])
     # Clip the positions to the boundaries
     np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
     return Xst, valid_idxs
@@ -238,19 +222,19 @@ def current_to_rand_1_bin(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 
 
 # The options of Differential Mutation operation
 differential_mutation_options = {
-  0: rand_1_bin,
-  1: rand_2_bin,
-  2: best_1_bin,
-  3: current_to_best_1_bin,
-  4: current_to_rand_1_bin
+  0: rand_1,
+  1: rand_2,
+  2: best_1,
+  3: current_to_best_1,
+  4: current_to_rand_1
 }
 ''' The options of Differential Mutation operation. They are:
 
-  - :type:`0`: Applies the DE/rand/1/bin strategy.
-  - :type:`1`: Applies the DE/rand/2/bin strategy.
-  - :type:`2`: Applies the DE/best/1/bin strategy.
-  - :type:`3`: Applies the DE/current-to-best/1/bin strategy.
-  - :type:`4`: Applies the DE/current-to-rand/1/bin strategy.
+  - :type:`0`: Applies the DE/rand/1 strategy.
+  - :type:`1`: Applies the DE/rand/2 strategy.
+  - :type:`2`: Applies the DE/best/1 strategy.
+  - :type:`3`: Applies the DE/current-to-best/1 strategy.
+  - :type:`4`: Applies the DE/current-to-rand/1 strategy.
 '''
 
 def get_differential_mutation(option: {0, 1, 2, 3, 4}) -> Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]:

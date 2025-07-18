@@ -5,7 +5,6 @@ from mesh.operations import differential_crossover as dc
 from scipy.stats import truncnorm
 
 import numpy as np
-import pytest
 
 # ---------- Fixed parameters for test setup ----------
 population_size = 20
@@ -41,14 +40,18 @@ def test_binomial_crossover(mocker):
   crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, params.position_dim))
   mocker.patch("numpy.random.uniform", return_value=crossover_chances)
 
-  mesh = Mesh(params, lambda x: (np.sum(x), np.prod(x)))
+  # Create a Mesh instance with a dummy function
+  mesh = Mesh(params, lambda x: np.array([np.sum(x), np.prod(x)]))
 
+  # Generate two random arrays for crossover
   X1 = np.random.rand(test_size, position_dim)
   X2 = np.random.rand(test_size, position_dim)
 
-  X = dc.binomial_crossover(mesh, X1, X2)
+  # Apply the binomial crossover operation
+  Xcross = dc.binomial_crossover(mesh, X1, X2)
 
-  for i, x in enumerate(X):
+  # Check if the crossover was applied correctly
+  for i, x in enumerate(Xcross):
     for j, c in enumerate(x):
       if (crossover_chances[i, j] <= crossover_rates[i]) or (j == crossover_idxs[i]):
         assert c == X2[i][j]
