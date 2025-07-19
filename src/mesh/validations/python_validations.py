@@ -1,6 +1,4 @@
-from typing import Iterable, Iterator
-
-from typing import Callable
+from typing import Iterable, Iterator, Callable
 
 import numpy as np
 

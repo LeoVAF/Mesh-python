@@ -1,7 +1,5 @@
 from mesh.validations import python_validations as pv
 
-from unittest import TestCase, main
-
 import pytest
 
 def test_assert_type_success():

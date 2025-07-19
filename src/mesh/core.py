@@ -31,21 +31,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
-from mesh.parameters import MeshParameters
-from mesh.utils.particles import Population, Memory
-from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
-from mesh.operations.global_best_attribution import get_global_best_attribution
-from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
-from mesh.operations.differential_mutation import get_differential_mutation
 from mesh.operations.differential_crossover import get_differential_crossover
+from mesh.operations.differential_mutation import get_differential_mutation
+from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
+from mesh.operations.global_best_attribution import get_global_best_attribution
+from mesh.parameters import MeshParameters
+from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
+from mesh.utils.particles import Population, Memory
 from mesh.validations.python_validations import assert_type, is_greater_in_type, is_function
 
-from tqdm import tqdm
+from joblib import Parallel, delayed
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
+from tqdm import tqdm
 from types import MethodType
 from typing import Callable, Optional
-from joblib import Parallel, delayed
 
 import numpy as np
 

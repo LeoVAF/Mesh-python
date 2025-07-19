@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from mesh.parameters import MeshParameters
-from mesh.validations.python_validations import assert_type
 from mesh.validations.numpy_validations import assert_np_vector_index
+from mesh.validations.python_validations import assert_type
 
 from pygmo import crowding_distance
 from math import comb
@@ -80,7 +80,7 @@ class Population:
             self.sigma = np.full((params.population_size, comb(params.objective_dim, 2)), np.nan)
         self.global_best = np.full((params.population_size, params.position_dim), np.nan)
         self.personal_best_pos = np.repeat(self.position[:, np.newaxis, :], params.max_personal_guides, axis=1)
-        self.personal_best_fit = np.empty((params.population_size, params.max_personal_guides, params.objective_dim))
+        self.personal_best_fit = np.full((params.population_size, params.max_personal_guides, params.objective_dim), np.inf)
 
 class Memory:
     """

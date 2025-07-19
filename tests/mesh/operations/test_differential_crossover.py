@@ -1,6 +1,6 @@
 from mesh.core import Mesh
-from mesh.parameters import MeshParameters
 from mesh.operations import differential_crossover as dc
+from mesh.parameters import MeshParameters
 
 from scipy.stats import truncnorm
 
