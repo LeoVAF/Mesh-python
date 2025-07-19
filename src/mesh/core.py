@@ -47,6 +47,7 @@ from types import MethodType
 from typing import Callable, Optional
 
 import numpy as np
+import random
 
 class Mesh():
     ''' MESH algorithm.
@@ -122,6 +123,7 @@ class Mesh():
         self.differential_crossover = MethodType(get_differential_crossover('binomial'), self)
         # Use a random seed if there is
         np.random.seed(params.random_state)
+        random.seed(params.random_state)
         # Particles
         self.population = None
         # Memory particles (and the final result after run MESH)

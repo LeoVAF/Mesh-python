@@ -4,20 +4,31 @@ from mesh.parameters import MeshParameters
 
 import numpy as np
 
-toy_function = lambda x: (np.sum(x**2), -np.sum(x**2))
+# ---------- Fixed parameters for test setup ----------
+objective_dim = 5
+position_dim = 5
+population_size = 20
+lower_bound = np.array([0] * position_dim)
+upper_bound = np.array([1] * position_dim)
+mutation_rate = 0.5
+communication_probability = 0.8
+max_gen = None
+max_fit_eval = 200
+max_personal_guides = 3
+random_state = None
+
+toy_function = lambda x: np.array([np.random.choice([-1, 1]) * np.random.choice(x) for _ in range(objective_dim)])
 
 def test_pool_from_memory():
   # Initialize a random Mesh instance
-  params = MeshParameters(objective_dim=2,
-                          position_dim=5, lower_bound_array=np.array([0]*5), upper_bound_array=np.array([1]*5), 
-                          population_size=20, memory_size=None,
-                          global_best_attribution_type=0,
+  params = MeshParameters(objective_dim=objective_dim,
+                          position_dim=position_dim, lower_bound_array=lower_bound, upper_bound_array=upper_bound, 
+                          population_size=population_size, memory_size=None,
                           dm_pool_type=0,
-                          dm_operation_type=0,
-                          communication_probability=0.5, mutation_rate=0.5,
-                          max_gen=0, max_fit_eval=200,
-                          max_personal_guides=3,
-                          random_state=None)
+                          communication_probability=communication_probability, mutation_rate=mutation_rate,
+                          max_gen=max_gen, max_fit_eval=max_fit_eval,
+                          max_personal_guides=max_personal_guides,
+                          random_state=random_state)
   mesh = Mesh(params, toy_function, log_memory=None)
 
   # Initialize the algorithm
@@ -32,16 +43,14 @@ def test_pool_from_memory():
 
 def test_pool_from_population():
   # Initialize a random Mesh instance
-  params = MeshParameters(objective_dim=2,
-                          position_dim=5, lower_bound_array=np.array([0]*5), upper_bound_array=np.array([1]*5), 
-                          population_size=20, memory_size=None,
-                          global_best_attribution_type=0,
+  params = MeshParameters(objective_dim=objective_dim,
+                          position_dim=position_dim, lower_bound_array=lower_bound, upper_bound_array=upper_bound, 
+                          population_size=population_size, memory_size=None,
                           dm_pool_type=1,
-                          dm_operation_type=0,
-                          communication_probability=0.5, mutation_rate=0.5,
-                          max_gen=0, max_fit_eval=200,
-                          max_personal_guides=3,
-                          random_state=None)
+                          communication_probability=communication_probability, mutation_rate=mutation_rate,
+                          max_gen=max_gen, max_fit_eval=max_fit_eval,
+                          max_personal_guides=max_personal_guides,
+                          random_state=random_state)
   mesh = Mesh(params, toy_function, log_memory=None)
 
   # Initialize the algorithm
@@ -56,16 +65,14 @@ def test_pool_from_population():
 
 def test_pool_from_population_and_memory():
   # Initialize a random Mesh instance
-  params = MeshParameters(objective_dim=2,
-                          position_dim=5, lower_bound_array=np.array([0]*5), upper_bound_array=np.array([1]*5), 
-                          population_size=3, memory_size=None,
-                          global_best_attribution_type=0,
+  params = MeshParameters(objective_dim=objective_dim,
+                          position_dim=position_dim, lower_bound_array=lower_bound, upper_bound_array=upper_bound, 
+                          population_size=population_size, memory_size=None,
                           dm_pool_type=2,
-                          dm_operation_type=0,
-                          communication_probability=0.5, mutation_rate=0.5,
-                          max_gen=0, max_fit_eval=200,
-                          max_personal_guides=3,
-                          random_state=None)
+                          communication_probability=communication_probability, mutation_rate=mutation_rate,
+                          max_gen=max_gen, max_fit_eval=max_fit_eval,
+                          max_personal_guides=max_personal_guides,
+                          random_state=random_state)
   mesh = Mesh(params, toy_function, log_memory=None)
 
   # Initialize the algorithm

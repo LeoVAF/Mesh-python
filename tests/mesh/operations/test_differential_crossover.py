@@ -7,27 +7,21 @@ from scipy.stats import truncnorm
 import numpy as np
 
 # ---------- Fixed parameters for test setup ----------
-population_size = 20
-objective_dim = 2
+objective_dim = 5
 position_dim = 5
+population_size = 20
 lower_bound = np.array([0] * position_dim)
 upper_bound = np.array([1] * position_dim)
-test_size = 10
+mutation_rate = 0.5
+communication_probability = 0.8
+max_gen = None
+max_fit_eval = 200
+max_personal_guides = 3
+random_state = None
 
-params = MeshParameters(
-    objective_dim=objective_dim,
-    position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
-    population_size=population_size,
-    memory_size=population_size,
-    mutation_rate=0.5,
-    communication_probability= 0.5,
-    max_gen=None,
-    max_fit_eval=200,
-    max_personal_guides=3,
-    random_state=None
-)
+toy_function = lambda x: np.array([np.random.choice([-1, 1]) * np.random.choice(x) for _ in range(objective_dim)])
+
+test_size = 10
 
 def test_binomial_crossover(mocker):
   # Mock the random functions to return predetermined values
@@ -40,8 +34,25 @@ def test_binomial_crossover(mocker):
   crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, params.position_dim))
   mocker.patch("numpy.random.uniform", return_value=crossover_chances)
 
-  # Create a Mesh instance with a dummy function
-  mesh = Mesh(params, lambda x: np.array([np.sum(x), np.prod(x)]))
+  # Create a Mesh instance with a toy function
+  params = MeshParameters(
+    objective_dim=objective_dim,
+    position_dim=position_dim,
+    lower_bound_array=lower_bound,
+    upper_bound_array=upper_bound,
+    population_size=population_size,
+    memory_size=population_size,
+    mutation_rate=mutation_rate,
+    communication_probability=communication_probability,
+    max_gen=max_gen,
+    max_fit_eval=max_fit_eval,
+    max_personal_guides=max_personal_guides,
+    random_state=random_state
+  )
+  mesh = Mesh(params, toy_function)
+
+  # Initialize the algorithm
+  mesh.initialize()
 
   # Generate two random arrays for crossover
   X1 = np.random.rand(test_size, position_dim)

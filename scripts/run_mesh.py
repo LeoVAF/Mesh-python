@@ -103,7 +103,7 @@ def main():
                                 max_personal_guides=personal_guide_array_size,
                                 random_state=random_state)
         
-        log = None # f"result/{config}_run{i+1}"
+        log = None # f"./scripts/results/{config}_run{i+1}"
         mesh = Mesh(params, func, log_memory=log, num_proc=num_proc)
         mesh.run()
         Pos, Fit = mesh.get_results()

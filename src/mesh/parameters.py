@@ -108,7 +108,7 @@ class MeshParameters:
         ''' Seed to generate random numbers. '''
 
         # Set the number of objectives
-        is_greater_in_type(objective_dim, 'objective_dim', (int, np.integer), 0)
+        is_greater_in_type(objective_dim, 'objective_dim', (int, np.integer), 1)
         self.objective_dim = objective_dim
         # Set the position dimension
         is_greater_in_type(position_dim, 'position_dim', (int, np.integer), 0)
