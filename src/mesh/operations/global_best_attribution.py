@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
+from sklearn.neighbors import KDTree
+
 import numpy as np
 
 if TYPE_CHECKING:
@@ -38,6 +40,9 @@ def sigma_evaluation(self: Mesh, fitness_matrix: np.ndarray[np.number, 2]) -> np
 
 def nearest_sigma_in_memory(self: Mesh, particle_idxs: np.ndarray[np.integer]) -> np.ndarray[np.integer, 2]:
   ''' Finds the nearest particle index in memory by sigma value, For each population particle index. The nearest particle will be different from itself (some particles in population can be in memory).
+
+  Note:
+    Because the nearest particle in Sigma space will be different from itself, the memory must have two or more particles when calling this function.
   
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -47,19 +52,14 @@ def nearest_sigma_in_memory(self: Mesh, particle_idxs: np.ndarray[np.integer]) -
     :type:`np.ndarray[np.integer, 2]`: The indices of the nearest particles in the memory. Each row has the index of the nearest particle for the respective particle in the input. If the nearest particle is itself, the index of the second particle is returned.
   '''
 
-  memory_sigma = self.memory.sigma
-  num_particles = len(particle_idxs)
-  # If there is just one particle in the memory, it is the global best of all indexed particles
-  if len(memory_sigma) == 1:
-    return np.zeros(num_particles, dtype=np.uint64)
-  else:
-    # Get the nearest neighbor distances and indices
-    distances, indices = self.pre_allocated.nearest_neighbors.fit(memory_sigma).kneighbors(self.population.sigma[particle_idxs])
-    # The nearest neighbor must be different from itself
-    zero_distances_mask = distances[:, 0] == 0
-    first_valid_idxs = np.where(zero_distances_mask, 1, 0)
-    # Return the nearest indices
-    return indices[np.arange(num_particles), first_valid_idxs]
+  # Get the nearest neighbor distances and indices
+  # distances, indices = self.pre_allocated.two_nearest_neighbors.fit(self.memory.sigma).kneighbors(self.population.sigma[particle_idxs])
+  distances, indices = KDTree(self.memory.sigma).query(self.population.sigma[particle_idxs], k=2)
+  # The nearest neighbor must be different from itself
+  zero_distances_mask = distances[:, 0] == 0
+  first_valid_idxs = np.where(zero_distances_mask, 1, 0)
+  # Return the nearest indices
+  return indices[np.arange(len(particle_idxs)), first_valid_idxs]
 
 def nearest_sigma_in_fronts(self: Mesh, particle_idxs: np.ndarray[np.integer], search_idxs: np.ndarray[np.integer]) -> np.ndarray[np.integer, 2]:
   ''' Finds the nearest particle index in the search indices by sigma value, for each population particle index. The nearest particle will be different from itself.
@@ -80,28 +80,28 @@ def nearest_sigma_in_fronts(self: Mesh, particle_idxs: np.ndarray[np.integer], s
     return np.zeros(num_particles, dtype=np.uint64)
   else:
     # Get the nearest neighbor distances and indices
-    distances, indices = self.pre_allocated.nearest_neighbors.fit(population_sigma[search_idxs]).kneighbors(population_sigma[particle_idxs])
-    # The nearest neighbor must be different from itself
-    non_zero_distances_mask = distances[:, 0] == 0
-    first_valid_idxs = np.where(non_zero_distances_mask, 1, 0)
-    return search_idxs[indices[np.arange(num_particles), first_valid_idxs]]
+    _, indices = KDTree(population_sigma[search_idxs]).query(population_sigma[particle_idxs], k=1)
+    return search_idxs[indices[np.arange(num_particles), 0]]
 
 def sigma_method_in_memory(self: Mesh) -> None:
-  ''' Global best attribution with sigma method in memory. The global best for each particle in the population will be the nearest particle different from itself in memory using the sigma value.
+  ''' Global best attribution with sigma method in memory. The global best for each particle in the population will be the nearest particle different from itself in memory, by sigma value.
   
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
   '''
 
-  # Evaluate sigma
-  self.memory.sigma = sigma_evaluation(self, self.memory.fitness)
-  self.population.sigma[:, :] = sigma_evaluation(self, self.population.fitness)
-  # Choose the global best for the population by the nearest neighbors using sigma value
-  nearest_idxs = nearest_sigma_in_memory(self, np.arange(self.params.population_size))
-  self.population.global_best[:, :] = self.memory.position[nearest_idxs]
+  if len(self.memory.position) == 1:
+    self.population.global_best[:, :] = np.repeat(self.memory.position, self.params.population_size, axis=0)
+  else:
+    # Evaluate sigma
+    self.memory.sigma = sigma_evaluation(self, self.memory.fitness)
+    self.population.sigma[:, :] = sigma_evaluation(self, self.population.fitness)
+    # Choose the global best for the population by the nearest neighbors using sigma value
+    nearest_idxs = nearest_sigma_in_memory(self, np.arange(self.params.population_size))
+    self.population.global_best[:, :] = self.memory.position[nearest_idxs]
 
 def sigma_method_in_fronts(self: Mesh) -> None:
-  ''' Global best attribution with sigma method in fronts. The global best for each particle in the population will be the nearest particle different from itself in the previous front using the sigma value. Particles in the Pareto front will choose the global best from memory.
+  ''' Global best attribution with sigma method in fronts. The global best for each particle in the population will be the nearest particle different from itself in the previous front, by the sigma value. Particles in the Pareto front will choose the global best from memory.
   
   Note:
     The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
@@ -113,15 +113,19 @@ def sigma_method_in_fronts(self: Mesh) -> None:
   # Get the fronts and its length
   fronts = self.fronts
   num_fronts = len(fronts)
-  # Evaluate sigma
-  self.memory.sigma = sigma_evaluation(self, self.memory.fitness)
-  self.population.sigma[:, :] = sigma_evaluation(self, self.population.fitness)
-  # Choose the global best for the Pareto front by the nearest neighbors using sigma value
   pareto_idxs = fronts[0]
-  nearest_idxs = nearest_sigma_in_memory(self, pareto_idxs)
-  self.population.global_best[pareto_idxs] = self.memory.position[nearest_idxs]
-  # Choose the global best for others fronts by the nearest neighbors from the front using sigma value
-  search_front = fronts[0]
+  # Evaluate population sigma
+  self.population.sigma[:, :] = sigma_evaluation(self, self.population.fitness)
+  if len(self.memory.position) == 1:
+    self.population.global_best[pareto_idxs] = np.repeat(self.memory.position, len(pareto_idxs), axis=0)
+  else:
+    # Evaluate memory sigma
+    self.memory.sigma = sigma_evaluation(self, self.memory.fitness)
+    # Choose the global best for the Pareto front by the nearest neighbors using sigma value
+    nearest_idxs = nearest_sigma_in_memory(self, pareto_idxs)
+    self.population.global_best[pareto_idxs] = self.memory.position[nearest_idxs]
+  # Choose the global best for others fronts by the nearest neighbors from the front using sigma value (This part is inefficient in Python)
+  search_front = pareto_idxs
   for i in range(1, num_fronts):
     current_front = fronts[i]
     nearest_idxs = nearest_sigma_in_fronts(self, current_front, search_front)

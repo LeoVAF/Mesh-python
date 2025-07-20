@@ -19,7 +19,7 @@ max_fit_eval = 200
 max_personal_guides = 3
 random_state = None
 
-toy_function = lambda x: np.array([np.random.choice([-1, 1]) * np.random.choice(x) for _ in range(objective_dim)])
+toy_function = lambda x: np.random.rand(objective_dim)
 
 def test_rand_1(mocker):
   # Create a list of arrays to sample from
@@ -67,7 +67,8 @@ def test_rand_1(mocker):
     x1 = Xr[1]
     x2 = Xr[2]
     xst = np.clip(x0 + operation_weight[i] * (x1 - x2), params.lower_bound_array, params.upper_bound_array)
-    assert np.array_equal(Xst[i], xst)
+    # Treating numeric errors
+    assert np.linalg.norm(Xst[i] - xst) < 1e-15
 
   # Testing the case that the pool has less than minimum number of elements
   Xr_pool_list = [np.random.rand(np.random.choice(valid_size), position_dim) for _ in range(population_size)]
@@ -122,7 +123,8 @@ def test_rand_2(mocker):
     x3 = Xr[3]
     x4 = Xr[4]
     xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), params.lower_bound_array, params.upper_bound_array)
-    assert np.array_equal(Xst[i], xst)
+    # Treating numeric errors
+    assert np.linalg.norm(Xst[i] - xst) < 1e-15
 
   # Testing the case that the pool has less than minimum number of elements
   Xr_pool_list = [np.random.rand(np.random.choice(valid_size), position_dim) for _ in range(population_size)]
@@ -175,7 +177,8 @@ def test_best_1(mocker):
     x0 = Xr[0]
     x1 = Xr[1]
     xst = np.clip(xgb + operation_weight[i] * (x0 - x1), params.lower_bound_array, params.upper_bound_array)
-    assert np.array_equal(Xst[i], xst)
+    # Treating numeric errors
+    assert np.linalg.norm(Xst[i] - xst) < 1e-15
 
   # Testing the case that the pool has less than minimum number of elements
   Xr_pool_list = [np.random.rand(np.random.choice(valid_size), position_dim) for _ in range(population_size)]
@@ -229,7 +232,8 @@ def test_current_to_best_1(mocker):
     x0 = Xr[0]
     x1 = Xr[1]
     xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), params.lower_bound_array, params.upper_bound_array)
-    assert np.array_equal(Xst[i], xst)
+    # Treating numeric errors
+    assert np.linalg.norm(Xst[i] - xst) < 1e-15
 
   # Testing the case that the pool has less than minimum number of elements
   Xr_pool_list = [np.random.rand(np.random.choice(valid_size), position_dim) for _ in range(population_size)]
@@ -283,7 +287,8 @@ def test_current_to_rand_1(mocker):
     x1 = Xr[1]
     x2 = Xr[2]
     xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), params.lower_bound_array, params.upper_bound_array)
-    assert np.array_equal(Xst[i], xst)
+    # Treating numeric errors
+    assert np.linalg.norm(Xst[i] - xst) < 1e-15
 
   # Testing the case that the pool has less than minimum number of elements
   Xr_pool_list = [np.random.rand(np.random.choice(valid_size), position_dim) for _ in range(population_size)]

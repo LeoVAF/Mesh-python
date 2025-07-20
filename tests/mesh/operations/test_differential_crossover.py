@@ -19,21 +19,11 @@ max_fit_eval = 200
 max_personal_guides = 3
 random_state = None
 
-toy_function = lambda x: np.array([np.random.choice([-1, 1]) * np.random.choice(x) for _ in range(objective_dim)])
+toy_function = lambda x: np.random.rand(objective_dim)
 
 test_size = 10
 
 def test_binomial_crossover(mocker):
-  # Mock the random functions to return predetermined values
-  crossover_rates = truncnorm.rvs(0, 1, size=(test_size, 1))
-  mocker.patch("scipy.stats.truncnorm.rvs", return_value=crossover_rates)
-
-  crossover_idxs = np.random.randint(0, params.position_dim, size=test_size)
-  mocker.patch("numpy.random.randint", return_value=crossover_idxs)
-
-  crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, params.position_dim))
-  mocker.patch("numpy.random.uniform", return_value=crossover_chances)
-
   # Create a Mesh instance with a toy function
   params = MeshParameters(
     objective_dim=objective_dim,
@@ -57,6 +47,16 @@ def test_binomial_crossover(mocker):
   # Generate two random arrays for crossover
   X1 = np.random.rand(test_size, position_dim)
   X2 = np.random.rand(test_size, position_dim)
+
+  # Mock the random functions to return predetermined values
+  crossover_rates = truncnorm.rvs(0, 1, size=(test_size, 1))
+  mocker.patch("scipy.stats.truncnorm.rvs", return_value=crossover_rates)
+
+  crossover_idxs = np.random.randint(0, params.position_dim, size=test_size)
+  mocker.patch("numpy.random.randint", return_value=crossover_idxs)
+
+  crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, params.position_dim))
+  mocker.patch("numpy.random.uniform", return_value=crossover_chances)
 
   # Apply the binomial crossover operation
   Xcross = dc.binomial_crossover(mesh, X1, X2)

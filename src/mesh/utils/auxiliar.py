@@ -1,8 +1,6 @@
 from mesh.parameters import MeshParameters
 from mesh.validations.python_validations import assert_type
 
-from sklearn.neighbors import NearestNeighbors
-
 import numpy as np
 
 class StoppingAlgorithm(Exception):
@@ -26,8 +24,6 @@ class PreAllocated():
 
         self.np_tril_indices: tuple[np.ndarray[np.uint64], np.ndarray[np.uint64]]
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
-        self.nearest_neighbors: NearestNeighbors
-        ''' Instance of :type:`sklearn.neighbors.NearestNeighbors` with two neighbors and Euclidean as distance metric. '''
         self.matrix_for_operations: np.ndarray[np.float64, 2]
         ''' Numpy matrix for operations. '''
         self.vector_for_operations: np.ndarray[np.float64]
@@ -44,8 +40,6 @@ class PreAllocated():
         # Used to calculate the sigma
         if params.global_best_attribution_type < 2:
             self.np_tril_indices = np.tril_indices(params.objective_dim, k=-1)
-        # The object to get the nearest neighbors
-        self.nearest_neighbors = NearestNeighbors(n_neighbors=2, algorithm='auto', metric='euclidean')
         # Structures used to calculate repetitive operations
         self.matrix_for_operations = np.empty((params.population_size, params.position_dim))
         self.vector_for_operations = np.empty(params.population_size)

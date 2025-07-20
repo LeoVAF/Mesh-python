@@ -17,7 +17,7 @@ max_fit_eval = 200
 max_personal_guides = 3
 random_state = None
 
-toy_function = lambda x: np.array([np.random.choice([-1, 1]) * np.random.choice(x) for _ in range(objective_dim)])
+toy_function = lambda x: np.random.rand(objective_dim)
 
 def test_pool_from_memory():
   # Initialize a random Mesh instance
