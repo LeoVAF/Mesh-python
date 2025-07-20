@@ -129,9 +129,6 @@ def is_function(f: Callable, f_name: str) -> None:
     Raises:
     TypeError: If the input is not of the expected type.
     ValueError: If the input is not a fitness function.
-  
-  Note:
-    Here, a fitness function is considered a function that receive a numpy vector of numbers and return a numpy vector of numbers, with the correct position and objective dimensions.
   '''
 
   # Check the input types

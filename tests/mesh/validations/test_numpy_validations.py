@@ -34,26 +34,26 @@ def test_assert_no_nan_in_np_array_failure():
   with pytest.raises(ValueError, match=r'The input "arr_value" has NaN values.'):
     npv.assert_no_nan_in_np_array(np.array([0, 1, np.nan]), 'arr_value')
 
-def test_assert_np_vector_for_operations_success():
-  assert (npv.assert_np_vector_for_operations(np.array([1, 2, 3]), 'array_value', 3)) is None
-  assert (npv.assert_np_vector_for_operations(np.array([]), 'array_value', 0)) is None
-  assert (npv.assert_np_vector_for_operations(np.array([1, 2, 3, 4, 5]), 'array_value', 5)) is None
-  assert (npv.assert_np_vector_for_operations(np.array([1., 2., 3.]), 'array_value', 3)) is None
+def test_assert_np_array_for_operations_success():
+  assert (npv.assert_np_array_for_operations(np.array([1, 2, 3]), 'array_value', (3,))) is None
+  assert (npv.assert_np_array_for_operations(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), 'array_value', (3, 3))) is None
+  assert (npv.assert_np_array_for_operations(np.array([1, 2, 3, 4, 5]), 'array_value', (5,))) is None
+  assert (npv.assert_np_array_for_operations(np.array([1., 2., 3.]), 'array_value', (3,))) is None
 
-def test_assert_np_vector_for_operations_failure():
-  with pytest.raises(TypeError, match=r'The input "vec_value" has type <class \'int\'>, but expected <class \'numpy.ndarray\'>.'):
-    npv.assert_np_vector_for_operations(1, 'vec_value', 1)
-  with pytest.raises(TypeError, match=r'The input "vec_name" has type <class \'int\'>, but expected <class \'str\'>.'):
-    npv.assert_np_vector_for_operations(np.array([0, 1]), 1, 2)
-  with pytest.raises(TypeError, match=r'The input "size" has type <class \'float\'>, but expected \(<class \'int\'>, <class \'numpy.integer\'>\).'):
-    npv.assert_np_vector_for_operations(np.array([0, 1]), 'vec_value', 2.)
+def test_assert_np_array_for_operations_failure():
+  with pytest.raises(TypeError, match=r'The input "arr_value" has type <class \'int\'>, but expected <class \'numpy.ndarray\'>.'):
+    npv.assert_np_array_for_operations(1, 'arr_value', (1,))
+  with pytest.raises(TypeError, match=r'The input "arr_name" has type <class \'int\'>, but expected <class \'str\'>.'):
+    npv.assert_np_array_for_operations(np.array([0, 1]), 1, 2)
+  with pytest.raises(TypeError, match=r'The input "shape" has type <class \'float\'>, but expected <class \'tuple\'>.'):
+    npv.assert_np_array_for_operations(np.array([0, 1]), 'arr_name', 2.0)
+  with pytest.raises(TypeError, match=r'The parameter "shape" has a non-integer in the position 1.'):
+    npv.assert_np_array_for_operations(np.array([[0, 1], [2, 3]]), 'arr_name', (2, 2.0))
 
-  with pytest.raises(ValueError, match=r'The input "vec_value" must be one-dimensional.'):
-    npv.assert_np_vector_for_operations(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), 'vec_value', 9)
-  with pytest.raises(ValueError, match=r'The parameter size must be greater than 0.'):
-    npv.assert_np_vector_for_operations(np.array([0, 1]), 'vec_value', -2)
-  with pytest.raises(ValueError, match=r'The input "vec_value" with size 2 must have size 1.'):
-    npv.assert_np_vector_for_operations(np.array([0, 1]), 'vec_value', 1)
+  with pytest.raises(ValueError, match=r'The input "arr_name" must have 1 dimension\(s\).'):
+    npv.assert_np_array_for_operations(np.array([[1, 2, 3], [4, 5, 6]]), 'arr_name', (3,))
+  with pytest.raises(ValueError, match=r'The input "arr_name" has 1 element\(s\) in the axis 1, but expected 2 element\(s\).'):
+    npv.assert_np_array_for_operations(np.array([[[1, 2, 3]], [[4, 5, 6]], [[7, 8, 9]]]), 'arr_name', (3, 2, 3))
 
 def test_assert_np_vectors_for_boundary_success():
   assert (npv.assert_np_vectors_for_boundary(np.array([0, 0, 0]), 'vec1', np.array([1, 1, 1]), 'vec2', 3)) is None
@@ -74,13 +74,13 @@ def test_assert_np_vectors_for_boundary_failure():
 
   with pytest.raises(ValueError, match=r'The input "vec1" must be one-dimensional.'):
     npv.assert_np_vectors_for_boundary(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), 'vec1', np.array([1,2,3,4,5,6,7,8,9]), 'vec2', 9)
-  with pytest.raises(ValueError, match=r'The input "vec1" with size 2 must have size 1.'):
+  with pytest.raises(ValueError, match=r'The input "vec1" has size 2, but expected 1.'):
     npv.assert_np_vectors_for_boundary(np.array([0, 0]), 'vec1', np.array([1]), 'vec2', 1)
   with pytest.raises(ValueError, match=r'The input "vec2" must be one-dimensional.'):
     npv.assert_np_vectors_for_boundary(np.array([1,2,3,4,5,6,7,8,9]), 'vec1', np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), 'vec2', 9)
-  with pytest.raises(ValueError, match=r'The input "vec2" with size 2 must have size 1.'):
+  with pytest.raises(ValueError, match=r'The input "vec2" has size 2, but expected 1.'):
     npv.assert_np_vectors_for_boundary(np.array([0]), 'vec1', np.array([1, 1]), 'vec2', 1)
-  with pytest.raises(ValueError, match=r'The parameter size must be greater than 0.'):
+  with pytest.raises(ValueError, match=r'The input "size" has value -2, but it must be greater than 0.'):
     npv.assert_np_vectors_for_boundary(np.array([0, 0]), 'vec1', np.array([1, 1]), 'vec2', -2)
   with pytest.raises(ValueError, match=r'The input "vec1" must be less than "vec2".'):
     npv.assert_np_vectors_for_boundary(np.array([0, 2, 0]), 'vec1', np.array([1, 1, 1]), 'vec2', 3)

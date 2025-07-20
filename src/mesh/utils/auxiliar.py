@@ -1,6 +1,8 @@
 from mesh.parameters import MeshParameters
 from mesh.validations.python_validations import assert_type
 
+from typing import Optional
+
 import numpy as np
 
 class StoppingAlgorithm(Exception):
@@ -22,7 +24,7 @@ class PreAllocated():
     def __init__(self, params: MeshParameters):
         assert_type(params, 'params', MeshParameters)
 
-        self.np_tril_indices: tuple[np.ndarray[np.uint64], np.ndarray[np.uint64]]
+        self.np_tril_indices: Optional[tuple[np.ndarray[np.uint64], np.ndarray[np.uint64]]] = None
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
         self.matrix_for_operations: np.ndarray[np.float64, 2]
         ''' Numpy matrix for operations. '''
@@ -38,7 +40,7 @@ class PreAllocated():
         ''' Numpy matrix to store the fitness of the particles before the particle moviment. '''
 
         # Used to calculate the sigma
-        if params.global_best_attribution_type < 2:
+        if params.global_best_attribution_type in {0, 1}:
             self.np_tril_indices = np.tril_indices(params.objective_dim, k=-1)
         # Structures used to calculate repetitive operations
         self.matrix_for_operations = np.empty((params.population_size, params.position_dim))
