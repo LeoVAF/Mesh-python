@@ -116,7 +116,7 @@ class Memory:
             # Calculate the crowd distance
             crowd_distances = crowding_distance(population.fitness[pareto_front])
             # Sort the Pareto front by the crowding distance
-            idx = np.argpartition(crowd_distances, -params.memory_size)[-params.memory_size:]
+            idxs = np.argpartition(crowd_distances, -params.memory_size)[-params.memory_size:]
             # Initialize the memory with the best solutions
-            self.position = population.position[pareto_front[idx]]
-            self.fitness = population.fitness[pareto_front[idx]]
+            self.position = population.position[pareto_front[idxs]]
+            self.fitness = population.fitness[pareto_front[idxs]]

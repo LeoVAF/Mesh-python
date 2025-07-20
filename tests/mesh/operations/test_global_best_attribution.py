@@ -7,15 +7,17 @@ import numpy as np
 # ---------- Fixed parameters for test setup ----------
 objective_dim = np.random.randint(2, 101)  # Randomly choose objective dimension
 position_dim = 5
-population_size = 50
+population_size = 100
 lower_bound = np.array([0] * position_dim)
 upper_bound = np.array([1] * position_dim)
 mutation_rate = 0.5
 communication_probability = 0.8
 max_gen = None
-max_fit_eval = 200
+max_fit_eval = 500
 max_personal_guides = 3
 random_state = 45
+
+equal_tolerance_for_array = 1e-15
 
 def generate_objective_function(objective_dim):
   def objective_function(position):
@@ -72,7 +74,7 @@ def test_sigma_evaluation():
         sigma_array.append(fitness[i] ** 2 - fitness[j] ** 2)
     sigma_array = np.array(sigma_array) / fitness_squared_sum
     # Treating numeric errors
-    assert np.linalg.norm(sigma_arrays[idx] - sigma_array) < 1e-15
+    assert np.linalg.norm(sigma_arrays[idx] - sigma_array) < equal_tolerance_for_array
 
 def test_sigma_method_in_memory():
   # Create a Mesh instance with a toy function
@@ -100,16 +102,17 @@ def test_sigma_method_in_memory():
   mesh.global_best_attribution()
 
   # Check the global best attribution
-  for i in range(population_size):
-    min_dist = np.inf
-    particle_sigma = mesh.population.sigma[i]
-    nearest_idx = 0
-    for j, memory_sigma in enumerate(mesh.memory.sigma):
-      dist = np.linalg.norm(particle_sigma - memory_sigma)
-      if dist < min_dist and dist != 0:
-        nearest_idx = j
-        min_dist = dist
-    assert np.array_equal(mesh.population.global_best[i], mesh.memory.position[nearest_idx])
+  if len(mesh.memory.position) > 1:
+    for idx in range(population_size):
+      min_dist = np.inf
+      particle_sigma = mesh.population.sigma[idx]
+      nearest_idx = None
+      for mem_idx, memory_sigma in enumerate(mesh.memory.sigma):
+        dist = np.linalg.norm(particle_sigma - memory_sigma)
+        if dist < min_dist and dist != 0:
+          nearest_idx = mem_idx
+          min_dist = dist
+      assert np.array_equal(mesh.population.global_best[idx], mesh.memory.position[nearest_idx])
   
   # Testing when memory has only one particle
   params = MeshParameters(
@@ -132,8 +135,8 @@ def test_sigma_method_in_memory():
   mesh.global_best_attribution()
 
   # Check the best global attribution in the case where the memory has only one particle
-  for i in range(population_size):
-    assert np.array_equal(mesh.population.global_best[i], mesh.memory.position[0])
+  for idx in range(population_size):
+    assert np.array_equal(mesh.population.global_best[idx], mesh.memory.position[0])
 
 def test_sigma_method_in_fronts():
   # Create a Mesh instance with a toy function
@@ -160,18 +163,33 @@ def test_sigma_method_in_fronts():
   # Find the global best for each particle
   mesh.global_best_attribution()
 
-  # Check the global best attribution
-  for i in range(population_size):
-    min_dist = np.inf
-    particle_sigma = mesh.population.sigma[i]
-    nearest_idx = 0
-    for j, memory_sigma in enumerate(mesh.memory.sigma):
-      dist = np.linalg.norm(particle_sigma - memory_sigma)
-      if dist < min_dist and dist != 0:
-        nearest_idx = j
-        min_dist = dist
-    assert np.array_equal(mesh.population.global_best[i], mesh.memory.position[nearest_idx])
-  
+  # Check the global best from memory
+  if len(mesh.memory.position) > 1:
+    for idx in mesh.fronts[0]:
+      min_dist = np.inf
+      particle_sigma = mesh.population.sigma[idx]
+      nearest_idx = None
+      for mem_idx, memory_sigma in enumerate(mesh.memory.sigma):
+        dist = np.linalg.norm(particle_sigma - memory_sigma)
+        if dist < min_dist and dist != 0:
+          nearest_idx = mem_idx
+          min_dist = dist
+      assert np.array_equal(mesh.population.global_best[idx], mesh.memory.position[nearest_idx])
+
+  # Check the global best from fronts
+  for rank in range(1, len(mesh.fronts)):
+    for idx in mesh.fronts[rank]:
+      min_dist = np.inf
+      particle_sigma = mesh.population.sigma[idx]
+      nearest_idx = None
+      search_front = mesh.fronts[rank-1]
+      for search_idx, search_sigma in enumerate(mesh.population.sigma[search_front]):
+        dist = np.linalg.norm(particle_sigma - search_sigma)
+        if dist < min_dist and dist != 0:
+          nearest_idx = search_front[search_idx]
+          min_dist = dist
+      assert np.array_equal(mesh.population.global_best[idx], mesh.population.position[nearest_idx])
+
   # Testing when memory has only one particle
   params = MeshParameters(
     objective_dim=objective_dim,
@@ -193,5 +211,7 @@ def test_sigma_method_in_fronts():
   mesh.global_best_attribution()
 
   # Check the best global attribution in the case where the memory has only one particle
-  for i in range(population_size):
-    assert np.array_equal(mesh.population.global_best[i], mesh.memory.position[0])
+  for idx in mesh.fronts[0]:
+    assert np.array_equal(mesh.population.global_best[idx], mesh.memory.position[0])
+
+test_sigma_method_in_fronts()

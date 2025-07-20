@@ -39,7 +39,7 @@ def sigma_evaluation(self: Mesh, fitness_matrix: np.ndarray[np.number, 2]) -> np
   return differences / sum_squared_fitnesses
 
 def nearest_sigma_in_memory(self: Mesh, particle_idxs: np.ndarray[np.integer]) -> np.ndarray[np.integer, 2]:
-  ''' Finds the nearest particle index in memory by sigma value, For each population particle index. The nearest particle will be different from itself (some particles in population can be in memory).
+  ''' Finds the index of the nearest particle on the memory by the sigma value for each index particle from population. The nearest particle will be different from itself (some particles in population can be in memory).
 
   Note:
     Because the nearest particle in Sigma space will be different from itself, the memory must have two or more particles when calling this function.
@@ -53,7 +53,6 @@ def nearest_sigma_in_memory(self: Mesh, particle_idxs: np.ndarray[np.integer]) -
   '''
 
   # Get the nearest neighbor distances and indices
-  # distances, indices = self.pre_allocated.two_nearest_neighbors.fit(self.memory.sigma).kneighbors(self.population.sigma[particle_idxs])
   distances, indices = KDTree(self.memory.sigma).query(self.population.sigma[particle_idxs], k=2)
   # The nearest neighbor must be different from itself
   zero_distances_mask = distances[:, 0] == 0
@@ -62,7 +61,7 @@ def nearest_sigma_in_memory(self: Mesh, particle_idxs: np.ndarray[np.integer]) -
   return indices[np.arange(len(particle_idxs)), first_valid_idxs]
 
 def nearest_sigma_in_fronts(self: Mesh, particle_idxs: np.ndarray[np.integer], search_idxs: np.ndarray[np.integer]) -> np.ndarray[np.integer, 2]:
-  ''' Finds the nearest particle index in the search indices by sigma value, for each population particle index. The nearest particle will be different from itself.
+  ''' Finds the index of the nearest particle on the search front by the sigma value for each index particle from population. Each row has the index of the nearest particle for the respective particle in the input.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -75,9 +74,9 @@ def nearest_sigma_in_fronts(self: Mesh, particle_idxs: np.ndarray[np.integer], s
 
   population_sigma = self.population.sigma
   num_particles = len(particle_idxs)
-  # If there is just one particle in the memory, it is the global best of all indexed particles
+  # If there is just one particle in the search front, it is the global best of all indexed particles
   if len(search_idxs) == 1:
-    return np.zeros(num_particles, dtype=np.uint64)
+    return np.full(num_particles, search_idxs[0])
   else:
     # Get the nearest neighbor distances and indices
     _, indices = KDTree(population_sigma[search_idxs]).query(population_sigma[particle_idxs], k=1)
