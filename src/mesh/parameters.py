@@ -1,8 +1,8 @@
-from mesh.operations.global_best_attribution import global_best_attribution_options
 from mesh.operations.differential_mutation_pool import differential_mutation_pool_options
 from mesh.operations.differential_mutation import differential_mutation_options
+from mesh.operations.global_best_attribution import global_best_attribution_options
+from mesh.validations.numpy_validations import assert_np_array_for_operations, assert_np_vectors_for_boundary
 from mesh.validations.python_validations import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
-from mesh.validations.numpy_validations import assert_np_vectors_for_boundary
 
 from typing import Optional
 
@@ -40,6 +40,8 @@ class MeshParameters:
         
         max_personal_guides (:type:`int | np.integer`): Maximum number of personal guides. Must be a positive integer (> 0).
 
+        initial_positions (:type:`np.ndarray[np.number, 2] | None`): The initial particle positions. If it is None, the initial positions are initialized randomly under the uniform distribution.
+
         random_state (:type:`int | np.integer | None`): Numpy random seed to generate random numbers. Default is None. Must be an integer or ``None``.
 
     Raises:
@@ -62,6 +64,7 @@ class MeshParameters:
                  max_gen: int | np.integer = 0,
                  max_fit_eval: int | np.integer = 0,
                  max_personal_guides: int | np.integer = 3,
+                 initial_positions: np.ndarray[np.number, 2] = None,
                  random_state: int | Optional[np.integer] = None):
         
         self.objective_dim: int | np.integer
@@ -104,7 +107,9 @@ class MeshParameters:
         ''' Maximum number of fitness evaluations. It won't be used if it's ``None``. '''
         self.max_personal_guides: int | np.integer
         ''' Maximum number of personal guides. '''
-        self.random_state: int | Optional[np.integer]
+        self.initial_positions: Optional[np.ndarray[np.number, 2]]
+        ''' The initial positions of the particles. '''
+        self.random_state: int | np.integer | None
         ''' Seed to generate random numbers. '''
 
         # Set the number of objectives
@@ -155,6 +160,10 @@ class MeshParameters:
         # Set the number of personal guides
         is_greater_in_type(max_personal_guides, 'max_personal_guides', (int, np.integer), 0)
         self.max_personal_guides = max_personal_guides
+        # Set the initial positions of the particles
+        if initial_positions != None:
+            assert_np_array_for_operations(initial_positions, 'initial_positions', (population_size, position_dim))
+        self.initial_positions = initial_positions
         # Set the random state
         assert_type(random_state, 'random_state', (int, np.integer), is_optional=True)
         self.random_state = random_state
