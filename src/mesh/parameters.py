@@ -163,6 +163,8 @@ class MeshParameters:
         # Set the initial positions of the particles
         if initial_positions is not None:
             assert_np_array_for_operations(initial_positions, 'initial_positions', (population_size, position_dim))
+            if np.any(initial_positions > upper_bound_array) or np.any(initial_positions < lower_bound_array):
+                ValueError('The parameter "initial_positions" is the bounds of the bounding arrays.')
         self.initial_positions = initial_positions
         # Set the random state
         assert_type(random_state, 'random_state', (int, np.integer), is_optional=True)

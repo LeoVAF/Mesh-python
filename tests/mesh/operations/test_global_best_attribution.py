@@ -9,7 +9,7 @@ objective_dim = np.random.randint(2, 101) # Randomly choose objective dimension
 position_dim = np.random.randint(2, 101) # Randomly choose position dimension
 population_size = np.random.randint(4, 101) # Randomly choose population size
 lower_bound = np.array([0] * position_dim)
-upper_bound = np.array([1] * position_dim)
+upper_bound = np.array([3] * position_dim)
 mutation_rate = 0.5
 communication_probability = 0.8
 max_gen = None
@@ -60,6 +60,8 @@ def test_sigma_evaluation():
 
 def test_sigma_method_in_memory():
   # Create a Mesh instance with a toy function
+  steps = np.linspace(0, 1, population_size)
+  initial_positions = np.hstack((np.array([[steps[i]] for i in range(population_size)]), np.random.rand(population_size, position_dim-1)))
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
@@ -73,6 +75,7 @@ def test_sigma_method_in_memory():
     max_gen=None,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
+    initial_positions=initial_positions,
     random_state=random_state
   )
   mesh = Mesh(params, toy_function)
@@ -121,8 +124,11 @@ def test_sigma_method_in_memory():
 
 def test_sigma_method_in_fronts():
   # Create a Mesh instance with a rank function
+  steps = np.linspace(0, 1, population_size)
   ranks = [0, 2]
-  initial_positions = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[1]]), np.random.rand(population_size, position_dim-1)))
+  initial_positions = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[1]]),
+                                 np.array([[steps[i]] for i in range(population_size)]),
+                                 np.random.rand(population_size, position_dim-2)))
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
@@ -187,6 +193,7 @@ def test_sigma_method_in_fronts():
     max_gen=None,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
+    initial_positions=initial_positions,
     random_state=random_state
   )
   mesh = Mesh(params, rank_function)
