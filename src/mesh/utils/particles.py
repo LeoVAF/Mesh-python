@@ -72,7 +72,7 @@ class Population:
         self.personal_best_fit: np.ndarray[np.float64, 3]
         ''' Numpy tensor with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` fitnesses. '''
 
-        if params.initial_positions == None:
+        if params.initial_positions is None:
             self.position = np.random.uniform(params.lower_bound_array, params.upper_bound_array, (params.population_size, params.position_dim))
         else:
             self.position = params.initial_positions

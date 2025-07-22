@@ -155,13 +155,13 @@ class MeshParameters:
         # Set the maximum number of fitness evaluations
         assert_type(max_fit_eval, 'max_fit_eval', (int, np.integer), is_optional=True)
         self.max_fit_eval = max_fit_eval
-        if self.max_gen == None and self.max_fit_eval == None:
+        if max_gen is None and max_fit_eval is None:
             raise ValueError('At least one of the parameters max_gen and max_fit_eval must be not None.')
         # Set the number of personal guides
         is_greater_in_type(max_personal_guides, 'max_personal_guides', (int, np.integer), 0)
         self.max_personal_guides = max_personal_guides
         # Set the initial positions of the particles
-        if initial_positions != None:
+        if initial_positions is not None:
             assert_np_array_for_operations(initial_positions, 'initial_positions', (population_size, position_dim))
         self.initial_positions = initial_positions
         # Set the random state

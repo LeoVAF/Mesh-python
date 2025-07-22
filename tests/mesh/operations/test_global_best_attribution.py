@@ -5,9 +5,9 @@ from mesh.parameters import MeshParameters
 import numpy as np
 
 # ---------- Fixed parameters for test setup ----------
-objective_dim = np.random.randint(2, 101)  # Randomly choose objective dimension
-position_dim = 5
-population_size = 100
+objective_dim = np.random.randint(2, 101) # Randomly choose objective dimension
+position_dim = np.random.randint(2, 101) # Randomly choose position dimension
+population_size = np.random.randint(4, 101) # Randomly choose population size
 lower_bound = np.array([0] * position_dim)
 upper_bound = np.array([1] * position_dim)
 mutation_rate = 0.5
@@ -15,12 +15,13 @@ communication_probability = 0.8
 max_gen = None
 max_fit_eval = 500
 max_personal_guides = 3
-random_state = 45
+random_state = None
 
 equal_tolerance_for_array = 1e-15
 
 # Function for testing
 toy_function = lambda x: np.array([x[0], 1 - x[0]] + [x[0] for _ in range(objective_dim-2)])
+rank_function = lambda x: np.array([x[0] + x[1], x[0] + 1 - x[1]] + [x[0] for _ in range(objective_dim-2)]) # x[0] controls the particle rank
 
 def test_sigma_evaluation():
   # Create a Mesh instance with a toy function
@@ -119,7 +120,9 @@ def test_sigma_method_in_memory():
     assert np.array_equal(mesh.population.global_best[idx], mesh.memory.position[0])
 
 def test_sigma_method_in_fronts():
-  # Create a Mesh instance with a toy function
+  # Create a Mesh instance with a rank function
+  ranks = [0, 2]
+  initial_positions = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[1]]), np.random.rand(population_size, position_dim-1)))
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
@@ -133,9 +136,10 @@ def test_sigma_method_in_fronts():
     max_gen=None,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
+    initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(params, rank_function)
   
   # Initialize the algorithm and set some informations
   mesh.initialize()
@@ -176,7 +180,7 @@ def test_sigma_method_in_fronts():
     lower_bound_array=lower_bound,
     upper_bound_array=upper_bound,
     population_size=population_size,
-    memory_size=population_size,
+    memory_size=1,
     global_best_attribution_type=1,
     mutation_rate=mutation_rate,
     communication_probability=communication_probability,
@@ -185,7 +189,7 @@ def test_sigma_method_in_fronts():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(params, rank_function)
   # Initialize the algorithm
   mesh.initialize()
   # Find the global best for each particle
