@@ -28,8 +28,8 @@ def test_binomial_crossover(mocker):
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     mutation_rate=mutation_rate,

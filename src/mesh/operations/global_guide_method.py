@@ -74,7 +74,7 @@ def nearest_sigma_in_fronts(self: Mesh, particle_idxs: np.ndarray[np.integer], s
 
   population_sigma = self.population.sigma
   num_particles = len(particle_idxs)
-  # If there is just one particle in the search front, it is the global best of all indexed particles
+  # If there is just one particle in the search front, it is the global guide of all indexed particles
   if len(search_idxs) == 1:
     return np.full(num_particles, search_idxs[0])
   else:
@@ -83,24 +83,24 @@ def nearest_sigma_in_fronts(self: Mesh, particle_idxs: np.ndarray[np.integer], s
     return search_idxs[indices[np.arange(num_particles), 0]]
 
 def sigma_method_in_memory(self: Mesh) -> None:
-  ''' Global best attribution with sigma method in memory. The global best for each particle in the population will be the nearest particle different from itself in memory, by sigma value.
+  ''' Global guide attribution by sigma method in memory. The global guide for each particle in the population will be the nearest particle different from itself in memory, by sigma value.
   
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
   '''
 
   if len(self.memory.position) == 1:
-    self.population.global_best[:, :] = np.repeat(self.memory.position, self.params.population_size, axis=0)
+    self.population.global_guide[:, :] = np.repeat(self.memory.position, self.params.population_size, axis=0)
   else:
     # Evaluate sigma
     self.memory.sigma = sigma_evaluation(self, self.memory.fitness)
     self.population.sigma[:, :] = sigma_evaluation(self, self.population.fitness)
-    # Choose the global best for the population by the nearest neighbors using sigma value
+    # Choose the global guide for the population by the nearest neighbors using sigma value
     nearest_idxs = nearest_sigma_in_memory(self, np.arange(self.params.population_size))
-    self.population.global_best[:, :] = self.memory.position[nearest_idxs]
+    self.population.global_guide[:, :] = self.memory.position[nearest_idxs]
 
 def sigma_method_in_fronts(self: Mesh) -> None:
-  ''' Global best attribution with sigma method in fronts. The global best for each particle in the population will be the nearest particle different from itself in the previous front, by the sigma value. Particles in the Pareto front will choose the global best from memory.
+  ''' Global guide search by sigma method in fronts. The global guide for each particle in the population will be the nearest particle different from itself in the previous front, by the sigma value. Particles in the Pareto front will choose the global guide from memory.
   
   Note:
     The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
@@ -116,34 +116,34 @@ def sigma_method_in_fronts(self: Mesh) -> None:
   # Evaluate population sigma
   self.population.sigma[:, :] = sigma_evaluation(self, self.population.fitness)
   if len(self.memory.position) == 1:
-    self.population.global_best[pareto_idxs] = np.repeat(self.memory.position, len(pareto_idxs), axis=0)
+    self.population.global_guide[pareto_idxs] = np.repeat(self.memory.position, len(pareto_idxs), axis=0)
   else:
     # Evaluate memory sigma
     self.memory.sigma = sigma_evaluation(self, self.memory.fitness)
-    # Choose the global best for the Pareto front by the nearest neighbors using sigma value
+    # Choose the global guide for the Pareto front by the nearest neighbors using sigma value
     nearest_idxs = nearest_sigma_in_memory(self, pareto_idxs)
-    self.population.global_best[pareto_idxs] = self.memory.position[nearest_idxs]
-  # Choose the global best for others fronts by the nearest neighbors from the front using sigma value (This part is inefficient in Python)
+    self.population.global_guide[pareto_idxs] = self.memory.position[nearest_idxs]
+  # Choose the global guide for others fronts by the nearest neighbors from the front using sigma value (This part is inefficient in Python)
   search_front = pareto_idxs
   for i in range(1, num_fronts):
     current_front = fronts[i]
     nearest_idxs = nearest_sigma_in_fronts(self, current_front, search_front)
     search_front = current_front
-    self.population.global_best[current_front] = self.population.position[nearest_idxs]
+    self.population.global_guide[current_front] = self.population.position[nearest_idxs]
 
 def random_in_memory(self: Mesh) -> None:
-  ''' Global best attribution with random choice in memory under an Uniform Distribution. The global best for each particle in the population will be a random particle in memory.
+  ''' Global guide search by random choice in memory under an Uniform Distribution. The global guide for each particle in the population will be a random particle in memory.
   
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
   '''
   # Get the random indices for the particles from memory
   random_indices = np.random.randint(0, len(self.memory.position), size=self.params.population_size)
-  # Choose the global best
-  self.population.global_best[:, :] = self.memory.position[random_indices]
+  # Choose the global guide
+  self.population.global_guide[:, :] = self.memory.position[random_indices]
 
 def random_in_fronts(self: Mesh) -> None:
-  ''' Global best attribution with random choice in fronts under an Uniform Distribution. The global best for each particle in the population will be a random particle in the previous front. Particles in the Pareto front will choose the global best from memory.
+  ''' Global guide search by random choice in fronts under an Uniform Distribution. The global guide for each particle in the population will be a random particle in the previous front. Particles in the Pareto front will choose the global guide from memory.
 
   Note:
     The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
@@ -155,9 +155,9 @@ def random_in_fronts(self: Mesh) -> None:
   # Get the masks for the respective rank positions
   rank_zero_mask = self.population.rank == 0
   rank_non_zero_mask = ~rank_zero_mask
-  # Set the global best from memory
+  # Set the global guide from memory
   num_rank_zero = np.sum(rank_zero_mask)
-  self.population.global_best[rank_zero_mask] = self.memory.position[np.random.randint(0, len(self.memory.position), size=num_rank_zero)]
+  self.population.global_guide[rank_zero_mask] = self.memory.position[np.random.randint(0, len(self.memory.position), size=num_rank_zero)]
   # Get the particles indices which have domination rank greater than zero
   search_front_idxs = self.population.rank[rank_non_zero_mask] - 1
   if(len(search_front_idxs)):
@@ -166,11 +166,11 @@ def random_in_fronts(self: Mesh) -> None:
     # Generate the random indices for domination ranks greater than zero
     random_indices = np.random.randint(0, [len(fronts[r]) for r in search_front_idxs])
     rank_non_zero_idxs = np.array([fronts[idx][random_indices[i]] for i, idx in enumerate(search_front_idxs)])
-    # Set the global best from previous front
-    self.population.global_best[rank_non_zero_mask] = self.population.position[rank_non_zero_idxs]
+    # Set the global guide from previous front
+    self.population.global_guide[rank_non_zero_mask] = self.population.position[rank_non_zero_idxs]
 
-# The options of global best attribution operation
-global_best_attribution_options = {
+# The options of global guide attribution operation
+global_guide_method_options = {
   0: sigma_method_in_memory,
   1: sigma_method_in_fronts,
   2: random_in_memory,
@@ -178,20 +178,20 @@ global_best_attribution_options = {
 }
 ''' The options of global guide attribution operation. They are:
 
-  - :type:`0`: Applies Sigma method in memory to select the global best.
-  - :type:`1`: Applies Sigma method in fronts to select the global best. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+  - :type:`0`: Applies Sigma method in memory to select the global guides.
+  - :type:`1`: Applies Sigma method in fronts to select the global guides. Each particle will select its global guide from the next front. Particles in Pareto front will select the global guide from memory.
   - :type:`2`: Chooses randomly under Uniform Distribution a particle from memory.
-  - :type:`3`: Chooses randomly under Uniform Distribution a particle from fronts. Each particle will select its global best from the next front. Particles in Pareto front will select the global best from memory.
+  - :type:`3`: Chooses randomly under Uniform Distribution a particle from fronts. Each particle will select its global guide from the next front. Particles in Pareto front will select the global guide from memory.
 '''
 
-def get_global_best_attribution(option: {0, 1, 2, 3}) -> Callable[[Mesh], None]:
-  ''' Sets the global best attribution operation according to :attr:`~mesh.operations.global_best_attribution.global_best_attribution_options`.
+def get_global_guide_method(option: {0, 1, 2, 3}) -> Callable[[Mesh], None]:
+  ''' Sets the global guide method according to :attr:`~mesh.operations.global_guide_method.global_guide_method_options`.
   
   Args:
-    option (:type:`{0, 1, 2, 3}`): Defines the global best attribution operation.
+    option (:type:`{0, 1, 2, 3}`): Defines the global guide method.
 
   Returns:
-    :type:`Callable[[Mesh], None]`: The respective function to select the global best.
+    :type:`Callable[[Mesh], None]`: The respective function to select the global guide.
   '''
 
-  return global_best_attribution_options[option]
+  return global_guide_method_options[option]

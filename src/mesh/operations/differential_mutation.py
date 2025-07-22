@@ -44,7 +44,7 @@ def rand_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
     # Apply the DE\rand\1 strategy
     Xst = Xr[:, 0, :] + operation_weight * (Xr[:, 1, :] - Xr[:, 2, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
+    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -84,7 +84,7 @@ def rand_2(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
     # Apply the DE\rand\2 strategy
     Xst = Xr[:, 0, :] + operation_weight * (Xr[:, 1, :] - Xr[:, 2, :]  + Xr[:, 3, :] - Xr[:, 4, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
+    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -113,7 +113,7 @@ def best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
   '''
 
   # Update the global best
-  self.global_best_attribution()
+  self.global_guide_method()
   # Set the valid size of each pool
   valid_size = 2
   # Get the mask for the pools with valid length
@@ -125,9 +125,9 @@ def best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\1 strategy
-    Xst = self.population.global_best[valid_idxs] + operation_weight * (Xr[:, 0, :] - Xr[:, 1, :])
+    Xst = self.population.global_guide[valid_idxs] + operation_weight * (Xr[:, 0, :] - Xr[:, 1, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
+    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -157,7 +157,7 @@ def current_to_best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]])
   '''
 
   # Update the global best
-  self.global_best_attribution()
+  self.global_guide_method()
   # Set the valid size of each pool
   valid_size = 2
   # Get the mask for the pools with valid length
@@ -170,9 +170,9 @@ def current_to_best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]])
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\1 strategy
     X = self.population.position[valid_idxs]
-    Xst = X + operation_weight * (self.population.global_best[valid_idxs] - X + Xr[:, 0, :] - Xr[:, 1, :])
+    Xst = X + operation_weight * (self.population.global_guide[valid_idxs] - X + Xr[:, 0, :] - Xr[:, 1, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
+    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -215,7 +215,7 @@ def current_to_rand_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]])
     X = self.population.position[valid_idxs]
     Xst = X + operation_weight * (Xr[:, 0, :] - X + Xr[:, 1, :] - Xr[:, 2, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.lower_bound_array, self.params.upper_bound_array, out=Xst)
+    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])

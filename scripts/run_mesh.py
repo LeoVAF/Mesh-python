@@ -82,12 +82,12 @@ def main():
     personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
-    global_best_attribution_type = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
+    global_guide_method = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
     dm_pool_type = 0 # 0 -> Sampling from memory (S1) | 1 -> Sampling from population (S2) | 2 -> Sampling from memory and population (S3)
     dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
-    config = f"MESH_G{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
-    print(f"Running MESH G{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
+    config = f"MESH_G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
+    print(f"Running MESH G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
     result = {}
     combined_F = None
     combined_P = None
@@ -95,7 +95,7 @@ def main():
         params = MeshParameters(objective_dim,
                                 position_dim, position_min_value, position_max_value,
                                 population_size, memory_size=memory_size,
-                                global_best_attribution_type=global_best_attribution_type,
+                                global_guide_method=global_guide_method,
                                 dm_pool_type=dm_pool_type,
                                 dm_operation_type=dm_operation_type,
                                 communication_probability=communication_probability, mutation_rate=mutation_rate,

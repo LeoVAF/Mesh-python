@@ -45,7 +45,7 @@ class Population:
     """ Represents the MESH population.
 
     Args:
-        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.lower_bound_array`, :attr:`~mesh.parameters.MeshParameters.upper_bound_array`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.global_best_attribution_type` and :attr:`~mesh.parameters.MeshParameters.max_personal_guides` are used to initialize the population.
+        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.lower_bound_array`, :attr:`~mesh.parameters.MeshParameters.upper_bound_array`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.global_guide_method` and :attr:`~mesh.parameters.MeshParameters.max_personal_guides` are used to initialize the population.
     
     Raises:
         TypeError: If the input is not an instance of :class:`~mesh.parameters.MeshParameters`.
@@ -64,26 +64,26 @@ class Population:
         ''' Numpy array with the particle's rank. '''
         self.sigma: Optional[np.ndarray[np.float64, 2]] = None
         ''' Numpy matrix for the sigma values. Initialized with ``np.inf`` values. Used only if the Sigma method is used. '''
-        self.global_best: np.ndarray[np.float64, 2]
-        ''' Numpy matrix with the best global position for each particle. '''
-        self.personal_best_pos: np.ndarray[np.float64, 3]
+        self.global_guide: np.ndarray[np.float64, 2]
+        ''' Numpy matrix with the global guide position for each particle. '''
+        self.personal_guide_pos: np.ndarray[np.float64, 3]
         ''' Numpy tensor with a matrix of personal guide positions for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` positions.
         Initialized with the respective particle's position repeated for all matrix entries. '''
-        self.personal_best_fit: np.ndarray[np.float64, 3]
+        self.personal_guide_fit: np.ndarray[np.float64, 3]
         ''' Numpy tensor with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` fitnesses. '''
 
         if params.initial_positions is None:
-            self.position = np.random.uniform(params.lower_bound_array, params.upper_bound_array, (params.population_size, params.position_dim))
+            self.position = np.random.uniform(params.position_lower_bounds, params.position_upper_bounds, (params.population_size, params.position_dim))
         else:
             self.position = params.initial_positions
-        self.velocity = np.random.uniform(params.velocity_min_value, params.velocity_max_value, (params.population_size, params.position_dim))
+        self.velocity = np.random.uniform(params.velocity_lower_bounds, params.velocity_upper_bounds, (params.population_size, params.position_dim))
         self.fitness = np.full((params.population_size, params.objective_dim), np.inf)
         self.rank= np.empty(params.population_size, dtype=int)
-        if params.global_best_attribution_type < 2:
+        if params.global_guide_method in {0, 1}:
             self.sigma = np.full((params.population_size, comb(params.objective_dim, 2)), np.nan)
-        self.global_best = np.full((params.population_size, params.position_dim), np.nan)
-        self.personal_best_pos = np.repeat(self.position[:, np.newaxis, :], params.max_personal_guides, axis=1)
-        self.personal_best_fit = np.full((params.population_size, params.max_personal_guides, params.objective_dim), np.inf)
+        self.global_guide = np.full((params.population_size, params.position_dim), np.nan)
+        self.personal_guide_pos = np.repeat(self.position[:, np.newaxis, :], params.max_personal_guides, axis=1)
+        self.personal_guide_fit = np.full((params.population_size, params.max_personal_guides, params.objective_dim), np.inf)
 
 class Memory:
     """
@@ -121,5 +121,6 @@ class Memory:
             # Sort the Pareto front by the crowding distance
             idxs = np.argpartition(crowd_distances, -params.memory_size)[-params.memory_size:]
             # Initialize the memory with the best solutions
-            self.position = population.position[pareto_front[idxs]]
-            self.fitness = population.fitness[pareto_front[idxs]]
+            best_pareto_idxs = pareto_front[idxs]
+            self.position = population.position[best_pareto_idxs]
+            self.fitness = population.fitness[best_pareto_idxs]

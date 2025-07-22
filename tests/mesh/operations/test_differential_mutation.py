@@ -42,8 +42,8 @@ def test_rand_1(mocker):
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     dm_operation_type=0,
@@ -68,7 +68,7 @@ def test_rand_1(mocker):
     x0 = Xr[0]
     x1 = Xr[1]
     x2 = Xr[2]
-    xst = np.clip(x0 + operation_weight[i] * (x1 - x2), params.lower_bound_array, params.upper_bound_array)
+    xst = np.clip(x0 + operation_weight[i] * (x1 - x2), params.position_lower_bounds, params.position_upper_bounds)
     # Treating numeric errors
     assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -96,8 +96,8 @@ def test_rand_2(mocker):
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     dm_operation_type=1,
@@ -124,7 +124,7 @@ def test_rand_2(mocker):
     x2 = Xr[2]
     x3 = Xr[3]
     x4 = Xr[4]
-    xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), params.lower_bound_array, params.upper_bound_array)
+    xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), params.position_lower_bounds, params.position_upper_bounds)
     # Treating numeric errors
     assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -152,8 +152,8 @@ def test_best_1(mocker):
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     dm_operation_type=2,
@@ -175,10 +175,10 @@ def test_best_1(mocker):
   # Check the output
   for i, idx in enumerate(idxs):
     Xr = Xr_pool_list[idx]
-    xgb = mesh.population.global_best[idx]
+    xgb = mesh.population.global_guide[idx]
     x0 = Xr[0]
     x1 = Xr[1]
-    xst = np.clip(xgb + operation_weight[i] * (x0 - x1), params.lower_bound_array, params.upper_bound_array)
+    xst = np.clip(xgb + operation_weight[i] * (x0 - x1), params.position_lower_bounds, params.position_upper_bounds)
     # Treating numeric errors
     assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -206,8 +206,8 @@ def test_current_to_best_1(mocker):
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     dm_operation_type=3,
@@ -230,10 +230,10 @@ def test_current_to_best_1(mocker):
   for i, idx in enumerate(idxs):
     Xr = Xr_pool_list[idx]
     x = mesh.population.position[idx]
-    xgb = mesh.population.global_best[idx]
+    xgb = mesh.population.global_guide[idx]
     x0 = Xr[0]
     x1 = Xr[1]
-    xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), params.lower_bound_array, params.upper_bound_array)
+    xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), params.position_lower_bounds, params.position_upper_bounds)
     # Treating numeric errors
     assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -261,8 +261,8 @@ def test_current_to_rand_1(mocker):
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     dm_operation_type=4,
@@ -288,7 +288,7 @@ def test_current_to_rand_1(mocker):
     x0 = Xr[0]
     x1 = Xr[1]
     x2 = Xr[2]
-    xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), params.lower_bound_array, params.upper_bound_array)
+    xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), params.position_lower_bounds, params.position_upper_bounds)
     # Treating numeric errors
     assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 

@@ -22,7 +22,7 @@ toy_function = lambda x: np.random.rand(objective_dim)
 def test_pool_from_memory():
   # Initialize a random Mesh instance
   params = MeshParameters(objective_dim=objective_dim,
-                          position_dim=position_dim, lower_bound_array=lower_bound, upper_bound_array=upper_bound, 
+                          position_dim=position_dim, position_lower_bounds=lower_bound, position_upper_bounds=upper_bound, 
                           population_size=population_size, memory_size=None,
                           dm_pool_type=0,
                           communication_probability=communication_probability, mutation_rate=mutation_rate,
@@ -44,7 +44,7 @@ def test_pool_from_memory():
 def test_pool_from_population():
   # Initialize a random Mesh instance
   params = MeshParameters(objective_dim=objective_dim,
-                          position_dim=position_dim, lower_bound_array=lower_bound, upper_bound_array=upper_bound, 
+                          position_dim=position_dim, position_lower_bounds=lower_bound, position_upper_bounds=upper_bound, 
                           population_size=population_size, memory_size=None,
                           dm_pool_type=1,
                           communication_probability=communication_probability, mutation_rate=mutation_rate,
@@ -66,7 +66,7 @@ def test_pool_from_population():
 def test_pool_from_population_and_memory():
   # Initialize a random Mesh instance
   params = MeshParameters(objective_dim=objective_dim,
-                          position_dim=position_dim, lower_bound_array=lower_bound, upper_bound_array=upper_bound, 
+                          position_dim=position_dim, position_lower_bounds=lower_bound, position_upper_bounds=upper_bound, 
                           population_size=population_size, memory_size=None,
                           dm_pool_type=2,
                           communication_probability=communication_probability, mutation_rate=mutation_rate,

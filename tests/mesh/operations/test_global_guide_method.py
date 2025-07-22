@@ -1,5 +1,5 @@
 from mesh.core import Mesh
-from mesh.operations import global_best_attribution as gba
+from mesh.operations import global_guide_method as gba
 from mesh.parameters import MeshParameters
 
 import numpy as np
@@ -28,8 +28,8 @@ def test_sigma_evaluation():
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     mutation_rate=mutation_rate,
@@ -44,7 +44,7 @@ def test_sigma_evaluation():
   # Initialize the algorithm
   mesh.initialize()
 
-  # Run the global best attribution operation
+  # Run the global guide search method
   sigma_arrays = gba.sigma_evaluation(mesh, mesh.population.fitness)
 
   # Check if the operation is correctly applied
@@ -65,11 +65,11 @@ def test_sigma_method_in_memory():
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
-    global_best_attribution_type=0,
+    global_guide_method=0,
     mutation_rate=mutation_rate,
     communication_probability=communication_probability,
     max_gen=None,
@@ -83,10 +83,10 @@ def test_sigma_method_in_memory():
   # Initialize the algorithm
   mesh.initialize()
 
-  # Find the global best for each particle
-  mesh.global_best_attribution()
+  # Find the global guide for each particle
+  mesh.global_guide_method()
 
-  # Check the global best attribution
+  # Check the global guide search
   for idx in range(population_size):
     min_dist = np.inf
     particle_sigma = mesh.population.sigma[idx]
@@ -96,17 +96,17 @@ def test_sigma_method_in_memory():
       if dist < min_dist and dist != 0:
         nearest_idx = mem_idx
         min_dist = dist
-    assert np.array_equal(mesh.population.global_best[idx], mesh.memory.position[nearest_idx])
+    assert np.array_equal(mesh.population.global_guide[idx], mesh.memory.position[nearest_idx])
   
   # Testing when memory has only one particle
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=1,
-    global_best_attribution_type=0,
+    global_guide_method=0,
     mutation_rate=mutation_rate,
     communication_probability=communication_probability,
     max_gen=None,
@@ -116,11 +116,11 @@ def test_sigma_method_in_memory():
   )
   mesh = Mesh(params, toy_function)
   mesh.initialize()
-  mesh.global_best_attribution()
+  mesh.global_guide_method()
 
   # Check the best global attribution in the case where the memory has only one particle
   for idx in range(population_size):
-    assert np.array_equal(mesh.population.global_best[idx], mesh.memory.position[0])
+    assert np.array_equal(mesh.population.global_guide[idx], mesh.memory.position[0])
 
 def test_sigma_method_in_fronts():
   # Create a Mesh instance with a rank function
@@ -132,11 +132,11 @@ def test_sigma_method_in_fronts():
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
-    global_best_attribution_type=1,
+    global_guide_method=1,
     mutation_rate=mutation_rate,
     communication_probability=communication_probability,
     max_gen=None,
@@ -147,13 +147,13 @@ def test_sigma_method_in_fronts():
   )
   mesh = Mesh(params, rank_function)
   
-  # Initialize the algorithm and set some informations
+  # Initialize the algorithm
   mesh.initialize()
 
-  # Find the global best for each particle
-  mesh.global_best_attribution()
+  # Find the global guide for each particle
+  mesh.global_guide_method()
 
-  # Check the global best from memory
+  # Check the global guide from memory
   for idx in mesh.fronts[0]:
     min_dist = np.inf
     particle_sigma = mesh.population.sigma[idx]
@@ -163,9 +163,9 @@ def test_sigma_method_in_fronts():
       if dist < min_dist and dist != 0:
         nearest_idx = mem_idx
         min_dist = dist
-    assert np.array_equal(mesh.population.global_best[idx], mesh.memory.position[nearest_idx])
+    assert np.array_equal(mesh.population.global_guide[idx], mesh.memory.position[nearest_idx])
 
-  # Check the global best from fronts
+  # Check the global guide from fronts
   for rank in range(1, len(mesh.fronts)):
     for idx in mesh.fronts[rank]:
       min_dist = np.inf
@@ -177,17 +177,17 @@ def test_sigma_method_in_fronts():
         if dist < min_dist and dist != 0:
           nearest_idx = search_front[search_idx]
           min_dist = dist
-      assert np.array_equal(mesh.population.global_best[idx], mesh.population.position[nearest_idx])
+      assert np.array_equal(mesh.population.global_guide[idx], mesh.population.position[nearest_idx])
 
-  # Create a Mesh instance with a rank function (one particle in each front)
+  # Create a Mesh instance with a rank function (one particle in memory)
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=1,
-    global_best_attribution_type=1,
+    global_guide_method=1,
     mutation_rate=mutation_rate,
     communication_probability=communication_probability,
     max_gen=None,
@@ -197,16 +197,14 @@ def test_sigma_method_in_fronts():
     random_state=random_state
   )
   mesh = Mesh(params, rank_function)
-  # Initialize the algorithm
   mesh.initialize()
-  # Find the global best for each particle
-  mesh.global_best_attribution()
+  mesh.global_guide_method()
 
-  # Check the global best from memory
+  # Check the global guide from memory
   for idx in mesh.fronts[0]:
-    assert np.array_equal(mesh.population.global_best[idx], mesh.memory.position[0])
+    assert np.array_equal(mesh.population.global_guide[idx], mesh.memory.position[0])
 
-  # Check the global best from fronts
+  # Check the global guide from fronts
   for rank in range(1, len(mesh.fronts)):
     for idx in mesh.fronts[rank]:
       min_dist = np.inf
@@ -218,4 +216,4 @@ def test_sigma_method_in_fronts():
         if dist < min_dist and dist != 0:
           nearest_idx = search_front[search_idx]
           min_dist = dist
-      assert np.array_equal(mesh.population.global_best[idx], mesh.population.position[nearest_idx])
+      assert np.array_equal(mesh.population.global_guide[idx], mesh.population.position[nearest_idx])

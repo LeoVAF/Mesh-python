@@ -23,8 +23,8 @@ def test_PreAllocated_success():
   params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
-    lower_bound_array=lower_bound,
-    upper_bound_array=upper_bound,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     mutation_rate=mutation_rate,
@@ -46,7 +46,7 @@ def test_PreAllocated_success():
   assert hasattr(pre_allocated_instance, 'fitness_copy')
 
 def test_PreAllocated_failure():
-  # Create a PreAllocated instance with an non MeshParameters instance
+  # Create a PreAllocated instance with a non MeshParameters instance
   params = object()
   with pytest.raises(TypeError, match=r'The input "params" has type <class \'object\'>, but expected <class \'mesh.parameters.MeshParameters\'>.'):
     aux.PreAllocated(params)

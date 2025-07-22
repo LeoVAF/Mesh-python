@@ -15,7 +15,7 @@ class PreAllocated():
     ''' Used for data allocation. It stores some data structures to avoid new allocations.
     
     Args:
-        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.population_size` and :attr:`~mesh.parameters.MeshParameters.global_best_attribution_type` are used to initialize the pre-allocations.
+        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.population_size` and :attr:`~mesh.parameters.MeshParameters.global_guide_method` are used to initialize the pre-allocations.
 
     Raises:
         TypeError: If the ``params`` is not an instance of :class:`~mesh.parameters.MeshParameters`.
@@ -40,7 +40,7 @@ class PreAllocated():
         ''' Numpy matrix to store the fitness of the particles before the particle moviment. '''
 
         # Used to calculate the sigma
-        if params.global_best_attribution_type in {0, 1}:
+        if params.global_guide_method in {0, 1}:
             self.np_tril_indices = np.tril_indices(params.objective_dim, k=-1)
         # Structures used to calculate repetitive operations
         self.matrix_for_operations = np.empty((params.population_size, params.position_dim))

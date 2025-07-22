@@ -34,7 +34,7 @@
 from mesh.operations.differential_crossover import get_differential_crossover
 from mesh.operations.differential_mutation import get_differential_mutation
 from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
-from mesh.operations.global_best_attribution import get_global_best_attribution
+from mesh.operations.global_guide_method import get_global_guide_method
 from mesh.parameters import MeshParameters
 from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
 from mesh.utils.particles import Population, Memory
@@ -74,8 +74,8 @@ class Mesh():
         
         self.params: MeshParameters
         ''' Mesh parameters. '''
-        self.global_best_attribution: MethodType[Callable[[Mesh], None]]
-        ''' Function to attribute the global best to the particles. '''
+        self.global_guide_method: MethodType[Callable[[Mesh], None]]
+        ''' Function to find the global guides for the particles. '''
         self.differential_mutation_pool: MethodType[Callable[[Mesh], list[np.ndarray[np.float64, 2]]]]
         ''' Function to make the Differential Mutation pool. '''
         self.differential_mutation: MethodType[Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
@@ -117,7 +117,7 @@ class Mesh():
         assert_type(params, 'params', MeshParameters)
         self.params = params
         # Chosing the operations just one time
-        self.global_best_attribution = MethodType(get_global_best_attribution(params.global_best_attribution_type), self)
+        self.global_guide_method = MethodType(get_global_guide_method(params.global_guide_method), self)
         self.differential_mutation_pool = MethodType(get_differential_mutation_pool(params.dm_pool_type), self)
         self.differential_mutation = MethodType(get_differential_mutation(params.dm_operation_type), self)
         self.differential_crossover = MethodType(get_differential_crossover('binomial'), self)
@@ -173,7 +173,7 @@ class Mesh():
             self.total_bar = min(params.population_size*(2*params.max_gen+1), params.max_fit_eval)
     
     def initialize(self):
-        ''' Initializes the MESH with some initial operations. It initializes the population, memory and personal best fitness, does initial fitness evaluations and calculates the domination fronts. '''
+        ''' Initializes the MESH with some initial operations. It initializes the population, memory and personal guide fitness, does initial fitness evaluations and calculates the domination fronts. '''
 
         # Initialize the population
         self.population = Population(self.params)
@@ -183,8 +183,8 @@ class Mesh():
         self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         # Initialize the memory
         self.memory = Memory(self.population, self.fronts[0], self.params)
-        # Repeat the population fitness for all personal best input
-        self.population.personal_best_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
+        # Repeat the population fitness for all personal guide input
+        self.population.personal_guide_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
 
     def sequential_fitness_evaluation(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
         ''' Evaluates the fitness given a particle position matrix sequentially.
@@ -297,9 +297,9 @@ class Mesh():
             update_memory_pos = np.concatenate((update_memory_pos, Xst), axis=0)
             update_memory_fit = np.concatenate((update_memory_fit, Fst), axis=0)
             self.update_memory(update_memory_pos, update_memory_fit)
-            # If a particle was replaced for a particle from a strategy, update the personal best
+            # If a particle was replaced for a particle from a strategy, update the personal guides
             if len(update_idxs):
-                self.update_personal_best(update_idxs)
+                self.update_personal_guides(update_idxs)
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         return update_memory_pos, update_memory_fit
 
@@ -331,8 +331,8 @@ class Mesh():
         '''
 
         neg_velocity = (velocity_input < 0)
-        return np.where(((position_input == self.params.lower_bound_array) & neg_velocity) |
-                        ((position_input == self.params.upper_bound_array) & (~ neg_velocity)),
+        return np.where(((position_input == self.params.position_lower_bounds) & neg_velocity) |
+                        ((position_input == self.params.position_upper_bounds) & (~ neg_velocity)),
                         -velocity_input,
                         velocity_input)
 
@@ -359,8 +359,8 @@ class Mesh():
 
             C_{[i,\ j]} = \begin{cases} 1, & \text{if } (i = j) \land (r_i \leq \tau_{com}); \\ 0, & \text{otherwise}. \end{cases}
 
-        - :math:`x_{pb}` is the personal best vector of the particle;
-        - :math:`x_{gb}` is the global best vector o the particle.
+        - :math:`x_{pb}` is the personal guide vector of the particle;
+        - :math:`x_{gb}` is the global guide vector o the particle.
         
         Note:
             In this implementation, the weights are calculated every generation by :meth:`mutate_weights` and each particle has its own weight. The mutation of :math:`x_{gb}` is done by:
@@ -378,10 +378,10 @@ class Mesh():
         population_size = params.population_size
         # Generating random indices for each sublist
         random_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
-        # Get matrix of personal best list positions
-        pb_positions = self.population.personal_best_pos[np.arange(population_size), random_indices, :]
-        # Get the global best positions
-        gb_positions = self.population.global_best
+        # Get matrix position of personal guides from personal guide list positions
+        pb_positions = self.population.personal_guide_pos[np.arange(population_size), random_indices, :]
+        # Get the global guide positions
+        gb_positions = self.population.global_guide
         # Get the positions
         positions = self.population.position
         # Get the velocities
@@ -397,7 +397,7 @@ class Mesh():
         np.add(velocities, matrix_for_operations, out=velocities)
         # Calculate the cooperation term and accumulate it in the velocities
         vector_for_operations = self.pre_allocated.vector_for_operations
-        ################## Mutation of the global best positions ##################
+        ################## Mutation of the global guide positions ##################
         vector_for_operations[:] = np.random.normal(0, 1, population_size)
         np.multiply(vector_for_operations, params.mutation_rate, out=vector_for_operations)
         np.add(vector_for_operations, 1, out=vector_for_operations)
@@ -408,10 +408,10 @@ class Mesh():
         np.multiply(matrix_for_operations, np.random.uniform(0.0, 1.0, params.position_dim) < params.communication_probability, out=matrix_for_operations)
         np.add(velocities, matrix_for_operations, out=velocities)
         # Calculate the new velocity (clipped)
-        np.clip(velocities, params.velocity_min_value, params.velocity_max_value, out=velocities)
+        np.clip(velocities, params.velocity_lower_bounds, params.velocity_upper_bounds, out=velocities)
         # Calculate the new position (clipped)
         np.add(positions, velocities, out=positions)
-        np.clip(positions, params.lower_bound_array, params.upper_bound_array, out=positions)
+        np.clip(positions, params.position_lower_bounds, params.position_upper_bounds, out=positions)
         # Reflect the velocity at the bounds
         self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
         # Evaluate the positions with the fitness function
@@ -450,14 +450,14 @@ class Mesh():
         self.population.position[prev_idx_size:] = self.population.position[current_idxs]
         self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
         self.population.fitness[prev_idx_size:] = self.population.fitness[current_idxs]
-        # Select the best N personal best
+        # Select the best N personal guide
         pb_idxs = np.concatenate((prev_idxs, current_idxs), axis=0)
-        self.population.personal_best_fit[:] = self.population.personal_best_fit[pb_idxs]
-        self.population.personal_best_pos[:] = self.population.personal_best_pos[pb_idxs]
+        self.population.personal_guide_fit[:] = self.population.personal_guide_fit[pb_idxs]
+        self.population.personal_guide_pos[:] = self.population.personal_guide_pos[pb_idxs]
         # Return the indices of the current population that were selected
         return current_idxs
 
-    def update_personal_best(self, pop_indices: np.ndarray[np.integer]) -> None:
+    def update_personal_guides(self, pop_indices: np.ndarray[np.integer]) -> None:
         ''' Updates the personal guides of the particles by the population index.
 
         Note:
@@ -473,26 +473,26 @@ class Mesh():
 
         # Get the population fitness as a tensor
         fitness_tensor = self.population.fitness[pop_indices, np.newaxis]
-        # Get the personal best fitness
-        pb_fitness = self.population.personal_best_fit[pop_indices]
-        # Get the mask to update the personal best
+        # Get the personal guide fitness
+        pb_fitness = self.population.personal_guide_fit[pop_indices]
+        # Get the mask to update the personal guide
         update_mask = ~np.any(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
         update_idxs = pop_indices[update_mask]
-        # Get the mask to replace the personal best dominated by the current particle
+        # Get the mask to replace the personal guide dominated by the current particle
         replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
-        # Replace the dominated personal best by the current particle
+        # Replace the dominated personal guide by the current particle
         replace_row, replace_col = np.nonzero(replace_mask)
         particle_to_replace_pb = update_idxs[replace_row]
-        self.population.personal_best_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
-        self.population.personal_best_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
-        # Get the mask to add the current to the personal best list
+        self.population.personal_guide_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_guide_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
+        # Get the mask to add the current to the personal guide list
         add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
-        # Delete the oldest personal best and include the current particle as a new personal best
-        self.population.personal_best_fit[add_idxs, 1:, :] = self.population.personal_best_fit[add_idxs, :-1, :]
-        self.population.personal_best_pos[add_idxs, 1:, :] = self.population.personal_best_pos[add_idxs, :-1, :]
-        # Update the personal best list by adding the current particle as a new personal best
-        self.population.personal_best_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
-        self.population.personal_best_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
+        # Delete the oldest personal guide and include the current particle as a new personal guide
+        self.population.personal_guide_fit[add_idxs, 1:, :] = self.population.personal_guide_fit[add_idxs, :-1, :]
+        self.population.personal_guide_pos[add_idxs, 1:, :] = self.population.personal_guide_pos[add_idxs, :-1, :]
+        # Update the personal guide list by adding the current particle as a new personal guide
+        self.population.personal_guide_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
+        self.population.personal_guide_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
     def update_memory(self, position_matrix: np.ndarray[np.float64, 2], fitness_matrix: np.ndarray[np.float64, 2]) -> None:
         ''' Updates the memory position and fitness using a position and fitness numpy matrices.
@@ -543,8 +543,8 @@ class Mesh():
                     update_memory_pos, update_memory_fit = self.differential_evolution()
                     # Mutate the weights
                     self.mutate_weights()
-                    # Update global best
-                    self.global_best_attribution()
+                    # Update global guides
+                    self.global_guide_method()
                     # Store some data of the population before the movement
                     self.pre_allocated.position_copy[:] = self.population.position.copy()
                     self.pre_allocated.velocity_copy[:] = self.population.velocity.copy()
@@ -553,8 +553,8 @@ class Mesh():
                     self.move_population()
                     # Select the best particles from those before and after movement
                     selected_idxs = self.population_selection()
-                    # Update the personal best
-                    self.update_personal_best(selected_idxs)
+                    # Update the personal guides
+                    self.update_personal_guides(selected_idxs)
                     # Get the fronts
                     self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                     # Update memory
