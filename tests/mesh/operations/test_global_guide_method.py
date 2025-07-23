@@ -57,6 +57,17 @@ def test_sigma_evaluation():
     sigma_array = np.array(sigma_array) / fitness_squared_sum
     # Treating numeric errors
     assert np.linalg.norm(sigma_arrays[idx] - sigma_array) < equal_tolerance_for_array
+  
+  # Check the case with fitnesses equal to zero
+  sigma_arrays = gba.sigma_evaluation(mesh, np.zeros((population_size, objective_dim)))
+  for idx in range(population_size):
+    sigma_array = []
+    for i in range(1, objective_dim):
+      for j in range(0, i):
+        sigma_array.append(0)
+    # Treating numeric errors
+    assert np.array_equal(sigma_arrays[idx], sigma_array)
+
 
 def test_sigma_method_in_memory():
   # Create a Mesh instance with a toy function

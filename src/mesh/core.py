@@ -133,8 +133,8 @@ class Mesh():
         # Estabilish the fitness function
         is_function(fitness_function, 'fitness_function')
         self.fitness_function = fitness_function
-        # Start the generation counter
-        self.generation_counter = 0
+        # Start the generation counter (considering the initial generation)
+        self.generation_counter = 1
         # Start the fitness evaluation counter
         self.fitness_eval_counter = 0
         # Create a random matrix (3 x population_size) with weights for the algorithm operations
@@ -158,7 +158,7 @@ class Mesh():
             self.count_generation = lambda : None
         # Check if the fitness evaluation is a stopping criterion
         if params.max_fit_eval != None:
-            self.evaluate = self.stopping_by_fitness_eval
+            self.evaluate = self.stopping_by_fitness_evaluation
         else:
             self.evaluate = self.evaluation_way
         # Choose the way to update the algorithm progress bar
@@ -605,9 +605,10 @@ class Mesh():
 
         self.generation_counter += 1
         if self.generation_counter > self.params.max_gen:
+            self.generation_counter -= 1
             raise StoppingAlgorithm()
     
-    def stopping_by_fitness_eval(self, X: np.ndarray[np.float64, 2]) -> tuple[np.ndarray[np.float64, 2], int]:
+    def stopping_by_fitness_evaluation(self, X: np.ndarray[np.float64, 2]) -> tuple[np.ndarray[np.float64, 2], int]:
         ''' Evaluates the position matrix ``X`` and counts the fitness evaluations. This method is used when the stopping criterion is by fitness evaluations.
         
         Args:

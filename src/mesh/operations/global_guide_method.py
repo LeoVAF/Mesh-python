@@ -29,8 +29,9 @@ def sigma_evaluation(self: Mesh, fitness_matrix: np.ndarray[np.number, 2]) -> np
 
   # Get the squared fitness matrix
   squared_fitnesses = np.square(fitness_matrix)
-  # Get the sum of each line in the fitness matrix
+  # Get the sum of each line in the fitness matrix (Treat the case when fitness sum is equal to zero)
   sum_squared_fitnesses = np.sum(squared_fitnesses, axis=1, keepdims=True)
+  sum_squared_fitnesses[sum_squared_fitnesses == 0] = 1
   # Take the indices to make the combination of differences (simulate a lower triangular matrix per vector to make the differences efficiently)
   row_indices, col_indices = self.pre_allocated.np_tril_indices
   # Get the fitness differences
