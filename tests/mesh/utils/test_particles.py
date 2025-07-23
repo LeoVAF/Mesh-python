@@ -17,7 +17,7 @@ max_fit_eval = 200
 max_personal_guides = 3
 random_state = None
 
-def test_Population_success():
+def test_Population():
   # Create a Population instance with initial positions
   initial_positions = np.random.rand(population_size, position_dim)
   params = MeshParameters(
@@ -58,11 +58,7 @@ def test_Population_success():
     assert np.all(v <= params.velocity_upper_bounds)
     assert np.all(v >= params.velocity_lower_bounds)
 
-
-def test_Population_failure():
-  pass
-
-def test_Memory_success():
+def test_Memory():
   # Create a Memory instance
   params = MeshParameters(
     objective_dim=objective_dim,
@@ -78,44 +74,9 @@ def test_Memory_success():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh_population = Population(params)
-
-  # Simulate a index array
-  pareto_idxs = np.arange(population_size)
-
-  mesh_memory = Memory(mesh_population, pareto_idxs, params)
+  mesh_memory = Memory(params)
 
   # Check if the class has the correct attributes
   assert hasattr(mesh_memory, 'position')
   assert hasattr(mesh_memory, 'fitness')
   assert hasattr(mesh_memory, 'sigma')
-
-  # Create a Memory instance with a memory size equals to one
-  params = MeshParameters(
-    objective_dim=objective_dim,
-    position_dim=position_dim,
-    position_lower_bounds=lower_bound,
-    position_upper_bounds=upper_bound,
-    population_size=population_size,
-    memory_size=1,
-    mutation_rate=mutation_rate,
-    communication_probability=communication_probability,
-    max_gen=max_gen,
-    max_fit_eval=max_fit_eval,
-    max_personal_guides=max_personal_guides,
-    random_state=random_state
-  )
-  mesh_population = Population(params)
-
-  # Simulate a index array
-  pareto_idxs = np.arange(population_size)
-
-  mesh_memory = Memory(mesh_population, pareto_idxs, params)
-
-  # Check if the class has the correct attributes
-  assert hasattr(mesh_memory, 'position')
-  assert hasattr(mesh_memory, 'fitness')
-  assert hasattr(mesh_memory, 'sigma')
-
-def test_Memory_failure():
-  pass

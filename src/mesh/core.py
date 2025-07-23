@@ -182,7 +182,8 @@ class Mesh():
         # Get the population fronts and domination ranks
         self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         # Initialize the memory
-        self.memory = Memory(self.population, self.fronts[0], self.params)
+        self.memory = Memory(self.params)
+        self.update_memory(self.population.position, self.population.fitness)
         # Repeat the population fitness for all personal guide input
         self.population.personal_guide_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
 

@@ -98,29 +98,13 @@ class Memory:
         TypeError: If the input is not of the expected type.
     """
     
-    def __init__(self, population: Population, pareto_front: np.ndarray[np.integer], params: MeshParameters) -> None:
-        assert_type(population, 'population', Population)
-        assert_np_vector_index(pareto_front, 'pareto_front', population.position.shape[0])
-        assert_np_vector_index(pareto_front, 'pareto_front', population.fitness.shape[0])
+    def __init__(self, params: MeshParameters) -> None:
         assert_type(params, 'params', MeshParameters)
 
         # Set the class attributes
-        self.position: np.ndarray[np.float64, 2] 
+        self.position: np.ndarray[np.float64, 2] = np.empty((0, params.position_dim))
         """ Numpy matrix with the memory position. """
-        self.fitness: np.ndarray[np.float64, 2]
+        self.fitness: np.ndarray[np.float64, 2] = np.empty((0, params.objective_dim))
         """ Numpy matrix with the memory fitness. """
         self.sigma: Optional[np.ndarray[np.float64, 2]] = None
         """ Numpy matrix with the memory sigma values. This attribute is only used when the Sigma method is used. """
-
-        if(len(pareto_front) <= params.memory_size):
-            self.position = population.position[pareto_front]
-            self.fitness = population.fitness[pareto_front]
-        else:
-            # Calculate the crowd distance
-            crowd_distances = crowding_distance(population.fitness[pareto_front])
-            # Sort the Pareto front by the crowding distance
-            idxs = np.argpartition(crowd_distances, -params.memory_size)[-params.memory_size:]
-            # Initialize the memory with the best solutions
-            best_pareto_idxs = pareto_front[idxs]
-            self.position = population.position[best_pareto_idxs]
-            self.fitness = population.fitness[best_pareto_idxs]
