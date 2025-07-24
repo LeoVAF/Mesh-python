@@ -6,10 +6,19 @@ from typing import Optional
 import numpy as np
 
 class StoppingAlgorithm(Exception):
-    ''' Class used to stop the algorithm with an exception. '''
+    ''' Class used to stop the algorithm with an exception.
+    
+    Args:
+        position (:type:`np.ndarray[np.number, 2]`): The position of the particles when the algorithm was stopped.
+        fitness (:type:`np.ndarray[np.number, 2]`): The fitness of the particles when the algorithm was stopped.
+    '''
 
-    def __init__(self):
-        pass
+    def __init__(self, position: np.ndarray[np.number, 2], fitness: np.ndarray[np.number, 2]):
+        self.position: np.ndarray[np.number, 2]
+        self.fitness: np.ndarray[np.number, 2]
+
+        self.position = position
+        self.fitness = fitness
 
 class PreAllocated():
     ''' Used for data allocation. It stores some data structures to avoid new allocations.

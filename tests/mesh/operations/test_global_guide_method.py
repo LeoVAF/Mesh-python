@@ -136,8 +136,8 @@ def test_sigma_method_in_memory():
 def test_sigma_method_in_fronts():
   # Create a Mesh instance with a rank function
   steps = np.linspace(0, 1, population_size)
-  ranks = [0, 2]
-  initial_positions = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[1]]),
+  ranks = [0, 4]
+  initial_positions = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[2]]),
                                  np.array([[steps[i]] for i in range(population_size)]),
                                  np.random.rand(population_size, position_dim-2)))
   params = MeshParameters(

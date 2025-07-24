@@ -105,9 +105,9 @@ class Mesh():
         self.evaluation_way: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 2], int]]
         ''' The way to evaluate the fitness function. It can be sequentially or parallelly. If :attr:`num_proc` is greater than zero, so the fitness evaluations will be parallel with :attr:`num_proc` processes. '''
         self.evaluate: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 2], int]]
-        ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is greater than 0, so the fitness evaluations will be counted. '''
+        ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is not None, so the fitness evaluations will be counted. '''
         self.count_generation: Callable[[], None]
-        ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is 0. '''
+        ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is not None. '''
         self.update_progress_bar: Callable[[tqdm, int], int]
         ''' Function to update the progress bar. '''
         self.total_bar: int
@@ -177,8 +177,11 @@ class Mesh():
 
         # Initialize the population
         self.population = Population(self.params)
-        # Evaluate the initial population
-        self.population.fitness[:] = self.evaluate(self.population.position)
+        # Evaluate the initial population (consider the case when there are less fitness evaluations than particles)
+        try:
+            self.population.fitness[:] = self.evaluate(self.population.position)
+        except StoppingAlgorithm as stop:
+            self.population.fitness[:len(stop.fitness)] = stop.fitness
         # Get the population fronts and domination ranks
         self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         # Initialize the memory
@@ -419,7 +422,7 @@ class Mesh():
         self.population.fitness[:] = self.evaluate(self.population.position)
     
     def population_selection(self) -> None:
-        ''' Selects the best particles from the previous (before applying the equation of motion) and current populations. The top :attr:~mesh.parameters.MeshParameters.population_size particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
+        ''' Selects the best particles from the previous (before applying the equation of motion) and current populations (after applying the equation of motion). The top :attr:~mesh.parameters.MeshParameters.population_size particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
         
         Note:
             The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with rank zero.
@@ -536,6 +539,8 @@ class Mesh():
                 prev_bar_value = 0
                 # Initialize the algorithm with initial operations
                 self.initialize()
+                if self.params.max_fit_eval is not None and self.fitness_eval_counter == self.params.max_fit_eval:
+                    raise StoppingAlgorithm(np.empty((0, self.params.position_dim)), np.empty((0, self.params.objective_dim)))
                 # Main loop
                 while True:
                     # Count generations if it is a stopping criterion
@@ -563,7 +568,9 @@ class Mesh():
                     # Update the progress bar
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
         # The end of the algorithm
-        except StoppingAlgorithm:
+        except StoppingAlgorithm as stop:
+            # Updated the memory
+            self.update_memory(stop.position, stop.fitness)
             # Log the memory
             if self.log_memory is not None:
                 self.logging()
@@ -606,7 +613,7 @@ class Mesh():
         self.generation_counter += 1
         if self.generation_counter > self.params.max_gen:
             self.generation_counter -= 1
-            raise StoppingAlgorithm()
+            raise StoppingAlgorithm(np.empty((0, self.params.position_dim)), np.empty((0, self.params.objective_dim)))
     
     def stopping_by_fitness_evaluation(self, X: np.ndarray[np.float64, 2]) -> tuple[np.ndarray[np.float64, 2], int]:
         ''' Evaluates the position matrix ``X`` and counts the fitness evaluations. This method is used when the stopping criterion is by fitness evaluations.
@@ -621,9 +628,6 @@ class Mesh():
             :class:`~mesh.utils.auxiliar.StoppingAlgorithm`: If the number of fitness evaluations is greater than the maximum number of fitness evaluations.    
         '''
 
-        # Check if the stopping criterion reached
-        if self.fitness_eval_counter >= self.params.max_fit_eval:
-            raise StoppingAlgorithm()
         # Get the size of the position matrix
         X_size = len(X)
         # Calculate the minimum number of fitness evaluations
@@ -631,11 +635,12 @@ class Mesh():
         # Update the fitness counter
         self.fitness_eval_counter += min_evaluations
         # Evaluate the fitness function
-        if(min_evaluations < X_size):
-            # Evaluate the sliced particle positions for the minimum evaluations and concatenate the rest with np.inf
-            return np.concatenate((self.evaluation_way(X[:min_evaluations]), np.full((X_size - min_evaluations, self.params.objective_dim), np.inf)), axis=0)
-        else:
+        if(self.fitness_eval_counter < self.params.max_fit_eval):
             return self.evaluation_way(X)
+        else:
+            # Evaluate the sliced particle positions and stop the algorithm
+            X_sliced = X[:min_evaluations]
+            raise StoppingAlgorithm(X_sliced, self.evaluation_way(X_sliced))
 
     def get_results(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
         ''' Returns a tuple with the memory position and fitness, respectively.
