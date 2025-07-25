@@ -32,17 +32,17 @@ class MeshParameters:
     
         communication_probability (:type:`int | float | np.number`): Communication/cooperation probability. Must be a number between 0 and 1, inclusive.
         
-        mutation_rate (:type:`int | float | np.number`): Mutation rate. Must be a number between 0 and 1, inclusive.
+        mutation_rate (:type:`int | float | np.number`): Mutation rate. Must be a positive number (> 0).
         
-        max_gen (:type:`int | np.integer | None`): Maximum number of generations. Must be a non-negative integer or ``None``.
+        max_gen (:type:`int | np.integer | None`): Maximum number of generations. Must be a positive integer (> 0) or ``None``.
         
-        max_fit_eval (:type:`int | np.integer | None`): Maximum number of fitness evaluations. Must be a non-negative integer or ``None``.
+        max_fit_eval (:type:`int | np.integer | None`): Maximum number of fitness evaluations. Must be a positive integer (> 0) or ``None``.
         
         max_personal_guides (:type:`int | np.integer`): Maximum number of personal guides. Must be a positive integer (> 0).
 
         initial_positions (:type:`np.ndarray[np.number, 2] | None`): The initial particle positions. If it is None, the initial positions are initialized randomly under the uniform distribution.
 
-        random_state (:type:`int | np.integer | None`): Numpy random seed to generate random numbers. Default is None. Must be an integer or ``None``.
+        random_state (:type:`int | np.integer | None`): Numpy random seed to generate random numbers. Default is None. Must be an integer (> 0) or ``None``.
 
     Raises:
         TypeError: If the input is not the expected type.
@@ -147,7 +147,7 @@ class MeshParameters:
         is_between_inclusive(communication_probability, 'communication_probability', 0, 1)
         self.communication_probability = communication_probability
         # Set the mutation rate
-        is_between_inclusive(mutation_rate, 'mutation_rate', 0, 1)
+        is_greater_in_type(mutation_rate, 'mutation_rate', (int, float), 0)
         self.mutation_rate = mutation_rate
         # Set the maximum number of generations
         is_greater_in_type(max_gen, 'max_gen', (int, np.integer), 0, is_optional=True)
@@ -165,7 +165,9 @@ class MeshParameters:
             assert_np_array_for_operations(initial_positions, 'initial_positions', (population_size, position_dim))
             if np.any(initial_positions > position_upper_bounds) or np.any(initial_positions < position_lower_bounds):
                 ValueError('The parameter "initial_positions" is the bounds of the bounding arrays.')
-        self.initial_positions = initial_positions
+            self.initial_positions = initial_positions.copy()
+        else:
+            self.initial_positions = None
         # Set the random state
         assert_type(random_state, 'random_state', (int, np.integer), is_optional=True)
         self.random_state = random_state

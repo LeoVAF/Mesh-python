@@ -35,6 +35,8 @@ class PreAllocated():
 
         self.np_tril_indices: Optional[tuple[np.ndarray[np.uint64], np.ndarray[np.uint64]]] = None
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
+        self.global_guides_mutated: np.ndarray[np.float64, 2]
+        ''' Numpy matrix for store the global guides after the mutation operation. '''
         self.matrix_for_operations: np.ndarray[np.float64, 2]
         ''' Numpy matrix for operations. '''
         self.vector_for_operations: np.ndarray[np.float64]

@@ -38,6 +38,7 @@ def test_PreAllocated_success():
 
   # Check if the class has the correct attributes
   assert hasattr(pre_allocated_instance, 'np_tril_indices')
+  assert hasattr(pre_allocated_instance, 'global_guides_mutated')
   assert hasattr(pre_allocated_instance, 'matrix_for_operations')
   assert hasattr(pre_allocated_instance, 'vector_for_operations')
   assert hasattr(pre_allocated_instance, 'fitness_selection')

@@ -219,10 +219,10 @@ class Microgrid:
 
     where:
 
-      - :math:`P_{pv}(h)` is the power effectively supplied to the load by the photovoltaic generator at hour :math:`h` [kWh];
-      - :math:`P_{wt}(h)` is the power effectively supplied to the load by the wind turbine at hour :math:`h` [kWh];
-      - :math:`P_{bat}(h)` is the power discharged from the battery to the load at hour :math:`h` [kWh];
-      - :math:`P_l(h)` is the power demanded by the load at hour :math:`h` [kWh].
+      - :math:`P_{pv}(h)` is the power effectively supplied to the load by the photovoltaic generator at hour :math:`h` [kW];
+      - :math:`P_{wt}(h)` is the power effectively supplied to the load by the wind turbine at hour :math:`h` [kW];
+      - :math:`P_{bat}(h)` is the power discharged from the battery to the load at hour :math:`h` [kW];
+      - :math:`P_l(h)` is the power demanded by the load at hour :math:`h` [kW].
 
     The Renewable Factor represents the fraction of the total demand met by renewable sources and battery storage over the simulation period.
     '''
