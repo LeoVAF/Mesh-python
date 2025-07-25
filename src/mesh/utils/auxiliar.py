@@ -41,8 +41,8 @@ class PreAllocated():
         ''' Numpy matrix for operations. '''
         self.vector_for_operations: np.ndarray[np.float64]
         ''' Numpy array for operations. '''
-        self.fitness_selection: np.ndarray[np.float64, 2]
-        ''' Numpy matrix used in :meth:`~mesh.core.Mesh.population_selection` to store the fitness of the population before and after the particle moviment. '''
+        self.fitness_elitism: np.ndarray[np.float64, 2]
+        ''' Numpy matrix used in :meth:`~mesh.core.Mesh.elitism` to store the fitness of the population before and after the particle moviment. '''
         self.position_copy: np.ndarray[np.float64, 2]
         ''' Numpy matrix to store the position of the particles before the particle moviment. '''
         self.velocity_copy: np.ndarray[np.float64, 2]
@@ -53,11 +53,13 @@ class PreAllocated():
         # Used to calculate the sigma
         if params.global_guide_method in {0, 1}:
             self.np_tril_indices = np.tril_indices(params.objective_dim, k=-1)
+        # Matrix for store the global guides after the mutation
+        self.global_guides_mutated = np.empty((params.population_size, params.position_dim))
         # Structures used to calculate repetitive operations
         self.matrix_for_operations = np.empty((params.population_size, params.position_dim))
         self.vector_for_operations = np.empty(params.population_size)
-        # Fitness matrix for the population selection
-        self.fitness_selection = np.empty((2*params.population_size, params.objective_dim))
+        # Fitness matrix for the elitism
+        self.fitness_elitism = np.empty((2*params.population_size, params.objective_dim))
         # Copies for the population
         self.position_copy = np.empty((params.population_size, params.position_dim))
         self.velocity_copy = np.empty((params.population_size, params.position_dim))

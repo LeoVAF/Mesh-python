@@ -41,7 +41,7 @@ def test_PreAllocated_success():
   assert hasattr(pre_allocated_instance, 'global_guides_mutated')
   assert hasattr(pre_allocated_instance, 'matrix_for_operations')
   assert hasattr(pre_allocated_instance, 'vector_for_operations')
-  assert hasattr(pre_allocated_instance, 'fitness_selection')
+  assert hasattr(pre_allocated_instance, 'fitness_elitism')
   assert hasattr(pre_allocated_instance, 'position_copy')
   assert hasattr(pre_allocated_instance, 'velocity_copy')
   assert hasattr(pre_allocated_instance, 'fitness_copy')

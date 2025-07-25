@@ -81,7 +81,7 @@ def test_move_population():
   pass
 
 ''' ######################################################################## '''
-def test_population_selection():
+def test_elitism():
   test_population_size = 2 * population_size
   # Initialize the algorithm with initial positions
   initial_positions = np.array([[i % 2] * position_dim for i in range(test_population_size)])
@@ -112,7 +112,7 @@ def test_population_selection():
   mesh.pre_allocated.fitness_copy = mesh.population.fitness.copy()
 
   # Select only the particles with the fitness equals to zero
-  mesh.population_selection()
+  mesh.elitism()
 
   # Check if the particles were selected correctly
   for i in range(test_population_size):
@@ -155,7 +155,7 @@ def test_population_selection():
   mesh.pre_allocated.fitness_copy = mesh.population.fitness.copy()
 
   # Select only the particles with the fitness equals to zero
-  mesh.population_selection()
+  mesh.elitism()
 
   # Check if the particles were selected correctly
   for i in range(test_population_size):

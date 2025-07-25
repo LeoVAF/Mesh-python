@@ -307,7 +307,7 @@ class Mesh():
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         return update_memory_pos, update_memory_fit
 
-    def mutate_weights(self) -> None:
+    def mutate(self) -> None:
         r''' Calculates the weights by the following equation:
 
         .. math::
@@ -421,7 +421,7 @@ class Mesh():
         # Evaluate the positions with the fitness function
         self.population.fitness[:] = self.evaluate(self.population.position)
     
-    def population_selection(self) -> None:
+    def elitism(self) -> None:
         ''' Selects the best particles from the previous (before applying the equation of motion) and current populations (after applying the equation of motion). The top :attr:~mesh.parameters.MeshParameters.population_size particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
         
         Note:
@@ -434,56 +434,25 @@ class Mesh():
         population_size = self.params.population_size
         pre_allocated = self.pre_allocated
         # Get the fitness matrix with the previous and the current population
-        pre_allocated.fitness_selection[:population_size] = pre_allocated.fitness_copy
-        pre_allocated.fitness_selection[population_size:] = self.population.fitness
+        pre_allocated.fitness_elitism[:population_size] = pre_allocated.fitness_copy
+        pre_allocated.fitness_elitism[population_size:] = self.population.fitness
         # Find the best N indices
-        best_N_idxs = select_best_N_mo(pre_allocated.fitness_selection, population_size)
+        best_N_idxs = select_best_N_mo(pre_allocated.fitness_elitism, population_size)
         # Get the previous population indices
         mask = best_N_idxs < population_size
         prev_idxs = best_N_idxs[mask]
         # Get the current population indices
         np.logical_not(mask, out=mask)
         current_idxs = best_N_idxs[mask] - population_size
-        # Select the previous particles to the current population
-        selection_idxs = np.setdiff1d(np.arange(population_size), current_idxs, assume_unique=True)
-        self.population.position[selection_idxs] = pre_allocated.position_copy[prev_idxs]
-        self.population.velocity[selection_idxs] = pre_allocated.velocity_copy[prev_idxs]
-        self.population.fitness[selection_idxs] = pre_allocated.fitness_copy[prev_idxs]
-        self.population.personal_guide_pos[selection_idxs] = self.population.personal_guide_pos[prev_idxs]
-        self.population.personal_guide_fit[selection_idxs] = self.population.personal_guide_fit[prev_idxs]
+        # Put the best previous particles in the current population
+        worst_current_idxs = np.setdiff1d(np.arange(population_size), current_idxs, assume_unique=True)
+        self.population.position[worst_current_idxs] = pre_allocated.position_copy[prev_idxs]
+        self.population.velocity[worst_current_idxs] = pre_allocated.velocity_copy[prev_idxs]
+        self.population.fitness[worst_current_idxs] = pre_allocated.fitness_copy[prev_idxs]
+        self.population.personal_guide_pos[worst_current_idxs] = self.population.personal_guide_pos[prev_idxs]
+        self.population.personal_guide_fit[worst_current_idxs] = self.population.personal_guide_fit[prev_idxs]
         # Return the indices of the current population that were selected
-        return selection_idxs
-
-        ######################################################################################################
-        # population_size = self.params.population_size
-        # pre_allocated = self.pre_allocated
-        # # Get the fitness matrix with the previous and the current population
-        # pre_allocated.fitness_selection[:population_size] = pre_allocated.fitness_copy
-        # pre_allocated.fitness_selection[population_size:] = self.population.fitness
-        # # Find the best N indices
-        # best_N_idxs = select_best_N_mo(pre_allocated.fitness_selection, population_size)
-        # # Separate the previous and current population indices from best_N_idxs
-        # mask = best_N_idxs < population_size
-        # prev_idxs = best_N_idxs[mask]
-        # # Get the current indices
-        # np.logical_not(mask, out=mask)
-        # current_idxs = best_N_idxs[mask] - population_size
-        # # Get the previous and the current size of indices
-        # prev_idx_size = len(prev_idxs)
-        # # Select the best previous particles
-        # self.population.position[:prev_idx_size] = pre_allocated.position_copy[prev_idxs]
-        # self.population.velocity[:prev_idx_size] = pre_allocated.velocity_copy[prev_idxs]
-        # self.population.fitness[:prev_idx_size] = pre_allocated.fitness_copy[prev_idxs]
-        # # Select the best current particles
-        # self.population.position[prev_idx_size:] = self.population.position[current_idxs]
-        # self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
-        # self.population.fitness[prev_idx_size:] = self.population.fitness[current_idxs]
-        # # Select the best N personal guide
-        # pb_idxs = np.concatenate((prev_idxs, current_idxs), axis=0)
-        # self.population.personal_guide_fit[:] = self.population.personal_guide_fit[pb_idxs]
-        # self.population.personal_guide_pos[:] = self.population.personal_guide_pos[pb_idxs]
-        # # Return the indices of the current population that were selected
-        # return np.arange(prev_idx_size, population_size)
+        return current_idxs
 
     def update_personal_guides(self, pop_indices: np.ndarray[np.integer]) -> None:
         ''' Updates the personal guides of the particles by the population index.
@@ -571,8 +540,8 @@ class Mesh():
                     self.count_generation()
                     # Calculate Xst for each particle
                     update_memory_pos, update_memory_fit = self.differential_evolution()
-                    # Mutate the weights
-                    self.mutate_weights()
+                    # Mutate the weights and the global guides
+                    self.mutate()
                     # Update global guides
                     self.global_guide_method()
                     # Store some data of the population before the movement
@@ -581,8 +550,8 @@ class Mesh():
                     self.pre_allocated.fitness_copy[:] = self.population.fitness.copy()
                     # Apply the movviment to the particles
                     self.move_population()
-                    # Select the best particles from those before and after movement
-                    selected_idxs = self.population_selection()
+                    # Select the best particles from those before and after the moviment
+                    selected_idxs = self.elitism()
                     # Update the personal guides
                     self.update_personal_guides(selected_idxs)
                     # Get the fronts
