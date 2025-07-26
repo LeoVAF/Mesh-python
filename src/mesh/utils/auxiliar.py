@@ -35,7 +35,7 @@ class PreAllocated():
 
         self.np_tril_indices: Optional[tuple[np.ndarray[np.uint64], np.ndarray[np.uint64]]] = None
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
-        self.global_guides_mutated: np.ndarray[np.float64, 2]
+        self.global_guide_mutated: np.ndarray[np.float64, 2]
         ''' Numpy matrix for store the global guides after the mutation operation. '''
         self.matrix_for_operations: np.ndarray[np.float64, 2]
         ''' Numpy matrix for operations. '''
@@ -54,7 +54,7 @@ class PreAllocated():
         if params.global_guide_method in {0, 1}:
             self.np_tril_indices = np.tril_indices(params.objective_dim, k=-1)
         # Matrix for store the global guides after the mutation
-        self.global_guides_mutated = np.empty((params.population_size, params.position_dim))
+        self.global_guide_mutated = np.empty((params.population_size, params.position_dim))
         # Structures used to calculate repetitive operations
         self.matrix_for_operations = np.empty((params.population_size, params.position_dim))
         self.vector_for_operations = np.empty(params.population_size)

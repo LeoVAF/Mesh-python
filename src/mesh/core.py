@@ -288,17 +288,17 @@ class Mesh():
         update_memory_fit = self.population.fitness
         if len(Xst):
             # Apply the differential crossover
-            Xst = self.differential_crossover(self.population.position[valid_idxs], Xst)
+            Xst_rec = self.differential_crossover(self.population.position[valid_idxs], Xst)
             # Update the current particle if the new particle from the strategy is better
-            Fst = self.evaluate(Xst)
+            Fst = self.evaluate(Xst_rec)
             valid_pop_fitnesses = self.population.fitness[valid_idxs]
             domination_mask = self.dominates(Fst, valid_pop_fitnesses, axis=1)
             update_idxs = valid_idxs[domination_mask]
             # Update the positions and the fitnesses
-            self.population.position[update_idxs] = Xst[domination_mask]
+            self.population.position[update_idxs] = Xst_rec[domination_mask]
             self.population.fitness[update_idxs] = Fst[domination_mask]
             # Update the memory with the new particles from the strategy
-            update_memory_pos = np.concatenate((update_memory_pos, Xst), axis=0)
+            update_memory_pos = np.concatenate((update_memory_pos, Xst_rec), axis=0)
             update_memory_fit = np.concatenate((update_memory_fit, Fst), axis=0)
             self.update_memory(update_memory_pos, update_memory_fit)
             # If a particle was replaced for a particle from a strategy, update the personal guides
@@ -307,21 +307,30 @@ class Mesh():
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         return update_memory_pos, update_memory_fit
 
-    def mutate(self) -> None:
-        r''' Calculates the weights by the following equation:
+    def mutation(self) -> None:
+        r''' Calculates the mutation of the weights by the following equation:
 
         .. math::
-            w^* = w + \tau_{mut} \cdot r,
+            \tilde{w} = w + \tau_{mut} \cdot r,
         
-        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution.
+        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution. The mutation of the global guides are done by the following equation:
+
+        .. math::
+                
+            \tilde{x}_{gb} = x_{gb} + \tau_{mut} \cdot \vec{r},
+            
+        where :math:`\vec{r} \sim \mathcal{N}(0, 1)^m` is a vector sampled from the Standard Gaussian Distribution.
         '''
         
         # Mutate the weights using a number sampled under the Standard Gaussian Distribution
         self.weights += np.random.normal(0, 1, (3, self.params.population_size)) * self.params.mutation_rate
         # Clip the weights to the allowed values
-        np.clip(self.weights[0, :], 0.0, 0.5, out=self.weights[0, :])
-        np.clip(self.weights[1, :], 0.0, 0.5, out=self.weights[1, :])
-        np.clip(self.weights[2, :], 0.0, 1.0, out=self.weights[2, :])
+        np.clip(self.weights, 0.0, 1.0, out=self.weights)
+        # Mutate the global guides with a covariance matrix
+        np.clip(self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) * self.params.mutation_rate,
+                self.params.position_lower_bounds,
+                self.params.position_upper_bounds,
+                out=self.pre_allocated.global_guide_mutated)
 
     def reflect_velocity_at_bounds(self, velocity_input: np.ndarray[np.number, 2], position_input: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
         ''' Reverses the direction of each component of the velocity that took the particle out of its respective boundaries.
@@ -346,7 +355,7 @@ class Mesh():
         .. math::
 
             \begin{cases}
-                v'^{(t)} = w^*_Iv^{(t)} + w^*_A(x_{pb} - x^{(t)}) + w^*_C C^{(t)} \times (x^*_{gb} - x^{(t)}), \\
+                v'^{(t)} = \tilde{w}_Iv^{(t)} + \tilde{w}_A(x_{pb} - x^{(t)}) + \tilde{w}_C C^{(t)} \times (\tilde{x}_{gb} - x^{(t)}), \\
                 x''^{(t)} = x'^{(t)} + v'^{(t)},
             \end{cases}
         
@@ -367,11 +376,11 @@ class Mesh():
         - :math:`x_{gb}` is the global guide vector o the particle.
         
         Note:
-            In this implementation, the weights are calculated every generation by :meth:`mutate_weights` and each particle has its own weight. The mutation of :math:`x_{gb}` is done by:
+            In this implementation, the weights are calculated every generation by :meth:`~mesh.core.mutation` and each particle has its own weight. The mutation of :math:`x_{gb}` is done by:
             
             .. math::
                 
-                x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot \vec{r}),
+                \tilde{x}_{gb} = x_{gb}(1 + \tau_{mut} \cdot \vec{r}),
             
             where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\vec{r} \sim \mathcal{N}(0, 1)^m` is a number sampled from the Standard Gaussian Distribution.
         '''
@@ -385,7 +394,7 @@ class Mesh():
         # Get matrix position of personal guides from personal guide list positions
         pb_positions = self.population.personal_guide_pos[np.arange(population_size), random_indices, :]
         # Get the global guide positions
-        gb_positions = self.population.global_guide
+        gb_positions_mutated = self.pre_allocated.global_guide_mutated
         # Get the positions
         positions = self.population.position
         # Get the velocities
@@ -400,14 +409,18 @@ class Mesh():
         np.multiply(matrix_for_operations, weights[1][:, np.newaxis], out=matrix_for_operations)
         np.add(velocities, matrix_for_operations, out=velocities)
         # Calculate the cooperation term and accumulate it in the velocities
-        vector_for_operations = self.pre_allocated.vector_for_operations
-        ################## Mutation of the global guide positions ##################
-        vector_for_operations[:] = np.random.normal(0, 1, population_size)
-        np.multiply(vector_for_operations, params.mutation_rate, out=vector_for_operations)
-        np.add(vector_for_operations, 1, out=vector_for_operations)
-        np.multiply(vector_for_operations[:, np.newaxis], gb_positions, out=matrix_for_operations)
-        ###########################################################################
-        np.subtract(matrix_for_operations, positions, out=matrix_for_operations)
+        
+        
+        # vector_for_operations = self.pre_allocated.vector_for_operations
+        # ################## Mutation of the global guide positions ##################
+        # vector_for_operations[:] = np.random.normal(0, 1, population_size)
+        # np.multiply(vector_for_operations, params.mutation_rate, out=vector_for_operations)
+        # np.add(vector_for_operations, 1, out=vector_for_operations)
+        # np.multiply(vector_for_operations[:, np.newaxis], gb_positions, out=matrix_for_operations)
+        # ###########################################################################
+        # np.subtract(matrix_for_operations, positions, out=matrix_for_operations)
+
+        np.subtract(gb_positions_mutated, positions, out=matrix_for_operations)
         np.multiply(matrix_for_operations, weights[2][:, np.newaxis], out=matrix_for_operations)
         np.multiply(matrix_for_operations, np.random.uniform(0.0, 1.0, params.position_dim) < params.communication_probability, out=matrix_for_operations)
         np.add(velocities, matrix_for_operations, out=velocities)
@@ -540,10 +553,10 @@ class Mesh():
                     self.count_generation()
                     # Calculate Xst for each particle
                     update_memory_pos, update_memory_fit = self.differential_evolution()
-                    # Mutate the weights and the global guides
-                    self.mutate()
                     # Update global guides
                     self.global_guide_method()
+                    # Mutate the weights and the global guides
+                    self.mutation()
                     # Store some data of the population before the movement
                     self.pre_allocated.position_copy[:] = self.population.position.copy()
                     self.pre_allocated.velocity_copy[:] = self.population.velocity.copy()
