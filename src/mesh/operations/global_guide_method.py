@@ -111,7 +111,7 @@ def sigma_method_in_fronts(self: Mesh) -> None:
   '''
 
   # Get the fronts and its length
-  fronts = self.fronts
+  fronts = self.get_non_domination_fronts(self.population.fitness)
   num_fronts = len(fronts)
   pareto_idxs = fronts[0]
   # Evaluate population sigma

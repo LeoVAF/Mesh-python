@@ -39,7 +39,6 @@ rank_function = lambda x: np.array([x[0] + x[1], x[0] + 1 - x[1]] + [x[0] for _ 
 
 equal_tolerance_for_array = 1e-15
 
-''' ######################################################################## '''
 def test_initialize():
   # Initialize the algortihm with none max_fit_eval
   test_params = MeshParameters(

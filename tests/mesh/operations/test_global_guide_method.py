@@ -165,7 +165,8 @@ def test_sigma_method_in_fronts():
   mesh.global_guide_method()
 
   # Check the global guide from memory
-  for idx in mesh.fronts[0]:
+  mesh_fronts = mesh.get_non_domination_fronts(mesh.population.fitness)
+  for idx in mesh_fronts[0]:
     min_dist = np.inf
     particle_sigma = mesh.population.sigma[idx]
     nearest_idx = None
@@ -177,12 +178,12 @@ def test_sigma_method_in_fronts():
     assert np.array_equal(mesh.population.global_guide[idx], mesh.memory.position[nearest_idx])
 
   # Check the global guide from fronts
-  for rank in range(1, len(mesh.fronts)):
-    for idx in mesh.fronts[rank]:
+  for rank in range(1, len(mesh_fronts)):
+    for idx in mesh_fronts[rank]:
       min_dist = np.inf
       particle_sigma = mesh.population.sigma[idx]
       nearest_idx = None
-      search_front = mesh.fronts[rank-1]
+      search_front = mesh_fronts[rank-1]
       for search_idx, search_sigma in enumerate(mesh.population.sigma[search_front]):
         dist = np.linalg.norm(particle_sigma - search_sigma)
         if dist < min_dist and dist != 0:
@@ -212,16 +213,17 @@ def test_sigma_method_in_fronts():
   mesh.global_guide_method()
 
   # Check the global guide from memory
-  for idx in mesh.fronts[0]:
+  mesh_fronts = mesh.get_non_domination_fronts(mesh.population.fitness)
+  for idx in mesh_fronts[0]:
     assert np.array_equal(mesh.population.global_guide[idx], mesh.memory.position[0])
 
   # Check the global guide from fronts
-  for rank in range(1, len(mesh.fronts)):
-    for idx in mesh.fronts[rank]:
+  for rank in range(1, len(mesh_fronts)):
+    for idx in mesh_fronts[rank]:
       min_dist = np.inf
       particle_sigma = mesh.population.sigma[idx]
       nearest_idx = None
-      search_front = mesh.fronts[rank-1]
+      search_front = mesh_fronts[rank-1]
       for search_idx, search_sigma in enumerate(mesh.population.sigma[search_front]):
         dist = np.linalg.norm(particle_sigma - search_sigma)
         if dist < min_dist and dist != 0:

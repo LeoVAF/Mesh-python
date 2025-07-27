@@ -86,8 +86,6 @@ class Mesh():
         ''' Population of particles. '''
         self.memory: Memory
         ''' Memory of particles. '''
-        self.fronts: list[np.ndarray[np.integer]]
-        ''' List of numpy arrays with index of each particle in the respective front. '''
         self.fitness_function: Callable[..., np.ndarray[np.number]]
         ''' Fitness function. '''
         self.generation_counter: int
@@ -128,8 +126,6 @@ class Mesh():
         self.population = None
         # Memory particles (and the final result after run MESH)
         self.memory = None
-        # Fronts (a list of numpy arrays with index of each particle in the respective front)
-        self.fronts = []
         # Estabilish the fitness function
         is_function(fitness_function, 'fitness_function')
         self.fitness_function = fitness_function
@@ -181,8 +177,7 @@ class Mesh():
         self.memory = Memory(self.params)
         # Evaluate the initial population (consider the case when there are less fitness evaluations than particles)
         self.population.fitness[:] = self.evaluate(self.population.position)
-        # Get the population fronts and domination ranks
-        self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
+        # Update memory
         self.update_memory(self.population.position, self.population.fitness)
         # Repeat the population fitness for all personal guide input
         self.population.personal_guide_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
@@ -241,7 +236,7 @@ class Mesh():
 
         return np.all(Fx <= Fy, axis=axis) & np.any(Fx < Fy, axis=axis)
 
-    def get_domination_fronts(self, fitness_matrix: np.ndarray[np.number, 2]) -> tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]:
+    def get_non_domination_fronts(self, fitness_matrix: np.ndarray[np.number, 2]) -> tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]:
         ''' Gets the fronts and the domination ranks of the particles given a fitness matrix.
         
         Note:
@@ -256,10 +251,10 @@ class Mesh():
 
         # If there is only one particle in the particle list, then it is the Pareto front by itself
         if(len(fitness_matrix) == 1):
-            return np.array([np.array([0])]), np.array([0])
+            return np.array([np.array([0])])
         # Do the Fast Non-dominated Sorting from Pygmo
-        non_dominated_fronts, _, _, ranks = fast_non_dominated_sorting(points=fitness_matrix)
-        return non_dominated_fronts, ranks
+        non_dominated_fronts, _, _, _ = fast_non_dominated_sorting(points=fitness_matrix)
+        return non_dominated_fronts
 
     def differential_evolution(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
         r''' Generates solutions by Differential Evolution algorithm according to a differential mutation strategy decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type`, with solutions sampled in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`. The new solutions in the population are defined according to the following equation:
@@ -304,7 +299,6 @@ class Mesh():
             # If a particle was replaced for a particle from a strategy, update the personal guides
             if len(worst_pop_idxs):
                 self.update_personal_guides(worst_pop_idxs)
-                self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         return update_memory_pos, update_memory_fit
 
         ###################################################################################
@@ -333,7 +327,6 @@ class Mesh():
         #     # If a particle was replaced for a particle from a strategy, update the personal guides
         #     if len(update_idxs):
         #         self.update_personal_guides(update_idxs)
-        #         self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         # return update_memory_pos, update_memory_fit
 
     def mutation(self) -> None:
@@ -499,7 +492,7 @@ class Mesh():
         # Get the unique fitnesses from the Pareto front and the memory
         unique_fitnesses = np.concatenate((self.memory.fitness, fitness_matrix), axis=0)[unique_idxs]
         # Get the Pareto front indices from the memory candidates
-        memory_pareto_front_idxs = self.get_domination_fronts(unique_fitnesses)[0][0]
+        memory_pareto_front_idxs = self.get_non_domination_fronts(unique_fitnesses)[0]
         # If the new memory Pareto front has size less or equal than the memory size, then set the new memory
         memory_size = self.params.memory_size
         if(len(memory_pareto_front_idxs) <= memory_size):
@@ -547,8 +540,6 @@ class Mesh():
                     selected_idxs = self.elitism()
                     # Update the personal guides
                     self.update_personal_guides(selected_idxs)
-                    # Get the fronts
-                    self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
                     # Update memory
                     self.update_memory(update_memory_pos, update_memory_fit)
                     # Update the progress bar
