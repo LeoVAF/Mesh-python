@@ -52,10 +52,10 @@ def test_binomial_crossover(mocker):
   crossover_rates = truncnorm.rvs(0, 1, size=(test_size, 1))
   mocker.patch("scipy.stats.truncnorm.rvs", return_value=crossover_rates)
 
-  crossover_idxs = np.random.randint(0, params.position_dim, size=test_size)
+  crossover_idxs = np.random.randint(0, mesh.params.position_dim, size=test_size)
   mocker.patch("numpy.random.randint", return_value=crossover_idxs)
 
-  crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, params.position_dim))
+  crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, mesh.params.position_dim))
   mocker.patch("numpy.random.uniform", return_value=crossover_chances)
 
   # Apply the binomial crossover operation

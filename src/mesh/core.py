@@ -322,32 +322,15 @@ class Mesh():
         where :math:`\vec{r} \sim \mathcal{N}(0, 1)^m` is a vector sampled from the Standard Gaussian Distribution.
         '''
         
-        # Mutate the weights using a number sampled under the Standard Gaussian Distribution
+        # Mutate the weights using a number sampled from the Standard Gaussian Distribution
         self.weights += np.random.normal(0, 1, (3, self.params.population_size)) * self.params.mutation_rate
         # Clip the weights to the allowed values
-        np.clip(self.weights, 0.0, 1.0, out=self.weights)
-        # Mutate the global guides with a covariance matrix
+        np.clip(self.weights, 0, 1, out=self.weights)
+        # Mutate the global guides with a vector sampled from the Standard Gaussian Distribution
         np.clip(self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) * self.params.mutation_rate,
                 self.params.position_lower_bounds,
                 self.params.position_upper_bounds,
                 out=self.pre_allocated.global_guide_mutated)
-
-    def reflect_velocity_at_bounds(self, velocity_input: np.ndarray[np.number, 2], position_input: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
-        ''' Reverses the direction of each component of the velocity that took the particle out of its respective boundaries.
-        
-        Args:
-            velocity_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle velocities.
-            position_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
-        
-        Returns:
-            :type:`np.ndarray[np.number, 2]`: A numpy matrix with the velocities reflected at the boundaries.
-        '''
-
-        neg_velocity = (velocity_input < 0)
-        return np.where(((position_input == self.params.position_lower_bounds) & neg_velocity) |
-                        ((position_input == self.params.position_upper_bounds) & (~ neg_velocity)),
-                        -velocity_input,
-                        velocity_input)
 
     def move_population(self) -> None:
         r''' Applies the equation of motion to the particles. The MESH equation of motion is given by:
@@ -376,13 +359,7 @@ class Mesh():
         - :math:`x_{gb}` is the global guide vector o the particle.
         
         Note:
-            In this implementation, the weights are calculated every generation by :meth:`~mesh.core.mutation` and each particle has its own weight. The mutation of :math:`x_{gb}` is done by:
-            
-            .. math::
-                
-                \tilde{x}_{gb} = x_{gb}(1 + \tau_{mut} \cdot \vec{r}),
-            
-            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\vec{r} \sim \mathcal{N}(0, 1)^m` is a number sampled from the Standard Gaussian Distribution.
+            In this implementation, the weights are calculated every generation by :meth:`~mesh.core.mutation` and each particle has its own weight. Every particle has its communication matrix too.
         '''
 
         # Get the parameters
@@ -390,47 +367,23 @@ class Mesh():
         # Get the population size and the position dimension
         population_size = params.population_size
         # Generating random indices for each sublist
-        random_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
+        pb_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
         # Get matrix position of personal guides from personal guide list positions
-        pb_positions = self.population.personal_guide_pos[np.arange(population_size), random_indices, :]
+        Xpb = self.population.personal_guide_pos[np.arange(population_size), pb_indices, :]
         # Get the global guide positions
-        gb_positions_mutated = self.pre_allocated.global_guide_mutated
+        Xgb_mut = self.pre_allocated.global_guide_mutated
         # Get the positions
-        positions = self.population.position
-        # Get the velocities
-        velocities = self.population.velocity
+        X = self.population.position
         # Get the weights
-        weights = self.weights
-        # Calculate the inertia term and accumulate it in the velocities
-        np.multiply(velocities, weights[0][:, np.newaxis], out=velocities)
-        # Calculate the memory term and accumulate it in the velocities
-        matrix_for_operations = self.pre_allocated.matrix_for_operations
-        np.subtract(pb_positions, positions, out=matrix_for_operations)
-        np.multiply(matrix_for_operations, weights[1][:, np.newaxis], out=matrix_for_operations)
-        np.add(velocities, matrix_for_operations, out=velocities)
-        # Calculate the cooperation term and accumulate it in the velocities
-        
-        
-        # vector_for_operations = self.pre_allocated.vector_for_operations
-        # ################## Mutation of the global guide positions ##################
-        # vector_for_operations[:] = np.random.normal(0, 1, population_size)
-        # np.multiply(vector_for_operations, params.mutation_rate, out=vector_for_operations)
-        # np.add(vector_for_operations, 1, out=vector_for_operations)
-        # np.multiply(vector_for_operations[:, np.newaxis], gb_positions, out=matrix_for_operations)
-        # ###########################################################################
-        # np.subtract(matrix_for_operations, positions, out=matrix_for_operations)
-
-        np.subtract(gb_positions_mutated, positions, out=matrix_for_operations)
-        np.multiply(matrix_for_operations, weights[2][:, np.newaxis], out=matrix_for_operations)
-        np.multiply(matrix_for_operations, np.random.uniform(0.0, 1.0, params.position_dim) < params.communication_probability, out=matrix_for_operations)
-        np.add(velocities, matrix_for_operations, out=velocities)
-        # Calculate the new velocity (clipped)
-        np.clip(velocities, params.velocity_lower_bounds, params.velocity_upper_bounds, out=velocities)
-        # Calculate the new position (clipped)
-        np.add(positions, velocities, out=positions)
-        np.clip(positions, params.position_lower_bounds, params.position_upper_bounds, out=positions)
-        # Reflect the velocity at the bounds
-        self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
+        W = self.weights
+        # Calculate the new velocity
+        C = np.random.rand(population_size, params.position_dim) < params.communication_probability
+        self.population.velocity[:] = W[0][:, np.newaxis] * self.population.velocity + W[1][:, np.newaxis] * (Xpb - X) + W[2][:, np.newaxis] * C * (Xgb_mut - X)
+        # Calculate the clipped velocity
+        np.clip(self.population.velocity, params.velocity_lower_bounds, params.velocity_upper_bounds, out=self.population.velocity)
+        # Calculate the clipped position
+        self.population.position += self.population.velocity
+        np.clip(self.population.position, params.position_lower_bounds, params.position_upper_bounds, out=self.population.position)
         # Evaluate the positions with the fitness function
         self.population.fitness[:] = self.evaluate(self.population.position)
     

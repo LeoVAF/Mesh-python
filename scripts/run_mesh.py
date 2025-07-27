@@ -59,9 +59,9 @@ def main():
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'dtlz1'
+    experiment_name = 'zdt4'
 
-    objective_dim = 3 # Number of objectives
+    objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
     
@@ -77,8 +77,8 @@ def main():
     max_fitness_eval = 15000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability =  0.23 # Communication probability
-    mutation_rate = 0.23 # Mutation rate
+    communication_probability =  0.4 # Communication probability
+    mutation_rate = 0.9 # Mutation rate
     personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
