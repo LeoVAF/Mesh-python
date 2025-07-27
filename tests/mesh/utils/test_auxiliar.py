@@ -20,7 +20,7 @@ random_state = None
 
 def test_PreAllocated_success():
   # Create a PreAllocated instance
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -34,7 +34,7 @@ def test_PreAllocated_success():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  pre_allocated_instance = aux.PreAllocated(params)
+  pre_allocated_instance = aux.PreAllocated(test_params)
 
   # Check if the class has the correct attributes
   assert hasattr(pre_allocated_instance, 'np_tril_indices')
@@ -48,6 +48,6 @@ def test_PreAllocated_success():
 
 def test_PreAllocated_failure():
   # Create a PreAllocated instance with a non MeshParameters instance
-  params = object()
+  test_params = object()
   with pytest.raises(TypeError, match=r'The input "params" has type <class \'object\'>, but expected <class \'mesh.parameters.MeshParameters\'>.'):
-    aux.PreAllocated(params)
+    aux.PreAllocated(test_params)

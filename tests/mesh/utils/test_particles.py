@@ -19,7 +19,7 @@ random_state = None
 def test_Population():
   # Create a Population instance with initial positions
   initial_positions = np.random.rand(population_size, position_dim)
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -34,7 +34,7 @@ def test_Population():
     initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh_population = Population(params)
+  mesh_population = Population(test_params)
   
   # Check if the class has the correct attributes
   assert hasattr(mesh_population, 'position')
@@ -51,15 +51,15 @@ def test_Population():
 
   # Check if the positions and velocities were initialized correctly
   for p in mesh_population.position:
-    assert np.all(p <= params.position_upper_bounds)
-    assert np.all(p >= params.position_lower_bounds)
+    assert np.all(p <= test_params.position_upper_bounds)
+    assert np.all(p >= test_params.position_lower_bounds)
   for v in mesh_population.velocity:
-    assert np.all(v <= params.velocity_upper_bounds)
-    assert np.all(v >= params.velocity_lower_bounds)
+    assert np.all(v <= test_params.velocity_upper_bounds)
+    assert np.all(v >= test_params.velocity_lower_bounds)
 
 def test_Memory():
   # Create a Memory instance
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -73,7 +73,7 @@ def test_Memory():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh_memory = Memory(params)
+  mesh_memory = Memory(test_params)
 
   # Check if the class has the correct attributes
   assert hasattr(mesh_memory, 'position')

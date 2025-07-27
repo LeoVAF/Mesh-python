@@ -1,9 +1,11 @@
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
+from mesh.utils.auxiliar import StoppingAlgorithm
 
 from unittest.mock import patch
 
 import numpy as np
+import pytest
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
@@ -18,7 +20,7 @@ max_fit_eval = 200
 max_personal_guides = 3
 random_state = None
 
-test_params = MeshParameters(
+params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -38,18 +40,55 @@ rank_function = lambda x: np.array([x[0] + x[1], x[0] + 1 - x[1]] + [x[0] for _ 
 equal_tolerance_for_array = 1e-15
 
 ''' ######################################################################## '''
-def test_Mesh():
-  pass
-
-''' ######################################################################## '''
 def test_initialize():
-  # Initialize the algortihm
+  # Initialize the algortihm with none max_fit_eval
+  test_params = MeshParameters(
+    objective_dim=objective_dim,
+    position_dim=position_dim,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
+    population_size=population_size,
+    max_gen=1,
+    max_fit_eval=None,
+    random_state=random_state
+  )
   mesh = Mesh(test_params, toy_function)
   mesh.initialize()
 
+  # Initialize the algortihm with less fitness evaluations than population size
+  test_params = MeshParameters(
+    objective_dim=objective_dim,
+    position_dim=position_dim,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
+    population_size=population_size,
+    max_gen=None,
+    max_fit_eval=population_size-1,
+    random_state=random_state
+  )
+  mesh = Mesh(test_params, toy_function)
+  with pytest.raises(StoppingAlgorithm, match=''):
+    mesh.initialize()
+
+  # Initialize the algortihm
+  test_params = MeshParameters(
+    objective_dim=objective_dim,
+    position_dim=position_dim,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
+    population_size=population_size,
+    max_gen=1,
+    max_fit_eval=population_size+1,
+    random_state=random_state
+  )
+  mesh = Mesh(test_params, toy_function)
+  mesh.initialize()
+
+
+
 def test_sequential_fitness_evaluation():
   # Initialize the algortihm
-  mesh = Mesh(test_params, toy_function)
+  mesh = Mesh(params, toy_function)
   mesh.initialize()
 
   # Test the fitness evaluation
@@ -60,7 +99,7 @@ def test_sequential_fitness_evaluation():
 
 def test_parallel_fitness_evaluation():
   # Initialize the algortihm
-  mesh = Mesh(test_params, toy_function, num_proc=4)
+  mesh = Mesh(params, toy_function, num_proc=4)
   mesh.initialize()
 
   # Test the fitness evaluation
@@ -69,17 +108,21 @@ def test_parallel_fitness_evaluation():
   for i, p in enumerate(positions):
     assert np.array_equal(toy_function(p), fitnesses[i])
 
-''' ######################################################################## '''
 def test_differential_evolution():
-  # Initialize the algortihm
-  initial_positions = np.array([])
-  params = MeshParameters(
+  test_population_size = 2 * population_size
+  # Create a Mesh instance with a rank function
+  steps = np.linspace(0, 1, test_population_size)
+  ranks = [0, 4]
+  initial_positions = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(test_population_size)]),
+                                 np.array([[steps[i]] for i in range(test_population_size)]),
+                                 np.random.rand(test_population_size, position_dim-2)))
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
     position_upper_bounds=upper_bound,
-    population_size=population_size,
-    memory_size=population_size,
+    population_size=test_population_size,
+    memory_size=test_population_size,
     mutation_rate=mutation_rate,
     communication_probability=communication_probability,
     max_gen=max_gen,
@@ -88,21 +131,29 @@ def test_differential_evolution():
     initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(test_params, rank_function)
   mesh.initialize()
 
   # Set the Xst and pop_idxs
-  Xst = 
-  pop_idxs =
+  Xst = np.hstack((np.array([[0] for _ in range(population_size)]),
+                   np.array([[steps[i]] for i in range(population_size)]),
+                   np.random.rand(population_size, position_dim-2)))
+  pop_idxs = np.array([i for i in range(population_size)])
   with patch.object(mesh, 'differential_mutation', return_value=(Xst, pop_idxs)), patch.object(mesh, 'differential_crossover', return_value=Xst):
     # Run the Differential Evolution phase
     mesh.differential_evolution()
-
-# test_differential_evolution()
+    # Check if the strategy particles are in the population
+    st_idxs = np.arange(1, test_population_size, 2)
+    Fst = np.array([mesh.fitness_function(Xst[i]) for i in range(population_size)])
+    for i, idx in enumerate(st_idxs):
+      assert np.array_equal(mesh.population.position[idx], Xst[i])
+      for j in range(max_personal_guides):
+        assert np.array_equal(mesh.population.personal_guide_pos[idx, j], Xst[i])
+        assert np.array_equal(mesh.population.personal_guide_fit[idx, j], Fst[i])
 
 def test_mutation():
   # Initialize the algortihm
-  mesh = Mesh(test_params, toy_function)
+  mesh = Mesh(params, toy_function)
   mesh.initialize()
 
   # Copy the weights
@@ -128,7 +179,7 @@ def test_mutation():
 
 def test_move_population():
   # Initialize the algortihm and prepare the population for the equation of motion
-  mesh = Mesh(test_params, toy_function)
+  mesh = Mesh(params, toy_function)
   mesh.initialize()
   mesh.population.personal_guide_pos = np.random.uniform(mesh.params.position_lower_bounds,
                                                          mesh.params.position_upper_bounds,
@@ -167,7 +218,7 @@ def test_elitism():
   test_population_size = 2 * population_size
   # Initialize the algorithm with initial positions
   initial_positions = np.array([[i % 2] * position_dim for i in range(test_population_size)])
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -182,7 +233,7 @@ def test_elitism():
     initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh = Mesh(params, lambda x: [x[0] for _ in range(objective_dim)])
+  mesh = Mesh(test_params, lambda x: [x[0] for _ in range(objective_dim)])
   mesh.initialize()
 
   # Set the velocity
@@ -209,7 +260,7 @@ def test_elitism():
   one_idxs = np.random.choice(test_population_size, size=population_size, replace=False)
   initial_positions = np.zeros((test_population_size, position_dim))
   initial_positions[one_idxs] = np.ones((population_size, position_dim))
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -224,7 +275,7 @@ def test_elitism():
     initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh = Mesh(params, lambda x: [x[0] for _ in range(objective_dim)])
+  mesh = Mesh(test_params, lambda x: [x[0] for _ in range(objective_dim)])
   mesh.initialize()
 
   # Set the velocity
@@ -259,7 +310,7 @@ def test_update_memory():
 def test_stopping_by_generation():
   # Initialize the algoritm
   maximum_generations = np.random.randint(1, 10)
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -267,7 +318,7 @@ def test_stopping_by_generation():
     population_size=population_size,
     max_gen=maximum_generations
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(test_params, toy_function)
 
   # Run the algorithm and check if the maximum generations was counted correctly 
   mesh.run()
@@ -277,7 +328,7 @@ def test_stopping_by_generation():
 def test_stopping_by_fitness_evalution():
   # Initialize the algoritm with fitness evaluations less or equal than the number of particles
   maximum_fitnes_evaluations = np.random.randint(1, population_size + 1)
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -285,7 +336,7 @@ def test_stopping_by_fitness_evalution():
     population_size=population_size,
     max_fit_eval=maximum_fitnes_evaluations
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(test_params, toy_function)
 
   # Run the algorithm and check if the maximum fitness evaluations was counted correctly
   mesh.run()
@@ -294,7 +345,7 @@ def test_stopping_by_fitness_evalution():
 
   # Initialize the algorithm with fitness evaluations greater than the number of particles
   maximum_fitnes_evaluations = np.random.randint(population_size + 1, 2 * population_size)
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -302,7 +353,7 @@ def test_stopping_by_fitness_evalution():
     population_size=population_size,
     max_fit_eval=maximum_fitnes_evaluations
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(test_params, toy_function)
 
   # Run the algorithm and check if the maximum fitness evaluations was counted correctly
   mesh.run()

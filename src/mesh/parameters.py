@@ -63,7 +63,7 @@ class MeshParameters:
                  mutation_rate: int | float | np.number = 0.9,
                  max_gen: int | np.integer = None,
                  max_fit_eval: int | np.integer = None,
-                 max_personal_guides: int | np.integer = 3,
+                 max_personal_guides: int | np.integer = 1,
                  initial_positions: Optional[np.ndarray[np.number, 2]] = None,
                  random_state: int | np.integer | None = None):
         

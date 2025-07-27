@@ -26,7 +26,7 @@ test_size = 10
 
 def test_binomial_crossover():
   # Create a Mesh instance with a toy function
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -40,7 +40,7 @@ def test_binomial_crossover():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(test_params, toy_function)
 
   # Initialize the algorithm
   mesh.initialize()

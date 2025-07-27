@@ -177,15 +177,12 @@ class Mesh():
 
         # Initialize the population
         self.population = Population(self.params)
-        # Evaluate the initial population (consider the case when there are less fitness evaluations than particles)
-        try:
-            self.population.fitness[:] = self.evaluate(self.population.position)
-        except StoppingAlgorithm as stop:
-            self.population.fitness[:len(stop.fitness)] = stop.fitness
-        # Get the population fronts and domination ranks
-        self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         # Initialize the memory
         self.memory = Memory(self.params)
+        # Evaluate the initial population (consider the case when there are less fitness evaluations than particles)
+        self.population.fitness[:] = self.evaluate(self.population.position)
+        # Get the population fronts and domination ranks
+        self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         self.update_memory(self.population.position, self.population.fitness)
         # Repeat the population fitness for all personal guide input
         self.population.personal_guide_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
@@ -523,15 +520,13 @@ class Mesh():
     def run(self):
         ''' This method runs the MESH algorithm. It stops when the maximum number of generations and/or fitness evaluations is reached. '''
 
-        try:
-            # Start the progress bars
-            with tqdm(total=self.total_bar, leave=False) as pbar:
+        # Start the progress bars
+        with tqdm(total=self.total_bar, leave=False) as pbar:
+            try:    
                 # A variable to update the tqdm bar
                 prev_bar_value = 0
                 # Initialize the algorithm with initial operations
                 self.initialize()
-                if self.params.max_fit_eval is not None and self.fitness_eval_counter == self.params.max_fit_eval:
-                    raise StoppingAlgorithm(np.empty((0, self.params.position_dim)), np.empty((0, self.params.objective_dim)))
                 # Main loop
                 while True:
                     # Count generations if it is a stopping criterion
@@ -558,13 +553,13 @@ class Mesh():
                     self.update_memory(update_memory_pos, update_memory_fit)
                     # Update the progress bar
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
-        # The end of the algorithm
-        except StoppingAlgorithm as stop:
-            # Updated the memory
-            self.update_memory(stop.position, stop.fitness)
-            # Log the memory
-            if self.log_memory is not None:
-                self.logging()
+            # The end of the algorithm
+            except StoppingAlgorithm as stop:
+                # Updated the memory
+                self.update_memory(stop.position, stop.fitness)
+                # Log the memory
+                if self.log_memory is not None:
+                    self.logging()
 
     def update_progress_bar_by_fitness_evaluation(self, pbar: tqdm, prev_bar_value: int) -> int:
         ''' Updates the progress bar by fitness evaluations. It is used when the stopping criterion is fitness evaluation or both generation and fitness evaluation.

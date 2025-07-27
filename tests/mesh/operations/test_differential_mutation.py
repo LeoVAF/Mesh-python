@@ -37,7 +37,7 @@ def test_rand_1():
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
   with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", return_value=np.arange(valid_size)):
     # Create a Mesh instance with a toy function
-    params = MeshParameters(
+    test_params = MeshParameters(
       objective_dim=objective_dim,
       position_dim=position_dim,
       position_lower_bounds=lower_bound,
@@ -52,7 +52,7 @@ def test_rand_1():
       max_personal_guides=max_personal_guides,
       random_state=random_state
     )
-    mesh = Mesh(params, toy_function)
+    mesh = Mesh(test_params, toy_function)
     
     # Initialize the algorithm
     mesh.initialize()
@@ -66,7 +66,7 @@ def test_rand_1():
       x0 = Xr[0]
       x1 = Xr[1]
       x2 = Xr[2]
-      xst = np.clip(x0 + operation_weight[i] * (x1 - x2), params.position_lower_bounds, params.position_upper_bounds)
+      xst = np.clip(x0 + operation_weight[i] * (x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -88,7 +88,7 @@ def test_rand_2():
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
   with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", return_value=np.arange(valid_size)):
     # Create a Mesh instance with a toy function
-    params = MeshParameters(
+    test_params = MeshParameters(
       objective_dim=objective_dim,
       position_dim=position_dim,
       position_lower_bounds=lower_bound,
@@ -103,7 +103,7 @@ def test_rand_2():
       max_personal_guides=max_personal_guides,
       random_state=random_state
     )
-    mesh = Mesh(params, toy_function)
+    mesh = Mesh(test_params, toy_function)
 
     # Initialize the algorithm
     mesh.initialize()
@@ -119,7 +119,7 @@ def test_rand_2():
       x2 = Xr[2]
       x3 = Xr[3]
       x4 = Xr[4]
-      xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), params.position_lower_bounds, params.position_upper_bounds)
+      xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -141,7 +141,7 @@ def test_best_1(mocker):
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
   with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", return_value=np.arange(valid_size)):
     # Create a Mesh instance with a toy function
-    params = MeshParameters(
+    test_params = MeshParameters(
       objective_dim=objective_dim,
       position_dim=position_dim,
       position_lower_bounds=lower_bound,
@@ -156,7 +156,7 @@ def test_best_1(mocker):
       max_personal_guides=max_personal_guides,
       random_state=random_state
     )
-    mesh = Mesh(params, toy_function)
+    mesh = Mesh(test_params, toy_function)
 
     # Initialize the algorithm
     mesh.initialize()
@@ -170,7 +170,7 @@ def test_best_1(mocker):
       xgb = mesh.population.global_guide[idx]
       x0 = Xr[0]
       x1 = Xr[1]
-      xst = np.clip(xgb + operation_weight[i] * (x0 - x1), params.position_lower_bounds, params.position_upper_bounds)
+      xst = np.clip(xgb + operation_weight[i] * (x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -192,7 +192,7 @@ def test_current_to_best_1(mocker):
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
   with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", return_value=np.arange(valid_size)):
     # Create a Mesh instance with a toy function
-    params = MeshParameters(
+    test_params = MeshParameters(
       objective_dim=objective_dim,
       position_dim=position_dim,
       position_lower_bounds=lower_bound,
@@ -207,7 +207,7 @@ def test_current_to_best_1(mocker):
       max_personal_guides=max_personal_guides,
       random_state=random_state
     )
-    mesh = Mesh(params, toy_function)
+    mesh = Mesh(test_params, toy_function)
 
     # Initialize the algorithm
     mesh.initialize()
@@ -222,7 +222,7 @@ def test_current_to_best_1(mocker):
       xgb = mesh.population.global_guide[idx]
       x0 = Xr[0]
       x1 = Xr[1]
-      xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), params.position_lower_bounds, params.position_upper_bounds)
+      xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -244,7 +244,7 @@ def test_current_to_rand_1(mocker):
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
   with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", return_value=np.arange(valid_size)):
     # Create a Mesh instance with a toy function
-    params = MeshParameters(
+    test_params = MeshParameters(
       objective_dim=objective_dim,
       position_dim=position_dim,
       position_lower_bounds=lower_bound,
@@ -259,7 +259,7 @@ def test_current_to_rand_1(mocker):
       max_personal_guides=max_personal_guides,
       random_state=random_state
     )
-    mesh = Mesh(params, toy_function)
+    mesh = Mesh(test_params, toy_function)
 
     # Initialize the algorithm
     mesh.initialize()
@@ -274,7 +274,7 @@ def test_current_to_rand_1(mocker):
       x0 = Xr[0]
       x1 = Xr[1]
       x2 = Xr[2]
-      xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), params.position_lower_bounds, params.position_upper_bounds)
+      xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 

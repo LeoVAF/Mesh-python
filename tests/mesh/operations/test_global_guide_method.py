@@ -25,7 +25,7 @@ rank_function = lambda x: np.array([x[0] + x[1], x[0] + 1 - x[1]] + [x[0] for _ 
 
 def test_sigma_evaluation():
   # Create a Mesh instance with a toy function
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -39,7 +39,7 @@ def test_sigma_evaluation():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(test_params, toy_function)
   
   # Initialize the algorithm
   mesh.initialize()
@@ -73,7 +73,7 @@ def test_sigma_method_in_memory():
   # Create a Mesh instance with a toy function
   steps = np.linspace(0, 1, population_size)
   initial_positions = np.hstack((np.array([[steps[i]] for i in range(population_size)]), np.random.rand(population_size, position_dim-1)))
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -89,7 +89,7 @@ def test_sigma_method_in_memory():
     initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(test_params, toy_function)
   
   # Initialize the algorithm
   mesh.initialize()
@@ -110,7 +110,7 @@ def test_sigma_method_in_memory():
     assert np.array_equal(mesh.population.global_guide[idx], mesh.memory.position[nearest_idx])
   
   # Testing when memory has only one particle
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -125,7 +125,7 @@ def test_sigma_method_in_memory():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(params, toy_function)
+  mesh = Mesh(test_params, toy_function)
   mesh.initialize()
   mesh.global_guide_method()
 
@@ -140,7 +140,7 @@ def test_sigma_method_in_fronts():
   initial_positions = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[2]]),
                                  np.array([[steps[i]] for i in range(population_size)]),
                                  np.random.rand(population_size, position_dim-2)))
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -156,7 +156,7 @@ def test_sigma_method_in_fronts():
     initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh = Mesh(params, rank_function)
+  mesh = Mesh(test_params, rank_function)
   
   # Initialize the algorithm
   mesh.initialize()
@@ -191,7 +191,7 @@ def test_sigma_method_in_fronts():
       assert np.array_equal(mesh.population.global_guide[idx], mesh.population.position[nearest_idx])
 
   # Create a Mesh instance with a rank function (one particle in memory)
-  params = MeshParameters(
+  test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
     position_lower_bounds=lower_bound,
@@ -207,7 +207,7 @@ def test_sigma_method_in_fronts():
     initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh = Mesh(params, rank_function)
+  mesh = Mesh(test_params, rank_function)
   mesh.initialize()
   mesh.global_guide_method()
 

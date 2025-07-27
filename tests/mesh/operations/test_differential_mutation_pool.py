@@ -21,7 +21,7 @@ toy_function = lambda x: np.random.rand(objective_dim)
 
 def test_pool_from_memory():
   # Initialize a random Mesh instance
-  params = MeshParameters(objective_dim=objective_dim,
+  test_params = MeshParameters(objective_dim=objective_dim,
                           position_dim=position_dim, position_lower_bounds=lower_bound, position_upper_bounds=upper_bound, 
                           population_size=population_size, memory_size=None,
                           dm_pool_type=0,
@@ -29,7 +29,7 @@ def test_pool_from_memory():
                           max_gen=max_gen, max_fit_eval=max_fit_eval,
                           max_personal_guides=max_personal_guides,
                           random_state=random_state)
-  mesh = Mesh(params, toy_function, log_memory=None)
+  mesh = Mesh(test_params, toy_function, log_memory=None)
 
   # Initialize the algorithm
   mesh.initialize()
@@ -43,7 +43,7 @@ def test_pool_from_memory():
 
 def test_pool_from_population():
   # Initialize a random Mesh instance
-  params = MeshParameters(objective_dim=objective_dim,
+  test_params = MeshParameters(objective_dim=objective_dim,
                           position_dim=position_dim, position_lower_bounds=lower_bound, position_upper_bounds=upper_bound, 
                           population_size=population_size, memory_size=None,
                           dm_pool_type=1,
@@ -51,7 +51,7 @@ def test_pool_from_population():
                           max_gen=max_gen, max_fit_eval=max_fit_eval,
                           max_personal_guides=max_personal_guides,
                           random_state=random_state)
-  mesh = Mesh(params, toy_function, log_memory=None)
+  mesh = Mesh(test_params, toy_function, log_memory=None)
 
   # Initialize the algorithm
   mesh.initialize()
@@ -65,7 +65,7 @@ def test_pool_from_population():
 
 def test_pool_from_population_and_memory():
   # Initialize a random Mesh instance
-  params = MeshParameters(objective_dim=objective_dim,
+  test_params = MeshParameters(objective_dim=objective_dim,
                           position_dim=position_dim, position_lower_bounds=lower_bound, position_upper_bounds=upper_bound, 
                           population_size=population_size, memory_size=None,
                           dm_pool_type=2,
@@ -73,7 +73,7 @@ def test_pool_from_population_and_memory():
                           max_gen=max_gen, max_fit_eval=max_fit_eval,
                           max_personal_guides=max_personal_guides,
                           random_state=random_state)
-  mesh = Mesh(params, toy_function, log_memory=None)
+  mesh = Mesh(test_params, toy_function, log_memory=None)
 
   # Initialize the algorithm
   mesh.initialize()
