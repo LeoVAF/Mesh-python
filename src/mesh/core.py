@@ -282,30 +282,64 @@ class Mesh():
         # A array of a matrix pool in each row
         Xr_pool_list = self.differential_mutation_pool()
         # Apply a differential mutation strategy
-        Xst, valid_idxs = self.differential_mutation(Xr_pool_list)
+        Xst, pop_idxs = self.differential_mutation(Xr_pool_list)
         # Get the position and fitness to update the memory
         update_memory_pos = self.population.position
         update_memory_fit = self.population.fitness
         if len(Xst):
+            population_size = self.params.population_size
             # Apply the differential crossover
-            Xst_rec = self.differential_crossover(self.population.position[valid_idxs], Xst)
+            Xst_rec = self.differential_crossover(self.population.position[pop_idxs], Xst)
             # Update the current particle if the new particle from the strategy is better
-            Fst = self.evaluate(Xst_rec)
-            valid_pop_fitnesses = self.population.fitness[valid_idxs]
-            domination_mask = self.dominates(Fst, valid_pop_fitnesses, axis=1)
-            update_idxs = valid_idxs[domination_mask]
-            # Update the positions and the fitnesses
-            self.population.position[update_idxs] = Xst_rec[domination_mask]
-            self.population.fitness[update_idxs] = Fst[domination_mask]
+            Fst_rec = self.evaluate(Xst_rec)
+            # Find the best N indices
+            best_N_idxs = select_best_N_mo(np.vstack((self.population.fitness, Fst_rec)), population_size)
+            # Get the indices of the best particles in the strategy array
+            mask = best_N_idxs >= population_size
+            best_st_indices = best_N_idxs[mask] - population_size
+            # Put the best strategy particles in the current population
+            np.logical_not(mask, out=mask)
+            worst_pop_idxs = np.setdiff1d(np.arange(population_size), best_N_idxs[mask], assume_unique=True)
+            self.population.position[worst_pop_idxs] = Xst_rec[best_st_indices]
+            self.population.fitness[worst_pop_idxs] = Fst_rec[best_st_indices]
             # Update the memory with the new particles from the strategy
             update_memory_pos = np.concatenate((update_memory_pos, Xst_rec), axis=0)
-            update_memory_fit = np.concatenate((update_memory_fit, Fst), axis=0)
+            update_memory_fit = np.concatenate((update_memory_fit, Fst_rec), axis=0)
             self.update_memory(update_memory_pos, update_memory_fit)
             # If a particle was replaced for a particle from a strategy, update the personal guides
-            if len(update_idxs):
-                self.update_personal_guides(update_idxs)
+            if len(worst_pop_idxs):
+                self.update_personal_guides(worst_pop_idxs)
                 self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
         return update_memory_pos, update_memory_fit
+
+        ###################################################################################
+        # # A array of a matrix pool in each row
+        # Xr_pool_list = self.differential_mutation_pool()
+        # # Apply a differential mutation strategy
+        # Xst, valid_idxs = self.differential_mutation(Xr_pool_list)
+        # # Get the position and fitness to update the memory
+        # update_memory_pos = self.population.position
+        # update_memory_fit = self.population.fitness
+        # if len(Xst):
+        #     # Apply the differential crossover
+        #     Xst_rec = self.differential_crossover(self.population.position[valid_idxs], Xst)
+        #     # Update the current particle if the new particle from the strategy is better
+        #     Fst = self.evaluate(Xst_rec)
+        #     valid_pop_fitnesses = self.population.fitness[valid_idxs]
+        #     domination_mask = self.dominates(Fst, valid_pop_fitnesses, axis=1)
+        #     update_idxs = valid_idxs[domination_mask]
+        #     # Update the positions and the fitnesses
+        #     self.population.position[update_idxs] = Xst_rec[domination_mask]
+        #     self.population.fitness[update_idxs] = Fst[domination_mask]
+        #     # Update the memory with the new particles from the strategy
+        #     update_memory_pos = np.concatenate((update_memory_pos, Xst_rec), axis=0)
+        #     update_memory_fit = np.concatenate((update_memory_fit, Fst), axis=0)
+        #     self.update_memory(update_memory_pos, update_memory_fit)
+        #     # If a particle was replaced for a particle from a strategy, update the personal guides
+        #     if len(update_idxs):
+        #         self.update_personal_guides(update_idxs)
+        #         self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
+        # return update_memory_pos, update_memory_fit
 
     def mutation(self) -> None:
         r''' Calculates the mutation of the weights by the following equation:

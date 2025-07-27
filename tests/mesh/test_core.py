@@ -6,7 +6,7 @@ import numpy as np
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
 position_dim = 5
-population_size = 5
+population_size = 20
 lower_bound = np.array([0] * position_dim)
 upper_bound = np.array([1] * position_dim)
 mutation_rate = 0.5
@@ -68,7 +68,11 @@ def test_parallel_fitness_evaluation():
 
 ''' ######################################################################## '''
 def test_differential_evolution():
-  pass
+  # Initialize the algortihm
+  mesh = Mesh(test_params, toy_function)
+  mesh.initialize()
+
+  # Run the Differential Evolution Phase
 
 def test_mutation(mocker):
   # Initialize the algortihm
@@ -95,10 +99,6 @@ def test_mutation(mocker):
   for i, gb_mut in enumerate(mesh.pre_allocated.global_guide_mutated):
     gb_expected = np.clip((mesh.population.global_guide[i] + global_guide_noise[i] * mesh.params.mutation_rate), mesh.params.position_lower_bounds, mesh.params.position_upper_bounds)
     assert np.linalg.norm(gb_mut - gb_expected) < equal_tolerance_for_array
-
-''' ######################################################################## '''
-def test_reflect_velocity_at_bounds():
-  pass
 
 def test_move_population(mocker):
   # Initialize the algortihm and prepare the population for the equation of motion
