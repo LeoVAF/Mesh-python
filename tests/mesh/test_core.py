@@ -1,6 +1,8 @@
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
 
+from unittest.mock import patch
+
 import numpy as np
 
 # ---------- Fixed parameters for test setup ----------
@@ -31,6 +33,7 @@ test_params = MeshParameters(
     random_state=random_state
   )
 toy_function = lambda x: np.array([(1 - 2 * (i % 2)) * x[i % position_dim] for i in range(objective_dim)])
+rank_function = lambda x: np.array([x[0] + x[1], x[0] + 1 - x[1]] + [x[0] for _ in range(objective_dim-2)]) # x[0] controls the particle rank
 
 equal_tolerance_for_array = 1e-15
 
@@ -69,12 +72,35 @@ def test_parallel_fitness_evaluation():
 ''' ######################################################################## '''
 def test_differential_evolution():
   # Initialize the algortihm
-  mesh = Mesh(test_params, toy_function)
+  initial_positions = np.array([])
+  params = MeshParameters(
+    objective_dim=objective_dim,
+    position_dim=position_dim,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
+    population_size=population_size,
+    memory_size=population_size,
+    mutation_rate=mutation_rate,
+    communication_probability=communication_probability,
+    max_gen=max_gen,
+    max_fit_eval=max_fit_eval,
+    max_personal_guides=max_personal_guides,
+    initial_positions=initial_positions,
+    random_state=random_state
+  )
+  mesh = Mesh(params, toy_function)
   mesh.initialize()
 
-  # Run the Differential Evolution Phase
+  # Set the Xst and pop_idxs
+  Xst = 
+  pop_idxs =
+  with patch.object(mesh, 'differential_mutation', return_value=(Xst, pop_idxs)), patch.object(mesh, 'differential_crossover', return_value=Xst):
+    # Run the Differential Evolution phase
+    mesh.differential_evolution()
 
-def test_mutation(mocker):
+# test_differential_evolution()
+
+def test_mutation():
   # Initialize the algortihm
   mesh = Mesh(test_params, toy_function)
   mesh.initialize()
@@ -85,22 +111,22 @@ def test_mutation(mocker):
   # Mock the random function to return predetermined values
   weight_noise = np.random.normal(0.0, 1.0, size=(3, mesh.params.population_size))
   global_guide_noise = np.random.normal(0.0, 1.0, size=(mesh.params.population_size, mesh.params.position_dim))
-  mocker.patch('numpy.random.normal', side_effect=[weight_noise, global_guide_noise])
+  with patch('numpy.random.normal', side_effect=[weight_noise, global_guide_noise]):
 
-  # Find the global guides
-  mesh.global_guide_method()
+    # Find the global guides
+    mesh.global_guide_method()
 
-  # Mutate the variables
-  mesh.mutation()
+    # Mutate the variables
+    mesh.mutation()
 
-  # Check if the mutation operation was applied correctly
-  for i in range(3):
-    assert np.linalg.norm(mesh.weights[i] - np.clip((weights[i] + weight_noise[i] * mesh.params.mutation_rate), 0, 1)) < equal_tolerance_for_array
-  for i, gb_mut in enumerate(mesh.pre_allocated.global_guide_mutated):
-    gb_expected = np.clip((mesh.population.global_guide[i] + global_guide_noise[i] * mesh.params.mutation_rate), mesh.params.position_lower_bounds, mesh.params.position_upper_bounds)
-    assert np.linalg.norm(gb_mut - gb_expected) < equal_tolerance_for_array
+    # Check if the mutation operation was applied correctly
+    for i in range(3):
+      assert np.linalg.norm(mesh.weights[i] - np.clip((weights[i] + weight_noise[i] * mesh.params.mutation_rate), 0, 1)) < equal_tolerance_for_array
+    for i, gb_mut in enumerate(mesh.pre_allocated.global_guide_mutated):
+      gb_expected = np.clip((mesh.population.global_guide[i] + global_guide_noise[i] * mesh.params.mutation_rate), mesh.params.position_lower_bounds, mesh.params.position_upper_bounds)
+      assert np.linalg.norm(gb_mut - gb_expected) < equal_tolerance_for_array
 
-def test_move_population(mocker):
+def test_move_population():
   # Initialize the algortihm and prepare the population for the equation of motion
   mesh = Mesh(test_params, toy_function)
   mesh.initialize()
@@ -112,35 +138,30 @@ def test_move_population(mocker):
 
   # Mock the random function to return predetermined values
   pb_indices = np.random.randint(0, mesh.params.max_personal_guides, size=mesh.params.population_size)
-  mocker.patch('numpy.random.randint', return_value=pb_indices)
-
   communication_probs = np.random.rand(mesh.params.population_size, mesh.params.position_dim)
-  mocker.patch('numpy.random.rand', return_value=communication_probs)
+  with patch('numpy.random.randint', return_value=pb_indices), patch('numpy.random.rand', return_value=communication_probs):
+    # Copy the population position and velocity
+    positions = mesh.population.position.copy()
+    velocities = mesh.population.velocity.copy()
 
-  # Copy the population position and velocity
-  positions = mesh.population.position.copy()
-  velocities = mesh.population.velocity.copy()
+    # Move the particles
+    mesh.move_population()
 
-  # Move the particles
-  mesh.move_population()
-
-  # Check if the particles were correctly moved
-  W = mesh.weights
-  C = communication_probs < mesh.params.communication_probability
-  for i, x in enumerate(positions):
-    # Check the velocity
-    x_pb = mesh.population.personal_guide_pos[i, pb_indices[i], :]
-    x_gb_mut = mesh.pre_allocated.global_guide_mutated[i]
-    v = W[0, i] * velocities[i] + W[1, i] * (x_pb - x) + W[2, i] * C[i] * (x_gb_mut - x)
-    np.clip(v, mesh.params.velocity_lower_bounds, mesh.params.velocity_upper_bounds, out=v)
-    assert np.linalg.norm(mesh.population.velocity[i] - v) < equal_tolerance_for_array
-    # Check the position
-    x_clipped = np.clip(x + v, mesh.params.position_lower_bounds, mesh.params.position_upper_bounds)
-    assert np.linalg.norm(mesh.population.position[i] - x_clipped) < equal_tolerance_for_array
-    # Check the fitness
-    assert np.linalg.norm(mesh.population.fitness[i] - mesh.fitness_function(x_clipped)) < equal_tolerance_for_array
-
-# test_move_population(Mocker())
+    # Check if the particles were correctly moved
+    W = mesh.weights
+    C = communication_probs < mesh.params.communication_probability
+    for i, x in enumerate(positions):
+      # Check the velocity
+      x_pb = mesh.population.personal_guide_pos[i, pb_indices[i], :]
+      x_gb_mut = mesh.pre_allocated.global_guide_mutated[i]
+      v = W[0, i] * velocities[i] + W[1, i] * (x_pb - x) + W[2, i] * C[i] * (x_gb_mut - x)
+      np.clip(v, mesh.params.velocity_lower_bounds, mesh.params.velocity_upper_bounds, out=v)
+      assert np.linalg.norm(mesh.population.velocity[i] - v) < equal_tolerance_for_array
+      # Check the position
+      x_clipped = np.clip(x + v, mesh.params.position_lower_bounds, mesh.params.position_upper_bounds)
+      assert np.linalg.norm(mesh.population.position[i] - x_clipped) < equal_tolerance_for_array
+      # Check the fitness
+      assert np.linalg.norm(mesh.population.fitness[i] - mesh.fitness_function(x_clipped)) < equal_tolerance_for_array
 
 def test_elitism():
   test_population_size = 2 * population_size

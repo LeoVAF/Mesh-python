@@ -3,6 +3,7 @@ from mesh.operations import differential_crossover as dc
 from mesh.parameters import MeshParameters
 
 from scipy.stats import truncnorm
+from unittest.mock import patch
 
 import numpy as np
 
@@ -23,7 +24,7 @@ toy_function = lambda x: np.random.rand(objective_dim)
 
 test_size = 10
 
-def test_binomial_crossover(mocker):
+def test_binomial_crossover():
   # Create a Mesh instance with a toy function
   params = MeshParameters(
     objective_dim=objective_dim,
@@ -50,21 +51,19 @@ def test_binomial_crossover(mocker):
 
   # Mock the random functions to return predetermined values
   crossover_rates = truncnorm.rvs(0, 1, size=(test_size, 1))
-  mocker.patch("scipy.stats.truncnorm.rvs", return_value=crossover_rates)
-
   crossover_idxs = np.random.randint(0, mesh.params.position_dim, size=test_size)
-  mocker.patch("numpy.random.randint", return_value=crossover_idxs)
-
   crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, mesh.params.position_dim))
-  mocker.patch("numpy.random.uniform", return_value=crossover_chances)
+  with patch("scipy.stats.truncnorm.rvs", return_value=crossover_rates),\
+       patch("numpy.random.randint", return_value=crossover_idxs),\
+       patch("numpy.random.uniform", return_value=crossover_chances):
 
-  # Apply the binomial crossover operation
-  Xcross = dc.binomial_crossover(mesh, X1, X2)
+    # Apply the binomial crossover operation
+    Xcross = dc.binomial_crossover(mesh, X1, X2)
 
-  # Check if the crossover was applied correctly
-  for i, x in enumerate(Xcross):
-    for j, c in enumerate(x):
-      if (crossover_chances[i, j] <= crossover_rates[i]) or (j == crossover_idxs[i]):
-        assert c == X2[i][j]
-      else:
-        assert c == X1[i][j]
+    # Check if the crossover was applied correctly
+    for i, x in enumerate(Xcross):
+      for j, c in enumerate(x):
+        if (crossover_chances[i, j] <= crossover_rates[i]) or (j == crossover_idxs[i]):
+          assert c == X2[i][j]
+        else:
+          assert c == X1[i][j]

@@ -279,10 +279,8 @@ class Mesh():
             :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]`: A tuple with the position and fitness used to update the memory the second time at the generation (for efficiency).
         '''
         
-        # A array of a matrix pool in each row
-        Xr_pool_list = self.differential_mutation_pool()
         # Apply a differential mutation strategy
-        Xst, pop_idxs = self.differential_mutation(Xr_pool_list)
+        Xst, pop_idxs = self.differential_mutation(self.differential_mutation_pool())
         # Get the position and fitness to update the memory
         update_memory_pos = self.population.position
         update_memory_fit = self.population.fitness
