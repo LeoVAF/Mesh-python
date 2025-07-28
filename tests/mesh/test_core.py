@@ -146,9 +146,6 @@ def test_differential_evolution():
     Fst = np.array([mesh.fitness_function(Xst[i]) for i in range(population_size)])
     for i, idx in enumerate(st_idxs):
       assert np.array_equal(mesh.population.position[idx], Xst[i])
-      for j in range(max_personal_guides):
-        assert np.array_equal(mesh.population.personal_guide_pos[idx, j], Xst[i])
-        assert np.array_equal(mesh.population.personal_guide_fit[idx, j], Fst[i])
 
 def test_mutation():
   # Initialize the algortihm

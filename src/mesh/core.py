@@ -296,9 +296,6 @@ class Mesh():
             update_memory_pos = np.concatenate((update_memory_pos, Xst_rec), axis=0)
             update_memory_fit = np.concatenate((update_memory_fit, Fst_rec), axis=0)
             self.update_memory(update_memory_pos, update_memory_fit)
-            # If a particle was replaced for a particle from a strategy, update the personal guides
-            if len(worst_pop_idxs):
-                self.update_personal_guides(worst_pop_idxs)
         return update_memory_pos, update_memory_fit
 
         ###################################################################################
@@ -439,11 +436,9 @@ class Mesh():
         self.population.fitness[worst_current_idxs] = pre_allocated.fitness_copy[prev_idxs]
         self.population.personal_guide_pos[worst_current_idxs] = self.population.personal_guide_pos[prev_idxs]
         self.population.personal_guide_fit[worst_current_idxs] = self.population.personal_guide_fit[prev_idxs]
-        # Return the indices of the current population that were selected
-        return current_idxs
 
-    def update_personal_guides(self, pop_indices: np.ndarray[np.integer]) -> None:
-        ''' Updates the personal guides of the particles by the population index.
+    def update_personal_guides(self) -> None:
+        ''' Updates the personal guides of the population particles.
 
         Note:
             There is three cases to update the personal guides:
@@ -451,18 +446,15 @@ class Mesh():
             - When the current particle is dominated by any of its personal guide, the current particle is ignored;
             - When the current particle dominates a personal guide, the current particle replaces the dominated personal guide. This replacement is done for all dominated personal guides, so the more the current particle dominates its personal guides, the more chance it has of being sampled in :meth:`move_population`;
             - When the current particle don't dominate and is not dominated by any personal guide, the current particle is added to the personal guide matrix. The oldest personal guide is removed when the current particle is only added.
-        
-        Args:
-            pop_indices (:type:`np.ndarray[np.integer]`): A numpy array with the indices of the population particles to update the personal guides.
         '''
 
         # Get the population fitness as a tensor
-        fitness_tensor = self.population.fitness[pop_indices, np.newaxis]
+        fitness_tensor = self.population.fitness[:, np.newaxis]
         # Get the personal guide fitness
-        pb_fitness = self.population.personal_guide_fit[pop_indices]
+        pb_fitness = self.population.personal_guide_fit
         # Get the mask to update the personal guide
         update_mask = ~np.any(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
-        update_idxs = pop_indices[update_mask]
+        update_idxs = np.flatnonzero(update_mask)
         # Get the mask to replace the personal guide dominated by the current particle
         replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
         # Replace the dominated personal guide by the current particle
@@ -530,6 +522,8 @@ class Mesh():
                     self.global_guide_method()
                     # Mutate the weights and the global guides
                     self.mutation()
+                    # Update the personal guides
+                    self.update_personal_guides()
                     # Store some data of the population before the movement
                     self.pre_allocated.position_copy[:] = self.population.position.copy()
                     self.pre_allocated.velocity_copy[:] = self.population.velocity.copy()
@@ -537,9 +531,7 @@ class Mesh():
                     # Apply the movviment to the particles
                     self.move_population()
                     # Select the best particles from those before and after the moviment
-                    selected_idxs = self.elitism()
-                    # Update the personal guides
-                    self.update_personal_guides(selected_idxs)
+                    self.elitism()
                     # Update memory
                     self.update_memory(update_memory_pos, update_memory_fit)
                     # Update the progress bar
