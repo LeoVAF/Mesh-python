@@ -35,11 +35,11 @@ def test_pool_from_memory():
   mesh.initialize()
 
   # Get the pool list
-  pool_list = dmp.pool_from_memory(mesh)
+  pool, pool_idxs = dmp.pool_from_memory(mesh)
 
   # Check if each particle or personal best position in the respective particle pool is not in the pool
-  for i, pool in enumerate(pool_list):
-    assert all([not np.array_equal(mesh.population.position[i], pos) for pos in pool])
+  for i, idxs in enumerate(pool_idxs):
+    assert all([not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs])
 
 def test_pool_from_population():
   # Initialize a random Mesh instance
@@ -57,11 +57,11 @@ def test_pool_from_population():
   mesh.initialize()
 
   # Get the pool list
-  pool_list = dmp.pool_from_population(mesh)
+  pool, pool_idxs = dmp.pool_from_population(mesh)
 
   # Check if each particle or personal best position in the respective particle pool is not in the pool
-  for i, pool in enumerate(pool_list):
-    assert all([not np.array_equal(mesh.population.position[i], pos) for pos in pool])
+  for i, idxs in enumerate(pool_idxs):
+    assert all([not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs])
 
 def test_pool_from_population_and_memory():
   # Initialize a random Mesh instance
@@ -79,8 +79,8 @@ def test_pool_from_population_and_memory():
   mesh.initialize()
 
   # Get the pool list
-  pool_list = dmp.pool_from_population_and_memory(mesh)
+  pool, pool_idxs = dmp.pool_from_population_and_memory(mesh)
 
   # Check if each particle or personal best position in the respective particle pool is not in the pool
-  for i, pool in enumerate(pool_list):
-    assert all([not np.array_equal(mesh.population.position[i], pos) for pos in pool])
+  for i, idxs in enumerate(pool_idxs):
+    assert all([not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs])

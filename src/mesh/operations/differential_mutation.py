@@ -9,7 +9,7 @@ import numpy as np
 if TYPE_CHECKING:
     from mesh.core import Mesh
 
-def rand_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def rand_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/rand/1 strategy. The strategy is defined as follows:
   
   .. math::
@@ -25,21 +25,22 @@ def rand_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
+    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
     
   Returns:
     :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
+  # Get the particle position pool and the index list for the particles
+  pool, pool_idxs = pool_tuple
   # Set the valid size of each pool
   valid_size = 3
   # Get the mask for the pools with valid length
-  lengths = np.fromiter((len(x) for x in Xr_pool_list), dtype=int)
-  valid_idxs = np.flatnonzero(lengths >= valid_size)
+  valid_idxs = np.flatnonzero(np.fromiter((len(x) for x in pool_idxs), dtype=int) >= valid_size)
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get three random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
+    Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\1 strategy
@@ -50,7 +51,7 @@ def rand_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
   else:
     return np.array([]), np.array([])
 
-def rand_2(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def rand_2(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/rand/2 strategy. The strategy is defined as follows:
 
   .. math::
@@ -66,21 +67,22 @@ def rand_2(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
+    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
     :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
+  # Get the particle position pool and the index list for the particles
+  pool, pool_idxs = pool_tuple
   # Set the valid size of each pool
   valid_size = 5
   # Get the mask for the pools with valid length
-  lengths = np.fromiter((len(x) for x in Xr_pool_list), dtype=int)
-  valid_idxs = np.flatnonzero(lengths >= valid_size)
+  valid_idxs = np.flatnonzero(np.fromiter((len(x) for x in pool_idxs), dtype=int) >= valid_size)
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get five random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
+    Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\2 strategy
@@ -91,7 +93,7 @@ def rand_2(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
   else:
     return np.array([]), np.array([])
 
-def best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def best_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/best/1. The strategy is defined as follows:
   
   .. math::
@@ -108,7 +110,7 @@ def best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
+    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
     :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
@@ -116,15 +118,16 @@ def best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
 
   # Update the global best
   self.global_guide_method()
+  # Get the particle position pool and the index list for the particles
+  pool, pool_idxs = pool_tuple
   # Set the valid size of each pool
   valid_size = 2
   # Get the mask for the pools with valid length
-  lengths = np.fromiter((len(x) for x in Xr_pool_list), dtype=int)
-  valid_idxs = np.flatnonzero(lengths >= valid_size)
+  valid_idxs = np.flatnonzero(np.fromiter((len(x) for x in pool_idxs), dtype=int) >= valid_size)
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get two random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
+    Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\1 strategy
@@ -135,7 +138,7 @@ def best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[n
   else:
     return np.array([]), np.array([])
 
-def current_to_best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def current_to_best_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/current-to-best/1. The strategy is defined as follows:
   
   .. math::
@@ -153,7 +156,7 @@ def current_to_best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]])
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
+    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
     :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
@@ -161,15 +164,16 @@ def current_to_best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]])
 
   # Update the global best
   self.global_guide_method()
+  # Get the particle position pool and the index list for the particles
+  pool, pool_idxs = pool_tuple
   # Set the valid size of each pool
   valid_size = 2
   # Get the mask for the pools with valid length
-  lengths = np.fromiter((len(x) for x in Xr_pool_list), dtype=int)
-  valid_idxs = np.flatnonzero(lengths >= valid_size)
+  valid_idxs = np.flatnonzero(np.fromiter((len(x) for x in pool_idxs), dtype=int) >= valid_size)
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get two random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
+    Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\1 strategy
@@ -181,7 +185,7 @@ def current_to_best_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]])
   else:
     return np.array([]), np.array([])
 
-def current_to_rand_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def current_to_rand_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
   r''' Applies the DE/current-to-rand/1. The strategy is defined as follows:
 
   .. math::
@@ -199,21 +203,22 @@ def current_to_rand_1(self: Mesh, Xr_pool_list: list[np.ndarray[np.float64, 2]])
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    Xr_pool_list (:type:`list[np.ndarray[np.float64, 2]]`): A pool list of particle position.
+    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
     :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
+  # Get the particle position pool and the index list for the particles
+  pool, pool_idxs = pool_tuple
   # Set the valid size of each pool
   valid_size = 3
   # Get the mask for the pools with valid length
-  lengths = np.fromiter((len(x) for x in Xr_pool_list), dtype=int)
-  valid_idxs = np.flatnonzero(lengths >= valid_size)
+  valid_idxs = np.flatnonzero(np.fromiter((len(x) for x in pool_idxs), dtype=int) >= valid_size)
   valid_idx_size = len(valid_idxs)
   if valid_idx_size:
     # Get three random indices for particle positions from pool
-    Xr = np.array([Xr_pool_list[idx][sample(range(len(Xr_pool_list[idx])), k=valid_size)] for idx in valid_idxs], order='F')
+    Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
     operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
     # Apply the DE\rand\2 strategy
