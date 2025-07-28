@@ -78,9 +78,9 @@ class Mesh():
         ''' Function to find the global guides for the particles. '''
         self.differential_mutation_pool: MethodType[Callable[[Mesh], list[np.ndarray[np.float64, 2]]]]
         ''' Function to make the Differential Mutation pool. '''
-        self.differential_mutation: MethodType[Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
+        self.differential_mutation: MethodType[Callable[[Mesh, tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.integer, 2]]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
         ''' Function to do the Differential Mutation operation. '''
-        self.differential_crossover: MethodType[Callable[[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2], MeshParameters], np.ndarray[np.float64, 2]]]
+        self.differential_crossover: MethodType[Callable[[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]], np.ndarray[np.float64, 2]]]
         ''' Function to do the Differential Crossover operation. '''
         self.population: Population = Population(params)
         ''' Population of particles. '''
