@@ -102,10 +102,12 @@ class Mesh():
         ''' Number of processes to execute the fitness function in parallel. If it is ``None``, so the fitness function will execute sequentially. '''
         self.evaluation_way: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 2], int]]
         ''' The way to evaluate the fitness function. It can be sequentially or parallelly. If :attr:`num_proc` is greater than zero, so the fitness evaluations will be parallel with :attr:`num_proc` processes. '''
-        self.evaluate: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 2], int]]
-        ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is not None, so the fitness evaluations will be counted. '''
+        self.evaluate: Callable[[np.ndarray[np.float64, 2]], np.ndarray[np.float64, 2]]
+        ''' Function for fitness evaluations. If :attr:`max_fit_eval` is not None, so the fitness evaluations will be counted. '''
         self.count_generation: Callable[[], None]
-        ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is not None. '''
+        ''' Function to count generations. Only used if :attr:`max_gen` is not None. '''
+        self.update_memory: Callable[[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]]
+        ''' Function to update the memory. When the :attr:`~mesh.parameters.MeshParameters.memory_size` is less or equal :attr:`~mesh.parameters.MeshParameters.population_size`, the update can be faster. '''
         self.update_progress_bar: Callable[[tqdm, int], int]
         ''' Function to update the progress bar. '''
         self.total_bar: int
@@ -153,6 +155,11 @@ class Mesh():
             self.evaluate = self.stopping_by_fitness_evaluation
         else:
             self.evaluate = self.evaluation_way
+        # Choose the memory update function according to memory size
+        if params.memory_size <= params.population_size:
+            self.update_memory = self.fast_update_memory
+        else:
+            self.update_memory = self.generic_update_memory
         # Choose the way to update the algorithm progress bar
         if params.max_gen == None:
             self.total_bar = params.max_fit_eval
@@ -271,8 +278,11 @@ class Mesh():
             Xst_rec = self.differential_crossover(self.population.position[pop_idxs], Xst)
             # Update the current particle if the new particle from the strategy is better
             Fst_rec = self.evaluate(Xst_rec)
+            # Concatenate the arrays with the population position and fitness with the strategy arrays
+            update_memory_pos = np.concatenate((self.population.position, Xst_rec), axis=0)
+            update_memory_fit = np.concatenate((self.population.fitness, Fst_rec), axis=0)
             # Find the best N indices
-            best_N_idxs = select_best_N_mo(np.vstack((self.population.fitness, Fst_rec)), population_size)
+            best_N_idxs = select_best_N_mo(update_memory_fit, population_size)
             # Get the indices of the best particles in the strategy array
             mask = best_N_idxs >= population_size
             best_st_indices = best_N_idxs[mask] - population_size
@@ -282,8 +292,6 @@ class Mesh():
             self.population.position[worst_pop_idxs] = Xst_rec[best_st_indices]
             self.population.fitness[worst_pop_idxs] = Fst_rec[best_st_indices]
             # Update the memory with the new particles from the strategy
-            update_memory_pos = np.concatenate((self.population.position, Xst_rec), axis=0)
-            update_memory_fit = np.concatenate((self.population.fitness, Fst_rec), axis=0)
             self.update_memory(update_memory_pos, update_memory_fit)
 
         ###################################################################################
@@ -459,7 +467,37 @@ class Mesh():
         self.population.personal_guide_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
         self.population.personal_guide_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
-    def update_memory(self, position_matrix: np.ndarray[np.float64, 2], fitness_matrix: np.ndarray[np.float64, 2]) -> None:
+    def fast_update_memory(self, position_matrix: np.ndarray[np.float64, 2], fitness_matrix: np.ndarray[np.float64, 2]) -> None:
+        ''' Updates the memory position and fitness faster using a population position and fitness numpy matrices.
+        
+        Args:
+            position_matrix (:type:`np.ndarray[np.float64, 2]`): Not used, just for consistency with :meth:`generic_update_memory`.
+            fitness_matrix (:type:`np.ndarray[np.float64, 2]`): Not used, just for consistency with :meth:`generic_update_memory`.
+        '''
+        
+        # Get the unique positions from the population positions and the memory
+        unique_pop_positions, unique_idxs = np.unique(self.population.position, axis=0, return_index=True)
+        unique_pop_fitnesses = self.population.fitness[unique_idxs]
+        # Get the pareto front indices from population
+        memory_pareto_idxs = self.get_non_domination_fronts(unique_pop_fitnesses)[0]
+        # If the new memory Pareto front has size less or equal than the memory size, then set the new memory
+        memory_size = self.params.memory_size
+        if(len(memory_pareto_idxs) <= memory_size):
+            self.memory.position = unique_pop_positions[memory_pareto_idxs]
+            self.memory.fitness = unique_pop_fitnesses[memory_pareto_idxs]
+        # Else get the particles with the highest crowd distance in the new memory Pareto front
+        else:
+            # Select the particles with the highest crowd distance
+            selected_fitness = unique_pop_fitnesses[memory_pareto_idxs]
+            # Calculate the crowding distance
+            crowd_distances = crowding_distance(selected_fitness)
+            # Get the indices of the particles with the highest crowd distance
+            idxs = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
+            # Update the memory
+            self.memory.position = unique_pop_positions[memory_pareto_idxs[idxs]]
+            self.memory.fitness = selected_fitness[idxs]
+
+    def generic_update_memory(self, position_matrix: np.ndarray[np.float64, 2], fitness_matrix: np.ndarray[np.float64, 2]) -> None:
         ''' Updates the memory position and fitness using a position and fitness numpy matrices.
         
         Args:
@@ -467,27 +505,27 @@ class Mesh():
             fitness_matrix (:type:`np.ndarray[np.float64, 2]`): A numpy matrix with the fitness of the particles.
         '''
 
-        # Get the unique positions from the Pareto front and the memory
+        # Get the unique positions from the position matrix and the memory
         unique_positions, unique_idxs = np.unique(np.concatenate((self.memory.position, position_matrix), axis=0), axis=0, return_index=True)
-        # Get the unique fitnesses from the Pareto front and the memory
+        # Get the unique fitnesses from the position matrix and the memory
         unique_fitnesses = np.concatenate((self.memory.fitness, fitness_matrix), axis=0)[unique_idxs]
         # Get the Pareto front indices from the memory candidates
-        memory_pareto_front_idxs = self.get_non_domination_fronts(unique_fitnesses)[0]
+        memory_pareto_idxs = self.get_non_domination_fronts(unique_fitnesses)[0]
         # If the new memory Pareto front has size less or equal than the memory size, then set the new memory
         memory_size = self.params.memory_size
-        if(len(memory_pareto_front_idxs) <= memory_size):
-            self.memory.position = unique_positions[memory_pareto_front_idxs]
-            self.memory.fitness = unique_fitnesses[memory_pareto_front_idxs]
+        if(len(memory_pareto_idxs) <= memory_size):
+            self.memory.position = unique_positions[memory_pareto_idxs]
+            self.memory.fitness = unique_fitnesses[memory_pareto_idxs]
         # Else get the particles with the highest crowd distance in the new memory Pareto front
         else:
             # Select the particles with the highest crowd distance
-            selected_fitness = unique_fitnesses[memory_pareto_front_idxs]
+            selected_fitness = unique_fitnesses[memory_pareto_idxs]
             # Calculate the crowding distance
             crowd_distances = crowding_distance(selected_fitness)
             # Get the indices of the particles with the highest crowd distance
             idxs = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
             # Update the memory
-            self.memory.position = unique_positions[memory_pareto_front_idxs[idxs]]
+            self.memory.position = unique_positions[memory_pareto_idxs[idxs]]
             self.memory.fitness = selected_fitness[idxs]
 
     def run(self):
@@ -527,7 +565,7 @@ class Mesh():
             # The end of the algorithm
             except StoppingAlgorithm as stop:
                 # Updated the memory
-                self.update_memory(stop.position, stop.fitness)
+                self.generic_update_memory(stop.position, stop.fitness)
                 # Log the memory
                 if self.log_memory is not None:
                     self.logging()
