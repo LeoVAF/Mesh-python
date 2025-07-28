@@ -82,9 +82,9 @@ class Mesh():
         ''' Function to do the Differential Mutation operation. '''
         self.differential_crossover: MethodType[Callable[[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2], MeshParameters], np.ndarray[np.float64, 2]]]
         ''' Function to do the Differential Crossover operation. '''
-        self.population: Population
+        self.population: Population = Population(params)
         ''' Population of particles. '''
-        self.memory: Memory
+        self.memory: Memory = Memory(params)
         ''' Memory of particles. '''
         self.fitness_function: Callable[..., np.ndarray[np.number]]
         ''' Fitness function. '''
@@ -122,10 +122,6 @@ class Mesh():
         # Use a random seed if there is
         np.random.seed(params.random_state)
         random.seed(params.random_state)
-        # Particles
-        self.population = None
-        # Memory particles (and the final result after run MESH)
-        self.memory = None
         # Estabilish the fitness function
         is_function(fitness_function, 'fitness_function')
         self.fitness_function = fitness_function
@@ -171,11 +167,7 @@ class Mesh():
     def initialize(self):
         ''' Initializes the MESH with some initial operations. It initializes the population, memory and personal guide fitness, does initial fitness evaluations and calculates the domination fronts. '''
 
-        # Initialize the population
-        self.population = Population(self.params)
-        # Initialize the memory
-        self.memory = Memory(self.params)
-        # Evaluate the initial population (consider the case when there are less fitness evaluations than particles)
+        # Evaluate the initial population
         self.population.fitness[:] = self.evaluate(self.population.position)
         # Update memory
         self.update_memory(self.population.position, self.population.fitness)
@@ -273,9 +265,6 @@ class Mesh():
         
         # Apply a differential mutation strategy
         Xst, pop_idxs = self.differential_mutation(self.differential_mutation_pool())
-        # Get the position and fitness to update the memory
-        update_memory_pos = self.population.position
-        update_memory_fit = self.population.fitness
         if len(Xst):
             population_size = self.params.population_size
             # Apply the differential crossover
@@ -293,10 +282,9 @@ class Mesh():
             self.population.position[worst_pop_idxs] = Xst_rec[best_st_indices]
             self.population.fitness[worst_pop_idxs] = Fst_rec[best_st_indices]
             # Update the memory with the new particles from the strategy
-            update_memory_pos = np.concatenate((update_memory_pos, Xst_rec), axis=0)
-            update_memory_fit = np.concatenate((update_memory_fit, Fst_rec), axis=0)
+            update_memory_pos = np.concatenate((self.population.position, Xst_rec), axis=0)
+            update_memory_fit = np.concatenate((self.population.fitness, Fst_rec), axis=0)
             self.update_memory(update_memory_pos, update_memory_fit)
-        return update_memory_pos, update_memory_fit
 
         ###################################################################################
         # # A array of a matrix pool in each row
@@ -517,7 +505,7 @@ class Mesh():
                     # Count generations if it is a stopping criterion
                     self.count_generation()
                     # Calculate Xst for each particle
-                    update_memory_pos, update_memory_fit = self.differential_evolution()
+                    self.differential_evolution()
                     # Update global guides
                     self.global_guide_method()
                     # Mutate the weights and the global guides
@@ -533,7 +521,7 @@ class Mesh():
                     # Select the best particles from those before and after the moviment
                     self.elitism()
                     # Update memory
-                    self.update_memory(update_memory_pos, update_memory_fit)
+                    self.update_memory(self.population.position, self.population.fitness)
                     # Update the progress bar
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
             # The end of the algorithm
