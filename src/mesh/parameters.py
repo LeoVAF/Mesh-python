@@ -61,8 +61,8 @@ class MeshParameters:
                  dm_operation_type: {0,1,2,3,4} = 0,
                  communication_probability: int | float | np.number = 0.7,
                  mutation_rate: int | float | np.number = 0.9,
-                 max_gen: int | np.integer = None,
-                 max_fit_eval: int | np.integer = None,
+                 max_gen: int | np.integer | None = None,
+                 max_fit_eval: int | np.integer | None = None,
                  max_personal_guides: int | np.integer = 1,
                  initial_positions: Optional[np.ndarray[np.number, 2]] = None,
                  random_state: int | np.integer | None = None):

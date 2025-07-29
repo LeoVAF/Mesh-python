@@ -381,7 +381,7 @@ class Mesh():
         params = self.params
         # Get the population size and the position dimension
         population_size = params.population_size
-        # Generating random indices for each sublist
+        # Generating random indices for each subarray
         pb_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
         # Get matrix position of personal guides from personal guide list positions
         Xpb = self.population.personal_guide_pos[np.arange(population_size), pb_indices, :]
@@ -392,7 +392,7 @@ class Mesh():
         # Get the weights
         W = self.weights
         # Calculate the new velocity
-        C = np.random.rand(population_size, params.position_dim) < params.communication_probability
+        C = np.random.rand(population_size, params.position_dim) <= params.communication_probability
         self.population.velocity[:] = W[0][:, np.newaxis] * self.population.velocity + W[1][:, np.newaxis] * (Xpb - X) + W[2][:, np.newaxis] * C * (Xgb_mut - X)
         # Calculate the clipped velocity
         np.clip(self.population.velocity, params.velocity_lower_bounds, params.velocity_upper_bounds, out=self.population.velocity)
@@ -449,15 +449,15 @@ class Mesh():
         # Get the personal guide fitness
         pb_fitness = self.population.personal_guide_fit
         # Get the mask to update the personal guide
-        update_mask = ~np.any(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
+        update_mask = ~np.all(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
         update_idxs = np.flatnonzero(update_mask)
         # Get the mask to replace the personal guide dominated by the current particle
         replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
         # Replace the dominated personal guide by the current particle
         replace_row, replace_col = np.nonzero(replace_mask)
         particle_to_replace_pb = update_idxs[replace_row]
-        self.population.personal_guide_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
-        self.population.personal_guide_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
+        self.population.personal_guide_fit[particle_to_replace_pb, replace_col, :] = self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_guide_pos[particle_to_replace_pb, replace_col, :] = self.population.position[particle_to_replace_pb, :]
         # Get the mask to add the current to the personal guide list
         add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
         # Delete the oldest personal guide and include the current particle as a new personal guide
@@ -584,7 +584,7 @@ class Mesh():
         pbar.update(self.fitness_eval_counter - prev_bar_value)
         return self.fitness_eval_counter
     
-    def update_progress_bar_by_generation(self, pbar, prev_bar_value):
+    def update_progress_bar_by_generation(self, pbar: tqdm, prev_bar_value: int) -> int:
         ''' Updates the progress bar by generations. It is used when the stopping criterion is generation counter.
         
         Args:

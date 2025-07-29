@@ -295,9 +295,61 @@ def test_elitism():
       assert np.array_equal(mesh.population.personal_guide_pos[i, j], np.zeros(position_dim))
       assert np.array_equal(mesh.population.personal_guide_fit[i, j], np.zeros(objective_dim))
 
-''' ######################################################################## '''
 def test_update_personal_guides():
-  pass
+  # Set some test parameters
+  test_population_size = 3 * population_size
+  test_max_personal_guides = 3
+  # initial_positions = np.random.rand(test_population_size, position_dim)
+  initial_positions = np.array([[i % 3] * position_dim for i in range(test_population_size)])
+  # Initialize the algorithm with initial positions
+  test_params = MeshParameters(
+    objective_dim=objective_dim,
+    position_dim=position_dim,
+    position_lower_bounds=lower_bound,
+    position_upper_bounds=upper_bound,
+    population_size=test_population_size,
+    memory_size=population_size,
+    mutation_rate=mutation_rate,
+    communication_probability=communication_probability,
+    max_gen=max_gen,
+    max_fit_eval=max_fit_eval,
+    max_personal_guides=test_max_personal_guides,
+    initial_positions=initial_positions,
+    random_state=random_state
+  )
+  mesh = Mesh(test_params, toy_function)
+  
+  # Set fitness values to check the personal guide update
+  mesh.population.fitness = np.array([[i % 3] * objective_dim for i in range(test_population_size)])
+  personal_guide_fit_options = [np.full((test_max_personal_guides, objective_dim), -1), # Check when the particle is dominated by one of the personal guides
+                                np.array([[2 * (i % 2)] * objective_dim for i in range(test_max_personal_guides)]), # Check when the current particle dominates some personal guides
+                                np.full((test_max_personal_guides, objective_dim), 2)] # Check when there is no domination between current particle and the personal guides
+  mesh.population.personal_guide_fit = np.array([personal_guide_fit_options[i % 3].copy() for i in range(test_population_size)])
+  # Set personal guide positions randomly
+  pb_positions = np.random.rand(test_population_size, test_max_personal_guides, position_dim)
+  mesh.population.personal_guide_pos = pb_positions.copy()
+
+  # Update the personal guides
+  mesh.update_personal_guides()
+
+  # Check if the personal guides were updated correctly
+  for i in range(test_population_size):
+    # The current particle is discarded
+    if i % 3 == 0:
+      for j in range(test_max_personal_guides):
+        assert np.array_equal(mesh.population.personal_guide_pos[i, j, :], pb_positions[i, j, :])
+    # Particles in odd positions are updated
+    elif i % 3 == 1:
+      for j in range(test_max_personal_guides):
+        if j % 2 == 1:
+          assert np.array_equal(mesh.population.personal_guide_pos[i, j, :], initial_positions[i, :])
+        else:
+          assert np.array_equal(mesh.population.personal_guide_pos[i, j, :], pb_positions[i, j, :])
+    # The oldest particle is discarded
+    else:
+      assert np.array_equal(mesh.population.personal_guide_pos[i, 0, :], initial_positions[i, :])
+      for j in range(1, test_max_personal_guides):
+        assert np.array_equal(mesh.population.personal_guide_pos[i, j, :], pb_positions[i, j-1, :])
 
 ''' ######################################################################## '''
 def test_update_memory():
@@ -340,7 +392,7 @@ def test_stopping_by_fitness_evalution():
   assert mesh.fitness_eval_counter == maximum_fitnes_evaluations
 
   # Initialize the algorithm with fitness evaluations greater than the number of particles
-  maximum_fitnes_evaluations = np.random.randint(population_size + 1, 2 * population_size)
+  maximum_fitnes_evaluations = np.random.randint(3 * population_size + 1, 5 * population_size)
   test_params = MeshParameters(
     objective_dim=objective_dim,
     position_dim=position_dim,
