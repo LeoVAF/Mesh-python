@@ -351,10 +351,6 @@ def test_update_personal_guides():
       for j in range(1, test_max_personal_guides):
         assert np.array_equal(mesh.population.personal_guide_pos[i, j, :], pb_positions[i, j-1, :])
 
-''' ######################################################################## '''
-def test_update_memory():
-  pass
-
 def test_stopping_by_generation():
   # Initialize the algoritm
   maximum_generations = np.random.randint(1, 10)
