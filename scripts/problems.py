@@ -116,7 +116,7 @@ def dtlz7(x, n_obj=3):
 
 def get_problem(name, n_var, n_obj):
   # Validation of inputs
-  if name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'} and n_obj != 2:
+  if name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'} and (n_obj != 2 or n_var < 2):
     raise ValueError(f"Problem {name} only supports 2 objectives.")
   if name in {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'} and n_var < n_obj:
     raise ValueError(f"Problem {name} requires at least {n_obj} variables.")
@@ -130,14 +130,14 @@ def get_problem(name, n_var, n_obj):
   elif name in {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'}:
     func = {'dtlz1':dtlz1, 'dtlz2':dtlz2, 'dtlz3':dtlz3, 'dtlz4':dtlz4, 'dtlz5':dtlz5, 'dtlz6':dtlz6, 'dtlz7':dtlz7}
     return partial(func[name], n_obj=n_obj), np.array([0.0]*n_var), np.array([1.0]*n_var)
-  elif name in {'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
+  elif name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
     func = {'wfg1': problem(wfg(prob_id=1, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg4': problem(wfg(prob_id=4, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness,
             'wfg5': problem(wfg(prob_id=5, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg6': problem(wfg(prob_id=6, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness,
             'wfg7': problem(wfg(prob_id=7, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg8': problem(wfg(prob_id=8, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness,
             'wfg9': problem(wfg(prob_id=9, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness}
     return func[name], np.array([0.0]*n_var), np.array([2.0*i for i in range(1, n_var+1)])
   elif name in {'wfg2', 'wfg3'}:
-    func = {'wfg2': problem(wfg(prob_id=1, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg3': problem(wfg(prob_id=1, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness}
+    func = {'wfg2': problem(wfg(prob_id=2, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness, 'wfg3': problem(wfg(prob_id=3, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness}
     return func[name], np.array([0.0]*n_var), np.array([2.0*i for i in range(1, n_var+1)])
   else:
     raise ValueError(f"Problem {name} not found.")
@@ -239,15 +239,6 @@ def dtlz7_pareto(N, n_obj=3):
     ndf, _, _, _ = fast_non_dominated_sorting(all_points)
     non_dominated_points = all_points[ndf[0]]
     return non_dominated_points
-    # non_dominated_points = non_dominated_points[np.argsort(non_dominated_points[:, 0])]
-    # points = []
-    # step = 1/(N-1)
-    # for i in range(len(non_dominated_points) - 1):
-    #   points.append(non_dominated_points[i])
-    #   if np.linalg.norm(non_dominated_points[i] - non_dominated_points[i + 1]) > np.linalg.norm(non_dominated_points[i] - np.array([(i+1)*step, f2((i+1)*step)])):
-    #     points.append(np.array([None]*n_obj))
-    # points.append(non_dominated_points[-1])
-    # return np.array(points)
   elif n_obj == 3:
     f = np.linspace(0, 1, N)
     f1, f2 = np.meshgrid(f, f)
