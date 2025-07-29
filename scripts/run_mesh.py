@@ -34,7 +34,7 @@
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
 from microgrid_old.techno_ka import techno_ka
-from problems import get_problem
+from problems.functions import get_problem
 
 from pathlib import Path
 # from pymoo.problems import get_problem
@@ -51,7 +51,7 @@ def main():
     load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
     load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
-    num_runs = 30 # Number of runs
+    num_runs = 1 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
@@ -59,7 +59,7 @@ def main():
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'zdt2'
+    experiment_name = 'zdt4'
 
     objective_dim = 2 # Number of objectives
     position_dim = 10 # Design space dimension
@@ -77,8 +77,8 @@ def main():
     max_fitness_eval = 15000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability =  0.56 # Communication probability
-    mutation_rate = 0.15 # Mutation rate
+    communication_probability = 0.2 # Communication probability
+    mutation_rate = 0.8 # Mutation rate
     personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
