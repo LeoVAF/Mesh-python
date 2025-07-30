@@ -1,7 +1,7 @@
 from mesh.core import *
 from mesh.parameters import MeshParameters
 from microgrid_old.techno_ka import techno_ka
-from problems.functions import get_problem
+from problems.problems import get_problem
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path

@@ -34,10 +34,9 @@
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
 from microgrid_old.techno_ka import techno_ka
-from problems.functions import get_problem
+from problems.problems import get_problem
 
 from pathlib import Path
-# from pymoo.problems import get_problem
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo
 from pickle import dump
@@ -59,11 +58,11 @@ def main():
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'zdt4'
+    experiment_name = 'wfg1'
 
-    objective_dim = 2 # Number of objectives
+    objective_dim = 3 # Number of objectives
     position_dim = 10 # Design space dimension
-    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
+    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
     
     # position_min_value = np.array([10, 1, 50]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
     # position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
