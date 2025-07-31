@@ -52,14 +52,18 @@ def wfg4(z, n_obj, k):
   f = x[-1] + S * concave(x[:-1])
   return f
 
+
+
+# Testing the functions
 n_var = 10
 n_obj = 3
+k = 2
 
 X = np.random.rand(5, 10)
 
-wfg4(np.array([0,0,0,0,0,0,0,0,0,0]), 3, 2)
+wfg4(np.array([0,0,0,0,0,0,0,0,0,0]), n_obj, k)
 
-pygmo_wfg = problem(wfg(prob_id=4, dim_dvs=n_var, dim_obj=n_obj, dim_k=n_obj-1)).fitness
+pygmo_wfg = problem(wfg(prob_id=4, dim_dvs=n_var, dim_obj=n_obj, dim_k=k)).fitness
 
 for z in X:
   F1 = wfg4(z, 3, 2)

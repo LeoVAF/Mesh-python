@@ -1,17 +1,13 @@
-from .DTLZ import dtlz1, dtlz2, dtlz3, dtlz4, dtlz5, dtlz6, dtlz7,\
-                 dtlz1_pareto, dtlz2_pareto, dtlz3_pareto, dtlz4_pareto, dtlz5_pareto, dtlz6_pareto, dtlz7_pareto
-# from WFG import 
-from .ZDT import zdt1, zdt2, zdt3, zdt4, zdt6,\
-                zdt1_pareto, zdt2_pareto, zdt3_pareto, zdt4_pareto, zdt6_pareto
+from problems.DTLZ import dtlz1_pareto, dtlz2_pareto, dtlz3_pareto, dtlz4_pareto, dtlz5_pareto, dtlz6_pareto, dtlz7_pareto
 
-from functools import partial
 from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
-from pygmo import problem, dtlz, wfg, zdt
+from pygmo import problem, dtlz, wfg, zdt, fast_non_dominated_sorting
 from typing import Callable
 
 import numpy as np
+from optproblems import zdt as opt_zdt, wfg as opt_wfg
 
-def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None):
+def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> tuple[Callable, np.ndarray[np.float64], np.ndarray[np.float64]]:
   # Validation of inputs
   if name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'} and (n_obj != 2 or n_var < 2):
     raise ValueError(f'Problem {name} only supports 2 objectives.')
@@ -58,11 +54,15 @@ def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None):
 
 ######################################################## Pareto front #######################################################
 
-def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = None) -> Callable:
+def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = None) -> np.ndarray[np.float64, ]:
   # Validation of inputs
+  if name not in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6', 'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7', 'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
+    raise ValueError(f"Pareto front for {name} not found.")
   if name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'} and (n_obj != 2 or n_var < 2):
     raise ValueError(f'Problem {name} only supports 2 objectives.')
   if name in {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'}:
+    if (n_obj > 3):
+      raise ValueError(f'Problem {name} only has 2D and 3D implementations.')
     if (n_var < n_obj):
       raise ValueError(f'Problem {name} requires at least {n_obj} variables.')
     if n_obj < 2:
@@ -75,29 +75,37 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     if name in {'wfg2', 'wfg3'} and ((n_var - wfg_k) % 2) != 0:
       raise ValueError(f'For WFG problems, the number of distance-related variables (n_var - wfg_k) must be divisible by two.')
 
+
   # Pareto function selection
-  pareto_set = {'zdt1':zdt1_pareto(N), 'zdt2':zdt2_pareto(N), 'zdt3':zdt3_pareto(N), 'zdt4':zdt4_pareto(N), 'zdt6':zdt6_pareto(N),
-                'dtlz1':dtlz1_pareto(N, n_obj), 'dtlz2':dtlz2_pareto(N, n_obj), 'dtlz3':dtlz3_pareto(N, n_obj), 'dtlz4':dtlz4_pareto(N, n_obj), 'dtlz5':dtlz5_pareto(N, n_obj),
-                'dtlz6':dtlz6_pareto(N, n_obj), 'dtlz7':dtlz7_pareto(N, n_obj)}
-  if name in pareto_set:
-    return pareto_set[name]
-  elif name == 'wfg1':
-    return WFG1(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
-  elif name == 'wfg2':
-    return WFG2(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
-  elif name == 'wfg3':
-    return WFG3(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
-  elif name == 'wfg4':
-    return WFG4(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
-  elif name == 'wfg5':
-    return WFG5(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
-  elif name == 'wfg6':
-    return WFG6(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
-  elif name == 'wfg7':
-    return WFG7(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
-  elif name == 'wfg8':
-    return WFG8(n_var=n_var, n_obj=n_obj).pareto_front(n_pareto_points=N)
-  elif name == 'wfg9':
-    return WFG9(n_var=n_var, n_obj=n_obj).pareto_front()
-  else:
-    raise ValueError(f"Pareto front for {name} not found.")
+  if name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}:
+    prob_classes = {'zdt1': opt_zdt.ZDT1(n_var), 'zdt2': opt_zdt.ZDT2(n_var), 'zdt3': opt_zdt.ZDT3(n_var), 'zdt4': opt_zdt.ZDT4(n_var), 'zdt6': opt_zdt.ZDT6(n_var)}
+    prob_class = prob_classes[name]
+    optimal_solutions = prob_class.get_optimal_solutions(N)
+    for individual in optimal_solutions:
+      prob_class.evaluate(individual)
+    objective_values = np.array([individual.objective_values for individual in optimal_solutions])
+
+  elif name in {'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7'}:
+    pareto_solutions = {'dtlz1': dtlz1_pareto(N, n_obj), 'dtlz2': dtlz2_pareto(N, n_obj), 'dtlz3': dtlz3_pareto(N, n_obj), 'dtlz4': dtlz4_pareto(N, n_obj), 
+                    'dtlz5': dtlz5_pareto(N, n_obj), 'dtlz6': dtlz6_pareto(N, n_obj), 'dtlz7': dtlz7_pareto(N, n_obj)}
+    return pareto_solutions[name]
+  
+  elif name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
+    prob_classes = {'wfg1': opt_wfg.WFG1(n_obj, n_var, wfg_k), 'wfg4': opt_wfg.WFG4(n_obj, n_var, wfg_k), 'wfg5': opt_wfg.WFG5(n_obj, n_var, wfg_k), 'wfg6': opt_wfg.WFG6(n_obj, n_var, wfg_k),
+                    'wfg7': opt_wfg.WFG7(n_obj, n_var, wfg_k), 'wfg8': opt_wfg.WFG8(n_obj, n_var, wfg_k), 'wfg9': opt_wfg.WFG9(n_obj, n_var, wfg_k)}
+    prob_class = prob_classes[name]
+    optimal_solutions = prob_class.get_optimal_solutions(N)
+    for individual in optimal_solutions:
+      prob_class.evaluate(individual)
+    objective_values = np.array([individual.objective_values for individual in optimal_solutions])
+  elif name in {'wfg2', 'wfg3'}:
+    prob_classes = {'wfg2': opt_wfg.WFG2(n_obj, n_var, wfg_k), 'wfg3': opt_wfg.WFG3(n_obj, n_var, wfg_k)}
+    prob_class = prob_classes[name]
+    optimal_solutions = prob_class.get_optimal_solutions(N)
+    for individual in optimal_solutions:
+      prob_class.evaluate(individual)
+    objective_values = np.array([individual.objective_values for individual in optimal_solutions])
+
+  # Get the non dominated objective values
+  pareto_solutions = objective_values[fast_non_dominated_sorting(points=objective_values)[0][0]]
+  return pareto_solutions
