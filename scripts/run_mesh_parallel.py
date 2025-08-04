@@ -1,7 +1,7 @@
 from mesh.core import *
 from mesh.parameters import MeshParameters
 from microgrid_old.techno_ka import techno_ka
-from problems import get_problem
+from problems.problems import get_problem
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
@@ -16,7 +16,7 @@ def run_mesh(experiment_name,
 						num_runs, # Number of executions
 						position_dim, objective_dim, # Number of variables and dimension of objective space
 						problem, # Tuple with function to be optimized and the limits of the design space
-						global_best_attribution_type,
+						global_guide_method,
 						dm_pool_type,
 						dm_operation_type):
 
@@ -31,8 +31,8 @@ def run_mesh(experiment_name,
 	personal_guide_array_size = 3 # Number of personal guides
 	random_state = None # Defines a seed for random numbers (not used if it is None)
 
-	config = f"E{global_best_attribution_type+1}V{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
-	print(f"Running E{global_best_attribution_type+1}V{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name} on MG")
+	config = f"E{global_guide_method+1}V{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
+	print(f"Running E{global_guide_method+1}V{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name} on MG")
 
 	result = {}
 	combined_F = None
@@ -41,7 +41,7 @@ def run_mesh(experiment_name,
 		params = MeshParameters(objective_dim,
 							position_dim, position_min_value, position_max_value, 
 							population_size, memory_size=memory_size,
-							global_best_attribution_type=global_best_attribution_type,
+							global_guide_method=global_guide_method,
 							dm_pool_type=dm_pool_type,
 							dm_operation_type=dm_operation_type,
 							communication_probability=communication_probability, mutation_rate=mutation_rate,
@@ -74,7 +74,7 @@ def run_mesh(experiment_name,
 		pareto_front = unique_combined_F[ndf[0]]
 		best_idx = select_best_N_mo(pareto_front, n)
 		result['combined'] = (unique_combined_P[ndf[0]][best_idx], pareto_front[best_idx])
-		with open(f'result/{config}.pkl', 'wb') as file:
+		with open(f'./scripts/results/{config}.pkl', 'wb') as file:
 				dump(result, file)
 	return None
 

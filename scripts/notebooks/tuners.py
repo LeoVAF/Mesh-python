@@ -18,7 +18,7 @@ import statistics
 
 
 def tuning_fitness(value_list: list) -> float:
-	return -statistics.mean(value_list)
+	return -statistics.median(value_list)
 
 def dump_results(file_name: str, file_folder: str, results: dict) -> None:
     # Creates the folder if it does not exist
@@ -60,11 +60,11 @@ def fine_tune_mesh(experiment: tuple, # Information to run the experiments
 		for step in range(n_steps):
 			params = MeshParameters(objective_dim = objective_dim,
 															position_dim = position_dim,
-															lower_bound_array = lower_bound_array,
-															upper_bound_array = upper_bound_array, 
+															position_lower_bounds = lower_bound_array,
+															position_upper_bounds = upper_bound_array, 
 															population_size = population_size,
 															memory_size = memory_size,
-															global_best_attribution_type = global_best_attribution_type,
+															global_guide_method = global_best_attribution_type,
 															dm_pool_type = dm_pool_type,
 															dm_operation_type = dm_operation_type,
 															communication_probability = communication_probability,

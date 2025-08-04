@@ -44,31 +44,32 @@ def assert_no_nan_in_np_array(arr: np.ndarray[np.number, ], arr_name: str) -> No
   if np.any(np.isnan(arr)):
     raise ValueError(f'The input "{arr_name}" has NaN values.')
 
-def assert_np_vector_for_operations(vec: np.ndarray[np.number], vec_name: str, size: int | np.integer) -> None:
-  ''' Checks if the ``vec`` is a numpy vector with the expected subtype for operations.
+def assert_np_array_for_operations(arr: np.ndarray[np.number, ], arr_name: str, shape: tuple) -> None:
+  ''' Checks if the ``vec`` is a numpy array with the expected subtype for operations.
   
   Args:
-    vec (:type:`np.ndarray[np.number]`): The input to be checked.
+    vec (:type:`np.ndarray[np.number, n]`): The input to be checked.
     vec_name (:type:`str`): The name of the input.
-    size (:type:`int | np.integer`): The expected size of the vector.
+    size (:type:`tuple`): The expected shape of the numpy array.
 
   Raises:
     TypeError: If the input does not have the expected subtype.
-    ValueError: If the numpy vector has a size different from the expected or NaN values.
+    ValueError: If the numpy array has a shape different from the expected or NaN values.
   '''
 
   # Check the input types
-  assert_type(vec_name, 'vec_name', str)
-  assert_type(size, 'size', (int, np.integer))
-  assert_no_nan_in_np_array(vec, vec_name)
+  assert_type(arr_name, 'arr_name', str)
+  assert_type(shape, 'shape', tuple)
+  assert_no_nan_in_np_array(arr, arr_name)
 
-  # Check the vector size
-  if vec.ndim != 1:
-    raise ValueError(f'The input "{vec_name}" must be one-dimensional.')
-  if size < 0:
-     raise ValueError(f'The parameter size must be greater than 0.')
-  if vec.size != size:
-	  raise ValueError(f'The input "{vec_name}" with size {vec.size} must have size {size}.')
+  # Check the vector shape
+  if arr.ndim != len(shape):
+    raise ValueError(f'The input "{arr_name}" must have {len(shape)} dimension(s).')
+  for i in range(len(shape)):
+    if not isinstance(shape[i], (int, np.integer)):
+      raise TypeError(f'The parameter "shape" has a non-integer in the position {i}.')
+    if arr.shape[i] != shape[i]:
+      raise ValueError(f'The input "{arr_name}" has {arr.shape[i]} element(s) in the axis {i}, but expected {shape[i]} element(s).')
 
 def assert_np_vectors_for_boundary(lower: np.ndarray[np.number], lower_name: str, upper: np.ndarray[np.number], upper_name: str, size: int | np.integer) -> None:
   ''' Checks if the ``lower`` and ``upper`` are boundary numpy vectors.
@@ -88,10 +89,19 @@ def assert_np_vectors_for_boundary(lower: np.ndarray[np.number], lower_name: str
   # Check the input types
   assert_type(lower_name, 'lower_name', str)
   assert_type(upper_name, 'upper_name', str)
-  assert_np_vector_for_operations(lower, lower_name, size)
-  assert_np_vector_for_operations(upper, upper_name, size)
+  is_greater_in_type(size, 'size', (int, np.integer), 0)
+  assert_no_nan_in_np_array(lower, lower_name)
+  assert_no_nan_in_np_array(upper, upper_name)
 
   # Check the boundary vectors
+  if lower.ndim != 1:
+    raise ValueError(f'The input "{lower_name}" must be one-dimensional.')
+  if lower.shape[0] != size:
+     raise ValueError(f'The input "{lower_name}" has size {lower.shape[0]}, but expected {size}.')
+  if upper.ndim != 1:
+    raise ValueError(f'The input "{upper_name}" must be one-dimensional.')
+  if upper.shape[0] != size:
+     raise ValueError(f'The input "{upper_name}" has size {upper.shape[0]}, but expected {size}.')
   if np.any(lower > upper):
 	  raise ValueError(f'The input "{lower_name}" must be less than "{upper_name}".')
 

@@ -31,22 +31,23 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
-from mesh.parameters import MeshParameters
-from mesh.utils.particles import Population, Memory
-from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
-from mesh.operations.global_best_attribution import get_global_best_attribution
+from mesh.operations.differential_crossover import get_differential_crossover
+from mesh.operations.differential_mutation import get_differential_mutation
 from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
-from mesh.operations.differential_mutation_strategy import get_differential_mutation_strategy
+from mesh.operations.global_guide_method import get_global_guide_method
+from mesh.parameters import MeshParameters
+from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
+from mesh.utils.particles import Population, Memory
 from mesh.validations.python_validations import assert_type, is_greater_in_type, is_function
 
-from tqdm import tqdm
+from joblib import Parallel, delayed
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
+from tqdm import tqdm
 from types import MethodType
 from typing import Callable, Optional
-from joblib import Parallel, delayed
 
 import numpy as np
+import random
 
 class Mesh():
     ''' MESH algorithm.
@@ -73,18 +74,18 @@ class Mesh():
         
         self.params: MeshParameters
         ''' Mesh parameters. '''
-        self.global_best_attribution: MethodType[Callable[[Mesh], None]]
-        ''' Function to attribute the global best to the particles. '''
+        self.global_guide_method: MethodType[Callable[[Mesh], None]]
+        ''' Function to find the global guides for the particles. '''
         self.differential_mutation_pool: MethodType[Callable[[Mesh], list[np.ndarray[np.float64, 2]]]]
-        ''' Function to make the differential mutation pool. '''
-        self.differential_mutation_strategy: MethodType[Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
-        ''' Function to do the differential mutation operation. '''
-        self.population: Population
+        ''' Function to make the Differential Mutation pool where the solutions are samppled. '''
+        self.differential_mutation: MethodType[Callable[[Mesh, tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.integer, 2]]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
+        ''' Function to do the Differential Mutation operation. '''
+        self.differential_crossover: MethodType[Callable[[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]], np.ndarray[np.float64, 2]]]
+        ''' Function to do the Differential Crossover operation. '''
+        self.population: Population = Population(params)
         ''' Population of particles. '''
-        self.memory: Memory
+        self.memory: Memory = Memory(params)
         ''' Memory of particles. '''
-        self.fronts: list[np.ndarray[np.integer]]
-        ''' List of numpy arrays with index of each particle in the respective front. '''
         self.fitness_function: Callable[..., np.ndarray[np.number]]
         ''' Fitness function. '''
         self.generation_counter: int
@@ -100,11 +101,13 @@ class Mesh():
         self.num_proc: Optional[int]
         ''' Number of processes to execute the fitness function in parallel. If it is ``None``, so the fitness function will execute sequentially. '''
         self.evaluation_way: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 2], int]]
-        ''' The way to evaluate the fitness function. It can be sequentially or parallelly. If :attr:`num_proc` is greater than zero, so the fitness evaluations will be parallel with :attr:`num_proc` processes. '''
-        self.evaluate: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 2], int]]
-        ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is greater than 0, so the fitness evaluations will be counted. '''
+        ''' The way to evaluate the fitness function. It can be sequentially or parallelly. If :attr:`num_proc` is not None, so the fitness evaluations will be parallel with :attr:`num_proc` processes. '''
+        self.evaluate: Callable[[np.ndarray[np.float64, 2]], np.ndarray[np.float64, 2]]
+        ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is not None, so the fitness evaluations will be counted. '''
         self.count_generation: Callable[[], None]
-        ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is 0. '''
+        ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is not None. '''
+        self.update_memory: Callable[[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]]
+        ''' Function to update the memory. When the :attr:`~mesh.parameters.MeshParameters.memory_size` is less or equal :attr:`~mesh.parameters.MeshParameters.population_size`, the update can be faster. '''
         self.update_progress_bar: Callable[[tqdm, int], int]
         ''' Function to update the progress bar. '''
         self.total_bar: int
@@ -114,22 +117,18 @@ class Mesh():
         assert_type(params, 'params', MeshParameters)
         self.params = params
         # Chosing the operations just one time
-        self.global_best_attribution = MethodType(get_global_best_attribution(params.global_best_attribution_type), self)
+        self.global_guide_method = MethodType(get_global_guide_method(params.global_guide_method), self)
         self.differential_mutation_pool = MethodType(get_differential_mutation_pool(params.dm_pool_type), self)
-        self.differential_mutation_strategy = MethodType(get_differential_mutation_strategy(params.dm_operation_type), self)
+        self.differential_mutation = MethodType(get_differential_mutation(params.dm_operation_type), self)
+        self.differential_crossover = MethodType(get_differential_crossover('binomial'), self)
         # Use a random seed if there is
         np.random.seed(params.random_state)
-        # Particles
-        self.population = None
-        # Memory particles (and the final result after run MESH)
-        self.memory = None
-        # Fronts (a list of numpy arrays with index of each particle in the respective front)
-        self.fronts = []
+        random.seed(params.random_state)
         # Estabilish the fitness function
         is_function(fitness_function, 'fitness_function')
         self.fitness_function = fitness_function
-        # Start the generation counter
-        self.generation_counter = 0
+        # Start the generation counter (considering the initial generation)
+        self.generation_counter = 1
         # Start the fitness evaluation counter
         self.fitness_eval_counter = 0
         # Create a random matrix (3 x population_size) with weights for the algorithm operations
@@ -153,9 +152,14 @@ class Mesh():
             self.count_generation = lambda : None
         # Check if the fitness evaluation is a stopping criterion
         if params.max_fit_eval != None:
-            self.evaluate = self.stopping_by_fitness_eval
+            self.evaluate = self.stopping_by_fitness_evaluation
         else:
             self.evaluate = self.evaluation_way
+        # Choose the memory update function according to memory size
+        if params.memory_size <= params.population_size:
+            self.update_memory = self.fast_update_memory
+        else:
+            self.update_memory = self.generic_update_memory
         # Choose the way to update the algorithm progress bar
         if params.max_gen == None:
             self.total_bar = params.max_fit_eval
@@ -168,18 +172,14 @@ class Mesh():
             self.total_bar = min(params.population_size*(2*params.max_gen+1), params.max_fit_eval)
     
     def initialize(self):
-        ''' Initializes the MESH with some initial operations. It initializes the population, memory and personal best fitness, does initial fitness evaluations and calculates the domination fronts. '''
+        ''' Initializes the MESH with some initial operations. It initializes the population, memory and personal guide fitness, does initial fitness evaluations and calculates the domination fronts. '''
 
-        # Initialize the population
-        self.population = Population(self.params)
         # Evaluate the initial population
         self.population.fitness[:] = self.evaluate(self.population.position)
-        # Get the population fronts and domination ranks
-        self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-        # Initialize the memory
-        self.memory = Memory(self.population, self.fronts[0], self.params)
-        # Repeat the population fitness for all personal best input
-        self.population.personal_best_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
+        # Update memory
+        self.update_memory(self.population.position, self.population.fitness)
+        # Repeat the population fitness for all personal guide input
+        self.population.personal_guide_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
 
     def sequential_fitness_evaluation(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
         ''' Evaluates the fitness given a particle position matrix sequentially.
@@ -235,7 +235,7 @@ class Mesh():
 
         return np.all(Fx <= Fy, axis=axis) & np.any(Fx < Fy, axis=axis)
 
-    def get_domination_fronts(self, fitness_matrix: np.ndarray[np.number, 2]) -> tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]:
+    def get_non_domination_fronts(self, fitness_matrix: np.ndarray[np.number, 2]) -> tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]:
         ''' Gets the fronts and the domination ranks of the particles given a fitness matrix.
         
         Note:
@@ -250,76 +250,108 @@ class Mesh():
 
         # If there is only one particle in the particle list, then it is the Pareto front by itself
         if(len(fitness_matrix) == 1):
-            return np.array([np.array([0])]), np.array([0])
+            return np.array([np.array([0])])
         # Do the Fast Non-dominated Sorting from Pygmo
-        non_dominated_fronts, _, _, ranks = fast_non_dominated_sorting(points=fitness_matrix)
-        return non_dominated_fronts, ranks
+        non_dominated_fronts, _, _, _ = fast_non_dominated_sorting(points=fitness_matrix)
+        return non_dominated_fronts
 
-    def differential_mutation(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
-        ''' Applies a differential mutation operation decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type` in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`.
+    def differential_evolution(self) -> None:
+        r''' Generates solutions by Differential Evolution algorithm according to a differential mutation strategy decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type`, with solutions sampled in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`. When new solutions are generated, an elitism is performed to update the position of the current population's less promising solutions.
         
-        Returns:
-            :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]`: A tuple with the position and fitness used to update the memory the second time at the generation (for efficiency).
+        Note:
+            The criteria for the best elitism solutions are the same as those for the method :meth:`elitism`.
         '''
         
-        # A array of a matrix pool in each row
-        Xr_pool_list = self.differential_mutation_pool()
-        # Apply a strategy
-        Xst, valid_idxs = self.differential_mutation_strategy(Xr_pool_list)
-        # Get the position and fitness to update the memory
-        update_memory_pos = self.population.position
-        update_memory_fit = self.population.fitness
+        # Apply a differential mutation strategy
+        Xst, pop_idxs = self.differential_mutation(self.differential_mutation_pool())
         if len(Xst):
+            population_size = self.params.population_size
+            # Apply the differential crossover
+            Xst_rec = self.differential_crossover(self.population.position[pop_idxs], Xst)
             # Update the current particle if the new particle from the strategy is better
-            Fst = self.evaluate(Xst)
-            valid_pop_fitnesses = self.population.fitness[valid_idxs]
-            domination_mask = self.dominates(Fst, valid_pop_fitnesses, axis=1)
-            update_idxs = valid_idxs[domination_mask]
-            # Update the positions and the fitnesses
-            self.population.position[update_idxs] = Xst[domination_mask]
-            self.population.fitness[update_idxs] = Fst[domination_mask]
+            Fst_rec = self.evaluate(Xst_rec)
+            # Concatenate the arrays with the population position and fitness with the strategy arrays
+            update_memory_pos = np.concatenate((self.population.position, Xst_rec), axis=0)
+            update_memory_fit = np.concatenate((self.population.fitness, Fst_rec), axis=0)
+            # Find the best N indices
+            best_N_idxs = select_best_N_mo(update_memory_fit, population_size)
+            # Get the indices of the best particles in the strategy array
+            mask = best_N_idxs >= population_size
+            best_st_indices = best_N_idxs[mask] - population_size
+            # Put the best strategy particles in the current population
+            np.logical_not(mask, out=mask)
+            worst_pop_idxs = np.setdiff1d(np.arange(population_size), best_N_idxs[mask], assume_unique=True)
+            self.population.position[worst_pop_idxs] = Xst_rec[best_st_indices]
+            self.population.fitness[worst_pop_idxs] = Fst_rec[best_st_indices]
             # Update the memory with the new particles from the strategy
-            update_memory_pos = np.concatenate((update_memory_pos, Xst), axis=0)
-            update_memory_fit = np.concatenate((update_memory_fit, Fst), axis=0)
             self.update_memory(update_memory_pos, update_memory_fit)
-            # If a particle was replaced for a particle from a strategy, update the personal best
-            if len(update_idxs):
-                self.update_personal_best(update_idxs)
-                self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
-        return update_memory_pos, update_memory_fit
 
-    def mutate_weights(self) -> None:
-        r''' Calculates the weights by the following equation:
+        ###################################################################################
+        # r''' Generates solutions by Differential Evolution algorithm according to a differential mutation strategy decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type`, with solutions sampled in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`. The new solutions in the population are defined according to the following equation:
+
+        # .. math::
+        #     x'^{(t)} = \begin{cases}
+        #                     u^{(t)}_{st}, & \text{if } u^{(t)}_{st} \textbf{ dominates } x^{(t)}; \\
+        #                     x^{(t)}, & \text{otherwise};
+        #                 \end{cases}
+        
+        # where :math:`u^{(t)}_{st}` is the new solution generated by the differential evolution phase and :math:`x^{(t)}` is the current solution in the population.
+        
+        # Returns:
+        #     :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]`: A tuple with the position and fitness used to update the memory the second time at the generation (for efficiency).
+        # '''
+
+        # # A array of a matrix pool in each row
+        # Xr_pool_list = self.differential_mutation_pool()
+        # # Apply a differential mutation strategy
+        # Xst, valid_idxs = self.differential_mutation(Xr_pool_list)
+        # # Get the position and fitness to update the memory
+        # update_memory_pos = self.population.position
+        # update_memory_fit = self.population.fitness
+        # if len(Xst):
+        #     # Apply the differential crossover
+        #     Xst_rec = self.differential_crossover(self.population.position[valid_idxs], Xst)
+        #     # Update the current particle if the new particle from the strategy is better
+        #     Fst = self.evaluate(Xst_rec)
+        #     valid_pop_fitnesses = self.population.fitness[valid_idxs]
+        #     domination_mask = self.dominates(Fst, valid_pop_fitnesses, axis=1)
+        #     update_idxs = valid_idxs[domination_mask]
+        #     # Update the positions and the fitnesses
+        #     self.population.position[update_idxs] = Xst_rec[domination_mask]
+        #     self.population.fitness[update_idxs] = Fst[domination_mask]
+        #     # Update the memory with the new particles from the strategy
+        #     update_memory_pos = np.concatenate((update_memory_pos, Xst_rec), axis=0)
+        #     update_memory_fit = np.concatenate((update_memory_fit, Fst), axis=0)
+        #     self.update_memory(update_memory_pos, update_memory_fit)
+        #     # If a particle was replaced for a particle from a strategy, update the personal guides
+        #     if len(update_idxs):
+        #         self.update_personal_guides(update_idxs)
+        # return update_memory_pos, update_memory_fit
+
+    def mutation(self) -> None:
+        r''' Calculates the mutation of the weights by the following equation:
 
         .. math::
-            w^* = w + \tau_{mut} \cdot r,
+            \tilde{w} = w + \tau_{mut} \cdot r,
         
-        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution.
+        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution. The mutation of the global guides are done by the following equation:
+
+        .. math::
+                
+            \tilde{x}_{gb} = x_{gb} + \tau_{mut} \cdot \vec{r},
+            
+        where :math:`\vec{r} \sim \mathcal{N}(0, 1)^m` is a vector sampled from the Standard Gaussian Distribution.
         '''
         
-        # Mutate the weights using a number sampled under the Standard Gaussian Distribution
+        # Mutate the weights using a number sampled from the Standard Gaussian Distribution
         self.weights += np.random.normal(0, 1, (3, self.params.population_size)) * self.params.mutation_rate
         # Clip the weights to the allowed values
-        np.clip(self.weights[0, :], 0.0, 1.0, out=self.weights[0, :])
-        np.clip(self.weights[1, :], 0.0, 0.5, out=self.weights[1, :])
-        np.clip(self.weights[2, :], 0.0, 2.0, out=self.weights[2, :])
-
-    def reflect_velocity_at_bounds(self, velocity_input: np.ndarray[np.number, 2], position_input: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
-        ''' Reverses the direction of each component of the velocity that took the particle out of its respective boundaries.
-        
-        Args:
-            velocity_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle velocities.
-            position_input (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
-        
-        Returns:
-            :type:`np.ndarray[np.number, 2]`: A numpy matrix with the velocities reflected at the boundaries.
-        '''
-
-        neg_velocity = (velocity_input < 0)
-        return np.where(((position_input == self.params.lower_bound_array) & neg_velocity) |
-                        ((position_input == self.params.upper_bound_array) & (~ neg_velocity)),
-                        -velocity_input,
-                        velocity_input)
+        np.clip(self.weights, 0, 1, out=self.weights)
+        # Mutate the global guides with a vector sampled from the Standard Gaussian Distribution
+        np.clip(self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) * self.params.mutation_rate,
+                self.params.position_lower_bounds,
+                self.params.position_upper_bounds,
+                out=self.pre_allocated.global_guide_mutated)
 
     def move_population(self) -> None:
         r''' Applies the equation of motion to the particles. The MESH equation of motion is given by:
@@ -327,83 +359,57 @@ class Mesh():
         .. math::
 
             \begin{cases}
-                v^{(t+1)} = w^*_Iv^{(t)} + w^*_A(x_{pb} - x^{(t)}) + w^*_C C^{(t)} \times (x^*_{gb} - x^{(t)}), \\
-                x^{(t+1)} = x^{(t)} + v^{(t+1)},
+                v'^{(t)} = \tilde{w}_Iv^{(t)} + \tilde{w}_A(x_{pb} - x^{(t)}) + \tilde{w}_C C^{(t)} \times (\tilde{x}_{gb} - x^{(t)}), \\
+                x''^{(t)} = x'^{(t)} + v'^{(t)},
             \end{cases}
         
         where:
 
         - :math:`v^{(t)}` is the velocity vector at time t;
-        - :math:`x^{(t)}` is the position vector at time t;
+        - :math:`x'^{(t)}` is the position vector at time t, after the differential mutation phase;
         - :math:`w_I` is the inertia weight;
         - :math:`w_A` is the assimilation weight;
         - :math:`w_C` is the cooperation weight;
-        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`r_i \sim \mathcal{U}(0,\ 1)` a number sampled under a uniform distribution between 0 and 1 for each line of :math:`C` and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
+        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`r_i \sim \mathcal{U}(0,\ 1)` a number sampled under a Uniform Distribution between 0 and 1 for each line of :math:`C` and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
 
         .. math::
 
-            C_{ij} = \begin{cases} 1, & \text{if } (i = j) \land (r_i \leq \tau_{com}); \\ 0, & \text{otherwise}. \end{cases}
+            C_{[i,\ j]} = \begin{cases} 1, & \text{if } (i = j) \land (r_i \leq \tau_{com}); \\ 0, & \text{otherwise}. \end{cases}
 
-        - :math:`x_{pb}` is the personal best vector of the particle;
-        - :math:`x_{gb}` is the global best vector o the particle.
+        - :math:`x_{pb}` is the personal guide vector of the particle;
+        - :math:`x_{gb}` is the global guide vector of the particle.
         
         Note:
-            In this implementation, the weights are calculated every generation by :meth:`mutate_weights` and each particle has its own weight. The mutation of :math:`x_{gb}` is done by:
-            
-            .. math::
-                
-                x^*_{gb} = x_{gb}(1 + \tau_{mut} \cdot \vec{r}),
-            
-            where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`\vec{r} \sim \mathcal{N}(0, 1)^m` is a number sampled from the Standard Gaussian Distribution.
+            In this implementation, the weights are calculated every generation by :meth:`mutation` and each particle has its own weight. Every particle has its communication matrix too.
         '''
 
         # Get the parameters
         params = self.params
         # Get the population size and the position dimension
         population_size = params.population_size
-        # Generating random indices for each sublist
-        random_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
-        # Get matrix of personal best list positions
-        pb_positions = self.population.personal_best_pos[np.arange(population_size), random_indices, :]
-        # Get the global best positions
-        gb_positions = self.population.global_best
+        # Generating random indices for each subarray
+        pb_indices = np.random.randint(0, self.params.max_personal_guides, size=population_size)
+        # Get matrix position of personal guides from personal guide list positions
+        Xpb = self.population.personal_guide_pos[np.arange(population_size), pb_indices, :]
+        # Get the global guide positions
+        Xgb_mut = self.pre_allocated.global_guide_mutated
         # Get the positions
-        positions = self.population.position
-        # Get the velocities
-        velocities = self.population.velocity
+        X = self.population.position
         # Get the weights
-        weights = self.weights
-        # Calculate the inertia term and accumulate it in the velocities
-        np.multiply(velocities, weights[0][:, np.newaxis], out=velocities)
-        # Calculate the memory term and accumulate it in the velocities
-        matrix_for_operations = self.pre_allocated.matrix_for_operations
-        np.subtract(pb_positions, positions, out=matrix_for_operations)
-        np.multiply(matrix_for_operations, weights[1][:, np.newaxis], out=matrix_for_operations)
-        np.add(velocities, matrix_for_operations, out=velocities)
-        # Calculate the cooperation term and accumulate it in the velocities
-        vector_for_operations = self.pre_allocated.vector_for_operations
-        ################## Mutation of the global best positions ##################
-        vector_for_operations[:] = np.random.normal(0, 1, population_size)
-        np.multiply(vector_for_operations, params.mutation_rate, out=vector_for_operations)
-        np.add(vector_for_operations, 1, out=vector_for_operations)
-        np.multiply(vector_for_operations[:, np.newaxis], gb_positions, out=matrix_for_operations)
-        ###########################################################################
-        np.subtract(matrix_for_operations, positions, out=matrix_for_operations)
-        np.multiply(matrix_for_operations, weights[2][:, np.newaxis], out=matrix_for_operations)
-        np.multiply(matrix_for_operations, np.random.uniform(0.0, 1.0, params.position_dim) < params.communication_probability, out=matrix_for_operations)
-        np.add(velocities, matrix_for_operations, out=velocities)
-        # Calculate the new velocity (clipped)
-        np.clip(velocities, params.velocity_min_value, params.velocity_max_value, out=velocities)
-        # Calculate the new position (clipped)
-        np.add(positions, velocities, out=positions)
-        np.clip(positions, params.lower_bound_array, params.upper_bound_array, out=positions)
-        # Reflect the velocity at the bounds
-        self.population.velocity[:, :] = self.reflect_velocity_at_bounds(velocities, positions)
+        W = self.weights
+        # Calculate the new velocity
+        C = np.random.rand(population_size, params.position_dim) <= params.communication_probability
+        self.population.velocity[:] = W[0][:, np.newaxis] * self.population.velocity + W[1][:, np.newaxis] * (Xpb - X) + W[2][:, np.newaxis] * C * (Xgb_mut - X)
+        # Calculate the clipped velocity
+        np.clip(self.population.velocity, params.velocity_lower_bounds, params.velocity_upper_bounds, out=self.population.velocity)
+        # Calculate the clipped position
+        self.population.position += self.population.velocity
+        np.clip(self.population.position, params.position_lower_bounds, params.position_upper_bounds, out=self.population.position)
         # Evaluate the positions with the fitness function
         self.population.fitness[:] = self.evaluate(self.population.position)
     
-    def population_selection(self) -> None:
-        ''' Selects the best particles from the previous (before applying the equation of motion) and current populations. The top :attr:~mesh.parameters.MeshParameters.population_size particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
+    def elitism(self) -> None:
+        ''' Selects the best particles from the previous (before applying the equation of motion) and current populations (after applying the equation of motion). The top :attr:`~mesh.parameters.MeshParameters.population_size` particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
         
         Note:
             The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with rank zero.
@@ -415,35 +421,26 @@ class Mesh():
         population_size = self.params.population_size
         pre_allocated = self.pre_allocated
         # Get the fitness matrix with the previous and the current population
-        pre_allocated.fitness_selection[:population_size] = pre_allocated.fitness_copy
-        pre_allocated.fitness_selection[population_size:] = self.population.fitness
+        pre_allocated.fitness_elitism[:population_size] = pre_allocated.fitness_copy
+        pre_allocated.fitness_elitism[population_size:] = self.population.fitness
         # Find the best N indices
-        best_N_idxs = select_best_N_mo(pre_allocated.fitness_selection, population_size)
-        # Separate the previous and current population indices from best_N_idxs
+        best_N_idxs = select_best_N_mo(pre_allocated.fitness_elitism, population_size)
+        # Get the previous population indices
         mask = best_N_idxs < population_size
         prev_idxs = best_N_idxs[mask]
-        # Get the current indices
+        # Get the current population indices
         np.logical_not(mask, out=mask)
         current_idxs = best_N_idxs[mask] - population_size
-        # Get the previous and the current size of indices
-        prev_idx_size = len(prev_idxs)
-        # Select the best previous particles
-        self.population.position[:prev_idx_size] = pre_allocated.position_copy[prev_idxs]
-        self.population.velocity[:prev_idx_size] = pre_allocated.velocity_copy[prev_idxs]
-        self.population.fitness[:prev_idx_size] = pre_allocated.fitness_copy[prev_idxs]
-        # Select the best current particles
-        self.population.position[prev_idx_size:] = self.population.position[current_idxs]
-        self.population.velocity[prev_idx_size:] = self.population.velocity[current_idxs]
-        self.population.fitness[prev_idx_size:] = self.population.fitness[current_idxs]
-        # Select the best N personal best
-        pb_idxs = np.concatenate((prev_idxs, current_idxs), axis=0)
-        self.population.personal_best_fit[:] = self.population.personal_best_fit[pb_idxs]
-        self.population.personal_best_pos[:] = self.population.personal_best_pos[pb_idxs]
-        # Return the indices of the current population that were selected
-        return current_idxs
+        # Put the best previous particles in the current population
+        worst_current_idxs = np.setdiff1d(np.arange(population_size), current_idxs, assume_unique=True)
+        self.population.position[worst_current_idxs] = pre_allocated.position_copy[prev_idxs]
+        self.population.velocity[worst_current_idxs] = pre_allocated.velocity_copy[prev_idxs]
+        self.population.fitness[worst_current_idxs] = pre_allocated.fitness_copy[prev_idxs]
+        self.population.personal_guide_pos[worst_current_idxs] = self.population.personal_guide_pos[prev_idxs]
+        self.population.personal_guide_fit[worst_current_idxs] = self.population.personal_guide_fit[prev_idxs]
 
-    def update_personal_best(self, pop_indices: np.ndarray[np.integer]) -> None:
-        ''' Updates the personal guides of the particles by the population index.
+    def update_personal_guides(self) -> None:
+        ''' Updates the personal guides of the population particles.
 
         Note:
             There is three cases to update the personal guides:
@@ -451,35 +448,61 @@ class Mesh():
             - When the current particle is dominated by any of its personal guide, the current particle is ignored;
             - When the current particle dominates a personal guide, the current particle replaces the dominated personal guide. This replacement is done for all dominated personal guides, so the more the current particle dominates its personal guides, the more chance it has of being sampled in :meth:`move_population`;
             - When the current particle don't dominate and is not dominated by any personal guide, the current particle is added to the personal guide matrix. The oldest personal guide is removed when the current particle is only added.
-        
-        Args:
-            pop_indices (:type:`np.ndarray[np.integer]`): A numpy array with the indices of the population particles to update the personal guides.
         '''
 
         # Get the population fitness as a tensor
-        fitness_tensor = self.population.fitness[pop_indices, np.newaxis]
-        # Get the personal best fitness
-        pb_fitness = self.population.personal_best_fit[pop_indices]
-        # Get the mask to update the personal best
-        update_mask = ~np.any(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
-        update_idxs = pop_indices[update_mask]
-        # Get the mask to replace the personal best dominated by the current particle
+        fitness_tensor = self.population.fitness[:, np.newaxis]
+        # Get the personal guide fitness
+        pb_fitness = self.population.personal_guide_fit
+        # Get the mask to update the personal guide
+        update_mask = ~np.all(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
+        update_idxs = np.flatnonzero(update_mask)
+        # Get the mask to replace the personal guide dominated by the current particle
         replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
-        # Replace the dominated personal best by the current particle
+        # Replace the dominated personal guide by the current particle
         replace_row, replace_col = np.nonzero(replace_mask)
         particle_to_replace_pb = update_idxs[replace_row]
-        self.population.personal_best_fit[particle_to_replace_pb, replace_col, :] =  self.population.fitness[particle_to_replace_pb, :]
-        self.population.personal_best_pos[particle_to_replace_pb, replace_col, :] =  self.population.position[particle_to_replace_pb, :]
-        # Get the mask to add the current to the personal best list
+        self.population.personal_guide_fit[particle_to_replace_pb, replace_col, :] = self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_guide_pos[particle_to_replace_pb, replace_col, :] = self.population.position[particle_to_replace_pb, :]
+        # Get the mask to add the current to the personal guide list
         add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
-        # Delete the oldest personal best and include the current particle as a new personal best
-        self.population.personal_best_fit[add_idxs, 1:, :] = self.population.personal_best_fit[add_idxs, :-1, :]
-        self.population.personal_best_pos[add_idxs, 1:, :] = self.population.personal_best_pos[add_idxs, :-1, :]
-        # Update the personal best list by adding the current particle as a new personal best
-        self.population.personal_best_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
-        self.population.personal_best_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
+        # Delete the oldest personal guide and include the current particle as a new personal guide
+        self.population.personal_guide_fit[add_idxs, 1:, :] = self.population.personal_guide_fit[add_idxs, :-1, :]
+        self.population.personal_guide_pos[add_idxs, 1:, :] = self.population.personal_guide_pos[add_idxs, :-1, :]
+        # Update the personal guide list by adding the current particle as a new personal guide
+        self.population.personal_guide_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
+        self.population.personal_guide_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
-    def update_memory(self, position_matrix: np.ndarray[np.float64, 2], fitness_matrix: np.ndarray[np.float64, 2]) -> None:
+    def fast_update_memory(self, _: any, __: any) -> None:
+        ''' Updates the memory position and fitness faster using position and fitness numpy matrices from population.
+
+        Note:
+            Function arguments are for compatibility with the method :meth:`generic_update_memory`.
+        '''
+        
+        # Get the unique positions from the population positions and the memory
+        unique_pop_positions, unique_idxs = np.unique(self.population.position, axis=0, return_index=True)
+        unique_pop_fitnesses = self.population.fitness[unique_idxs]
+        # Get the pareto front indices from population
+        memory_pareto_idxs = self.get_non_domination_fronts(unique_pop_fitnesses)[0]
+        # If the new memory Pareto front has size less or equal than the memory size, then set the new memory
+        memory_size = self.params.memory_size
+        if(len(memory_pareto_idxs) <= memory_size):
+            self.memory.position = unique_pop_positions[memory_pareto_idxs]
+            self.memory.fitness = unique_pop_fitnesses[memory_pareto_idxs]
+        # Else get the particles with the highest crowd distance in the new memory Pareto front
+        else:
+            # Select the particles with the highest crowd distance
+            selected_fitness = unique_pop_fitnesses[memory_pareto_idxs]
+            # Calculate the crowding distance
+            crowd_distances = crowding_distance(selected_fitness)
+            # Get the indices of the particles with the highest crowd distance
+            idxs = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
+            # Update the memory
+            self.memory.position = unique_pop_positions[memory_pareto_idxs[idxs]]
+            self.memory.fitness = selected_fitness[idxs]
+
+    def generic_update_memory(self, position_matrix: np.ndarray[np.float64, 2], fitness_matrix: np.ndarray[np.float64, 2]) -> None:
         ''' Updates the memory position and fitness using a position and fitness numpy matrices.
         
         Args:
@@ -487,35 +510,35 @@ class Mesh():
             fitness_matrix (:type:`np.ndarray[np.float64, 2]`): A numpy matrix with the fitness of the particles.
         '''
 
-        # Get the unique positions from the Pareto front and the memory
+        # Get the unique positions from the position matrix and the memory
         unique_positions, unique_idxs = np.unique(np.concatenate((self.memory.position, position_matrix), axis=0), axis=0, return_index=True)
-        # Get the unique fitnesses from the Pareto front and the memory
+        # Get the unique fitnesses from the position matrix and the memory
         unique_fitnesses = np.concatenate((self.memory.fitness, fitness_matrix), axis=0)[unique_idxs]
         # Get the Pareto front indices from the memory candidates
-        memory_pareto_front_idxs = self.get_domination_fronts(unique_fitnesses)[0][0]
+        memory_pareto_idxs = self.get_non_domination_fronts(unique_fitnesses)[0]
         # If the new memory Pareto front has size less or equal than the memory size, then set the new memory
         memory_size = self.params.memory_size
-        if(len(memory_pareto_front_idxs) <= memory_size):
-            self.memory.position = unique_positions[memory_pareto_front_idxs]
-            self.memory.fitness = unique_fitnesses[memory_pareto_front_idxs]
+        if(len(memory_pareto_idxs) <= memory_size):
+            self.memory.position = unique_positions[memory_pareto_idxs]
+            self.memory.fitness = unique_fitnesses[memory_pareto_idxs]
         # Else get the particles with the highest crowd distance in the new memory Pareto front
         else:
             # Select the particles with the highest crowd distance
-            selected_fitness = unique_fitnesses[memory_pareto_front_idxs]
+            selected_fitness = unique_fitnesses[memory_pareto_idxs]
             # Calculate the crowding distance
             crowd_distances = crowding_distance(selected_fitness)
             # Get the indices of the particles with the highest crowd distance
             idxs = np.argpartition(crowd_distances, -memory_size)[-memory_size:]
             # Update the memory
-            self.memory.position = unique_positions[memory_pareto_front_idxs[idxs]]
+            self.memory.position = unique_positions[memory_pareto_idxs[idxs]]
             self.memory.fitness = selected_fitness[idxs]
 
     def run(self):
         ''' This method runs the MESH algorithm. It stops when the maximum number of generations and/or fitness evaluations is reached. '''
 
-        try:
-            # Start the progress bars
-            with tqdm(total=self.total_bar, leave=False) as pbar:
+        # Start the progress bars
+        with tqdm(total=self.total_bar, leave=False) as pbar:
+            try:    
                 # A variable to update the tqdm bar
                 prev_bar_value = 0
                 # Initialize the algorithm with initial operations
@@ -525,32 +548,32 @@ class Mesh():
                     # Count generations if it is a stopping criterion
                     self.count_generation()
                     # Calculate Xst for each particle
-                    update_memory_pos, update_memory_fit = self.differential_mutation()
-                    # Mutate the weights
-                    self.mutate_weights()
-                    # Update global best
-                    self.global_best_attribution()
+                    self.differential_evolution()
+                    # Update global guides
+                    self.global_guide_method()
+                    # Mutate the weights and the global guides
+                    self.mutation()
+                    # Update the personal guides
+                    self.update_personal_guides()
                     # Store some data of the population before the movement
                     self.pre_allocated.position_copy[:] = self.population.position.copy()
                     self.pre_allocated.velocity_copy[:] = self.population.velocity.copy()
                     self.pre_allocated.fitness_copy[:] = self.population.fitness.copy()
                     # Apply the movviment to the particles
                     self.move_population()
-                    # Select the best particles from those before and after movement
-                    selected_idxs = self.population_selection()
-                    # Update the personal best
-                    self.update_personal_best(selected_idxs)
-                    # Get the fronts
-                    self.fronts, self.population.rank = self.get_domination_fronts(self.population.fitness)
+                    # Select the best particles from those before and after the moviment
+                    self.elitism()
                     # Update memory
-                    self.update_memory(update_memory_pos, update_memory_fit)
+                    self.update_memory(self.population.position, self.population.fitness)
                     # Update the progress bar
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
-        # The end of the algorithm
-        except StoppingAlgorithm:
-            # Log the memory
-            if self.log_memory is not None:
-                self.logging()
+            # The end of the algorithm
+            except StoppingAlgorithm as stop:
+                # Updated the memory
+                self.generic_update_memory(stop.position, stop.fitness)
+                # Log the memory
+                if self.log_memory is not None:
+                    self.logging()
 
     def update_progress_bar_by_fitness_evaluation(self, pbar: tqdm, prev_bar_value: int) -> int:
         ''' Updates the progress bar by fitness evaluations. It is used when the stopping criterion is fitness evaluation or both generation and fitness evaluation.
@@ -566,7 +589,7 @@ class Mesh():
         pbar.update(self.fitness_eval_counter - prev_bar_value)
         return self.fitness_eval_counter
     
-    def update_progress_bar_by_generation(self, pbar, prev_bar_value):
+    def update_progress_bar_by_generation(self, pbar: tqdm, prev_bar_value: int) -> int:
         ''' Updates the progress bar by generations. It is used when the stopping criterion is generation counter.
         
         Args:
@@ -589,9 +612,10 @@ class Mesh():
 
         self.generation_counter += 1
         if self.generation_counter > self.params.max_gen:
-            raise StoppingAlgorithm()
+            self.generation_counter -= 1
+            raise StoppingAlgorithm(np.empty((0, self.params.position_dim)), np.empty((0, self.params.objective_dim)))
     
-    def stopping_by_fitness_eval(self, X: np.ndarray[np.float64, 2]) -> tuple[np.ndarray[np.float64, 2], int]:
+    def stopping_by_fitness_evaluation(self, X: np.ndarray[np.float64, 2]) -> tuple[np.ndarray[np.float64, 2], int]:
         ''' Evaluates the position matrix ``X`` and counts the fitness evaluations. This method is used when the stopping criterion is by fitness evaluations.
         
         Args:
@@ -604,9 +628,6 @@ class Mesh():
             :class:`~mesh.utils.auxiliar.StoppingAlgorithm`: If the number of fitness evaluations is greater than the maximum number of fitness evaluations.    
         '''
 
-        # Check if the stopping criterion reached
-        if self.fitness_eval_counter >= self.params.max_fit_eval:
-            raise StoppingAlgorithm()
         # Get the size of the position matrix
         X_size = len(X)
         # Calculate the minimum number of fitness evaluations
@@ -614,11 +635,12 @@ class Mesh():
         # Update the fitness counter
         self.fitness_eval_counter += min_evaluations
         # Evaluate the fitness function
-        if(min_evaluations < X_size):
-            # Evaluate the sliced particle positions for the minimum evaluations and concatenate the rest with np.inf
-            return np.concatenate((self.evaluation_way(X[:min_evaluations]), np.full((X_size - min_evaluations, self.params.objective_dim), np.inf)), axis=0)
-        else:
+        if(self.fitness_eval_counter < self.params.max_fit_eval):
             return self.evaluation_way(X)
+        else:
+            # Evaluate the sliced particle positions and stop the algorithm
+            X_sliced = X[:min_evaluations]
+            raise StoppingAlgorithm(X_sliced, self.evaluation_way(X_sliced))
 
     def get_results(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
         ''' Returns a tuple with the memory position and fitness, respectively.

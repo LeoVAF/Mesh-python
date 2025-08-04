@@ -5,26 +5,32 @@ dependencies:
   # Development support tools
   - python=3.13
   # Project libraries
-  - numpy=2.2
-  - matplotlib=3.10
-  - scikit-learn=1.6
-  - pygmo=2.19
-  - scipy=1.15
-  - pymoo=0.6
-  - plotly=5.24
-  - nbformat=5.10
-  - pandas=2.2
-  - openpyxl=3.0
   - cython=3.0
+  - matplotlib=3.10
+  - nbformat=5.10
+  - numpy=2.2
+  - openpyxl=3.0
+  - pip=25.1
+  - pip:
+      - optproblems
+      - diversipy
+      - -e .
+  - optuna=4.3
+  - pandas=2.2
+  - plotly=5.24
+  - pygmo=2.19
+  - pymoo=0.6
   - pytest=8.2
   - pytest-cov=6.0
-  - optuna=4.3
-  # - hyperopt=0.2
+  - pytest-mock=3.14
+  - scikit-learn=1.6
+  - scipy=1.15
+
   # Project management
   # - poetry=2.1
+  - jsonschema=4.23
   - make=4.4
-  - sphinx=8.2
   - myst-nb=1.2
+  - sphinx=8.2
   - sphinx-autoapi=3.5
   - sphinx-book-theme=1.1
-  - jsonschema=4.23

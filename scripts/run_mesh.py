@@ -34,10 +34,9 @@
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
 from microgrid_old.techno_ka import techno_ka
-from problems import get_problem
+from problems.problems import get_problem
 
 from pathlib import Path
-# from pymoo.problems import get_problem
 from tqdm import tqdm
 from pygmo import fast_non_dominated_sorting, select_best_N_mo
 from pickle import dump
@@ -53,17 +52,17 @@ def main():
     
     num_runs = 1 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
-    num_final_solutions = 300
 
     # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     select_bat = 3
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
+    
     # experiment_name = bat_name[select_bat]
-    experiment_name = 'zdt4'
+    experiment_name = 'wfg1'
 
-    objective_dim = 2 # Number of objectives
+    objective_dim = 3 # Number of objectives
     position_dim = 10 # Design space dimension
-    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim)
+    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
     
     # position_min_value = np.array([10, 1, 50]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
     # position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
@@ -77,25 +76,25 @@ def main():
     max_fitness_eval = 15000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability =  0.33 # Communication probability
-    mutation_rate = 0.1 # Mutation rate
+    communication_probability = 0.2 # Communication probability
+    mutation_rate = 0.8 # Mutation rate
     personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
-    global_best_attribution_type = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
+    global_guide_method = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
     dm_pool_type = 0 # 0 -> Sampling from memory (S1) | 1 -> Sampling from population (S2) | 2 -> Sampling from memory and population (S3)
     dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
-    config = f"MESH_G{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
-    print(f"Running MESH S{global_best_attribution_type+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
+    config = f"MESH_G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
+    print(f"Running MESH G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
     result = {}
     combined_F = None
     combined_P = None
     for i in tqdm(range(num_runs)):
         params = MeshParameters(objective_dim,
-                                position_dim, position_min_value, position_max_value, 
+                                position_dim, position_min_value, position_max_value,
                                 population_size, memory_size=memory_size,
-                                global_best_attribution_type=global_best_attribution_type,
+                                global_guide_method=global_guide_method,
                                 dm_pool_type=dm_pool_type,
                                 dm_operation_type=dm_operation_type,
                                 communication_probability=communication_probability, mutation_rate=mutation_rate,
@@ -103,7 +102,7 @@ def main():
                                 max_personal_guides=personal_guide_array_size,
                                 random_state=random_state)
         
-        log = None # f"result/{config}_run{i+1}"
+        log = None # f"./scripts/results/{config}_run{i+1}"
         mesh = Mesh(params, func, log_memory=log, num_proc=num_proc)
         mesh.run()
         Pos, Fit = mesh.get_results()
@@ -124,12 +123,12 @@ def main():
         ndf = [[0]]
     else:
         ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_F)
-    n = min(len(ndf[0]), num_final_solutions)
+    n = min(len(ndf[0]), population_size)
     # Get the best indexes based on number of final solutions
     pareto_front = unique_combined_F[ndf[0]]
     best_idx = select_best_N_mo(pareto_front, n)
     result['combined'] = (unique_combined_P[ndf[0]][best_idx], pareto_front[best_idx])
-    with open(f'./scripts/results/{config}.pkl', 'wb') as file:
+    with open(f'./scripts/results/{config}_{objective_dim}_{position_dim}.pkl', 'wb') as file:
         dump(result, file)
 
 if __name__ == '__main__':
