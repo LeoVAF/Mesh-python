@@ -70,7 +70,7 @@ class Battery:
     self.state_of_charge[0] = self.capacity
 
   def charge(self, surplus_energy: int | float, t: int) -> int | float:
-    ''' Charges the battery with surplus power considering the battery efficiency in this operation.
+    ''' Charges the battery with surplus power.
     
     Args:
       surplus_energy (:type:`int | float`): Surplus energy to charge the battery in [kWh].
@@ -85,13 +85,13 @@ class Battery:
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
     # Charge the battery
-    self.state_of_charge[t_soc] = min(state_of_charge + surplus_energy * self.efficiency, self.capacity)
+    self.state_of_charge[t_soc] = min(state_of_charge + surplus_energy, self.capacity)
     self.energy_charged[t] = self.state_of_charge[t_soc] - state_of_charge
     # Return the remaining surplus energy after charging
     return surplus_energy - self.energy_charged[t]
 
   def discharge(self, energy_demanded_adjusted: int | float, inverter_efficiency: int | float, t: int) -> int | float:
-    ''' Discharges the battery to meet demand.
+    ''' Discharges the battery to meet demand considering the battery efficiency in this operation.
     
     Args:
       energy_demanded_adjusted (:type:`int | float`): Energy demanded adjusted by the microgrid inverter to discharge the battery in [kWh].
@@ -107,9 +107,9 @@ class Battery:
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
     # Discharge the battery
-    self.state_of_charge[t_soc] = max(state_of_charge - energy_demanded_adjusted, self.min_soc)
+    self.state_of_charge[t_soc] = max(state_of_charge - energy_demanded_adjusted / self.efficiency, self.min_soc)
     energy_to_discharge = state_of_charge - self.state_of_charge[t_soc]
     self.energy_discharged[t] = energy_to_discharge
-    self.meet_demand[t] = energy_to_discharge * inverter_efficiency
+    self.meet_demand[t] = energy_to_discharge * self.efficiency * inverter_efficiency
     # Return the remaining demand adjusted after discharging
     return energy_demanded_adjusted - self.energy_discharged[t]
