@@ -5,6 +5,7 @@ class PublicGrid:
   
   Args:
     cost_per_kwh (:type:`int | float`): Cost per kWh of the public grid in [US$].
+    tariff_growth (:type:`int | float`): Tariff growth over the course of the microgrid project between 0 and 1.
     credit_rate (:type:`int | float`): Credit rate when sending energy to the public grid between 0 and 1.
 
   Raises:
@@ -14,14 +15,17 @@ class PublicGrid:
 
   def __init__(self,
                cost_per_kwh: int | float = 0.2,
+               tariff_growth: int | float = 0.05,
                credit_rate: int | float = 0):
     
     self.cost_per_kwh: int | float
-    ''' Cost per kWh of the public grid in [US$]. '''
+    ''' Cost per kWh of the public grid in [US$/kWh]. '''
+    self.tariff_growth: int | float
+    ''' Tariff growth over the course of the microgrid project between 0 and 1. '''
     self.credit_rate: int | float
     ''' Compensation percentage when sending energy to the public grid between 0 and 1. '''
-    self.grid_cost: float = 0.0
-    ''' Total public grid cost in [US$]. '''
+    self.operation_cost: float = 0.0
+    ''' Grid purchasing costs in [US$]. '''
     self.energy_purchased: np.ndarray[np.float64] | None = None
     ''' Numpy array to store the energy purchased at each time step in [kWh]. '''
     self.energy_credit: float = 0.0
@@ -34,6 +38,7 @@ class PublicGrid:
     ''' Numpy array to store the energy compensated at each time step in [kWh]. '''
 
     self.cost_per_kwh = cost_per_kwh
+    self.tariff_growth = tariff_growth
     self.credit_rate = credit_rate
 
   def initialize(self, hour_steps: int) -> None:
@@ -78,4 +83,27 @@ class PublicGrid:
     # Buy the remaining energy
     energy_to_purchase = energy_demanded - compensated
     self.energy_purchased[t] = energy_to_purchase
-    self.grid_cost += energy_to_purchase * self.cost_per_kwh
+    self.operation_cost += energy_to_purchase * self.cost_per_kwh
+
+  def economic_analysis(self, project_lifetime: int, discount_rate: int | float) -> float:
+    r''' Performs the economic analysis of the public grid. It is calculated according to the following equation:
+
+    .. math::
+      \sum^{T}_{t=1}\frac{C_{grid}(1 + e)^{t-1}}{(1 + d)^t},
+
+    where:
+    - :math:`T` is the project lifetime in [years];
+    - :math:`C_{grid}` is the simulated purchasing cost during a year in [US$];
+    - :math:`e` is the tariff growth rate during the project lifetime;
+    - :math:`d` is the discount rate during the project lifetime.
+
+    Args:
+      project_lifetime (:type:`int`): The microgrid project lifetime in [years].
+      discout_rate (:type:`int | float`): Discount rate (per year) during the project lifetime.
+    '''
+
+    # Calculate the Net Present Cost for the purchasing from public grid
+    years = np.arange(project_lifetime)
+    future_cost = self.operation_cost * ((1 + discount_rate) ** years)
+    NPV = future_cost / ((1 + self.tariff_growth) ** years)
+    return np.sum(NPV)

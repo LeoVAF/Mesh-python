@@ -17,13 +17,14 @@ class Microgrid:
     solar_radiation (:type:`np.ndarray[np.float64]`): A numpy array with solar radiation in [kWh/m^2].
     wind_velocity (:type:`np.ndarray[np.float64]`): A numpy array with the wind velocity in [m/s].
     wind_height (:type:`int | float`): The height where the wind speed was measured in [m].
-    lifetime (:type:`int | float`): Microgrid lifetime in [year].
-    photovoltaic_panel (:class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` :type:`| None`): A :class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` instance.
-    wind_turbine (:class:`~microgrid.wind_turbine.WindTurbine` :type:`| None`): A :class:`~microgrid.wind_turbine.WindTurbine` instance.
-    battery (:class:`~microgrid.battery.Battery` :type:`| None`): A :class:`~microgrid.battery.Battery` instance.
-    public_grid (:class:`~microgrid.public_grid.PublicGrid` :type:`| None`): A :class:`~microgrid.public_grid.PublicGrid` instance.
-    inverter (:class:`~microgrid.inverter.Inverter` :type:`| None`): A :class:`microgrid.inverter.Inverter` instance.
-    converter (:class:`~microgrid.converter.Converter` :type:`| None`): A :class:`microgrid.converter.Converter` instance.
+    lifetime (:type:`int | float`): Microgrid lifetime project in [year].
+    discount_rate (:type:`int | float`): The discount rate during the lifetime project in [decimal].
+    photovoltaic_panel (:class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` :type:`| None`): A :class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``.
+    wind_turbine (:class:`~microgrid.wind_turbine.WindTurbine` :type:`| None`): A :class:`~microgrid.wind_turbine.WindTurbine` instance. Default is ``None``.
+    battery (:class:`~microgrid.battery.Battery` :type:`| None`): A :class:`~microgrid.battery.Battery` instance. Default is ``None``.
+    public_grid (:class:`~microgrid.public_grid.PublicGrid` :type:`| None`): A :class:`~microgrid.public_grid.PublicGrid` instance. Default is ``None``.
+    inverter (:class:`~microgrid.inverter.Inverter` :type:`| None`): A :class:`microgrid.inverter.Inverter` instance. Default is ``None``.
+    converter (:class:`~microgrid.converter.Converter` :type:`| None`): A :class:`microgrid.converter.Converter` instance. Default is ``None``.
 
   Raises:
     TypeError: If the input is not the expected type.
@@ -37,6 +38,7 @@ class Microgrid:
                wind_velocity: np.ndarray[np.float64],
                wind_height: int | float,
                lifetime: int | float = 24,
+               discount_rate: int | float = 0.15,
                photovoltaic_panel: PhotovoltaicPanel | None = None,
                wind_turbine: WindTurbine | None = None,
                battery: Battery | None = None,
@@ -54,32 +56,32 @@ class Microgrid:
     ''' A numpy array with the wind velocity in [m/s]. '''
     self.wind_height: int | float
     ''' The height where the wind speed was measured in [m]. '''
-    self.lifetime : int | float
-    ''' Microgrid lifetime in [year]. '''
+    self.lifetime: int | float
+    ''' Microgrid project lifetime in [year]. '''
+    self.discount_rate: int | float
+    ''' The discount rate during the lifetime project in [decimal]. '''
     self.photovoltaic_panel: PhotovoltaicPanel | None
-    ''' A :class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` instance. '''
+    ''' A :class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``. '''
     self.wind_turbine: WindTurbine | None
-    ''' A :class:`~microgrid.wind_turbine.WindTurbine` instance. '''
+    ''' A :class:`~microgrid.wind_turbine.WindTurbine` instance. Default is ``None``. '''
     self.battery: Battery | None
-    ''' A :class:`~microgrid.battery.Battery` instance. '''
+    ''' A :class:`~microgrid.battery.Battery` instance. Default is ``None``. '''
     self.public_grid: PublicGrid | None
-    ''' A :class:`~microgrid.public_grid.PublicGrid` instance. '''
+    ''' A :class:`~microgrid.public_grid.PublicGrid` instance. Default is ``None``.'''
     self.inverter: Inverter | None
-    ''' A :class:`microgrid.inverter.Inverter` instance. '''
+    ''' A :class:`microgrid.inverter.Inverter` instance. Default is ``None``.'''
     self.converter: Converter | None
-    ''' A :class:`microgrid.converter.Converter` instance. '''
+    ''' A :class:`microgrid.converter.Converter` instance. Default is ``None``.'''
     self.hour_steps: int
     ''' Number of hour steps in the simulation. '''
-    self.energy_generated: np.ndarray[np.float64] | None = None
-    ''' Energy generated at each time step in [kWh]. '''
     self.surplus_energy: np.ndarray[np.float64]
     ''' Numpy array to store the energy surplus that will be throw away at each time step in [kWh]. '''
+    self.energy_generated: np.ndarray[np.float64] | None = None
+    ''' Energy generated at each time step in [kWh]. Default is ``None``. '''
     # Objectives
-    self.cost: float | None = None
+    self.planning_cost: float = 0.0
     ''' Cost of electricity in [US$/kWh]. '''
-    self.LOLP: float | None = None
-    ''' Loss of load probability between 0 and 1. '''
-    self.RF: float | None = None
+    self.renewable_factor: float = 0.0
     ''' Renewable factor between 0 and 1. '''
 
     self.load = load
@@ -88,6 +90,7 @@ class Microgrid:
     self.wind_velocity = wind_velocity
     self.wind_height = wind_height
     self.lifetime = lifetime
+    self.discount_rate = discount_rate
     self.photovoltaic_panel = photovoltaic_panel
     self.wind_turbine = wind_turbine
     self.battery = battery
@@ -194,24 +197,28 @@ class Microgrid:
   def economic_analysis(self) -> None:
     ''' Performs the economic analysis of the microgrid and its components. '''
 
-    pass
-    # # Perform economic analysis for photovoltaic panels
-    # if self.photovoltaic_panel:
-    #   self.photovoltaic_panel.economic_analysis(self.hour_steps)
-    # # Perform economic analysis for wind turbines
-    # if self.wind_turbine:
-    #   self.wind_turbine.economic_analysis(self.hour_steps)
+    BoP = 0.0
+
+    # Perform economic analysis for converter
+    # if self.converter:
+    #   self.converter.economic_analysis(self.lifetime, self.discount_rate)
     # # Perform economic analysis for inverter
     # if self.inverter:
-    #   self.inverter.economic_analysis(self.hour_steps)
+    #   self.inverter.economic_analysis(self.lifetime, self.discount_rate)
+    # Perform economic analysis for photovoltaic panels
+    if self.photovoltaic_panel:
+      self.planning_cost += self.photovoltaic_panel.economic_analysis(self.lifetime, self.discount_rate)
+    # Perform economic analysis for wind turbines
+    if self.wind_turbine:
+      self.planning_cost += self.wind_turbine.economic_analysis(self.lifetime, self.discount_rate)
     # # Perform economic analysis for battery
     # if self.battery:
-    #   self.battery.economic_analysis(self.hour_steps)
-    # # Perform economic analysis for public grid
-    # if self.public_grid:
-    #   self.public_grid.economic_analysis(self.hour_steps)
+    #   self.battery.economic_analysis(self.lifetime, self.discount_rate)
+    # Perform economic analysis for public grid
+    if self.public_grid:
+      self.planning_cost += self.public_grid.economic_analysis(self.lifetime, self.discount_rate)
 
-  def calculate_rf(self) -> None:
+  def calculate_renewable_factor(self) -> None:
     r''' Calculates the Renewable Factor (RF) according to the following equation:
 
     .. math::
@@ -239,36 +246,9 @@ class Microgrid:
       bat_meet = self.battery.meet_demand
     else:
       bat_meet = 0
-    self.RF = np.sum(pv_meet + wt_meet + bat_meet) / np.sum(self.load)
+    self.renewable_factor = np.sum(pv_meet + wt_meet + bat_meet) / np.sum(self.load)
 
-  def calculate_lolp(self) -> None:
-    ''' Calculates the load of loss probability. '''
-    
-    if self.photovoltaic_panel:
-      if self.wind_turbine:
-        if self.battery:
-          self.LOLP = np.sum(self.load > self.photovoltaic_panel.output_power + self.wind_turbine.output_power + (self.battery.state_of_charge - self.battery.min_soc) + self.public_grid.energy_compensated + self.public_grid.energy_purchased) / self.hour_steps
-        else:
-          self.LOLP = None
-      else:
-        if self.battery:
-          self.LOLP = None
-        else:
-          self.LOLP = None
-    else:
-      if self.wind_turbine:
-        if self.battery:
-          self.LOLP = None
-        else:
-          self.LOLP = None
-      else:
-        if self.battery:
-          self.LOLP = None
-        else:
-          self.LOLP = None
-
-
-  def run(self) -> tuple:
+  def run(self) -> np.ndarray[np.float64]:
     ''' Runs the Microgrid simulation. '''
 
     # Initialize the microgrid components
@@ -280,10 +260,8 @@ class Microgrid:
     # Performs economic analysis
     self.economic_analysis()
     # Calculate the renewable factor
-    self.calculate_rf()
-    # Calculate the load of loss probability
-    self.calculate_lolp()
-    return self.cost, self.LOLP, self.RF
+    self.calculate_renewable_factor()
+    return np.array([self.planning_cost, self.renewable_factor])
 
   def logging(self, file_name: str) -> None:
     ''' Logs the microgrid information into a excel file.
