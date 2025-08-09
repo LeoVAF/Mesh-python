@@ -89,7 +89,7 @@ class PhotovoltaicPanel:
         NPC_{PV} = IC_{PV} + NPV_{OM} + NPV_{repl}.
 
     Where:
-      - :math:`IC_{PV}` is the initial installation cost;
+      - :math:`IC_{PV}` is the installation cost;
       - :math:`NPV_{OM}` is the Net Present Value of annual operation and maintenance costs;
       - :math:`NPV_{repl}` is the Net Present Value of replacement costs during the project lifetime.
 
@@ -98,12 +98,12 @@ class PhotovoltaicPanel:
     .. math::
         IC_{PV} = C_{kWp} \cdot P_{rated}.
 
-    :math:`C_{kWp}` is the cost per kWp of the photovoltaic panels. The operation and maintenance costs are assumed to be constant each year as a percentage of the installation cost:
+    :math:`C_{kWp}` is the cost per kWp of the photovoltaic panels and :math:`P_{rated}` is the rated power of the photovoltaic panel. The operation and maintenance costs are assumed to be constant each year as a percentage of the installation cost:
 
     .. math::
         OM_{annual} = IC_{PV} \cdot \tau_{OM}.
 
-    :math:`\tau_{OM}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the initial installation cost,
+    :math:`\tau_{OM}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost,
     discounted to present value.
 
     Args:
@@ -117,12 +117,14 @@ class PhotovoltaicPanel:
     years = np.arange(project_lifetime)
     # Installation cost (CAPEX)
     installation_cost = self.cost_per_kwp * self.rated_power
-    # O&M costs over the project lifetime (discounted)
+    # Installation cost (CAPEX) - year 0 only
+    NPC = installation_cost
+    # O&M costs (discounted)
     OM_cost = (self.om_cost_rate * installation_cost) / ((1 + discount_rate) ** years)
-    # Replacement costs
-    NPV_repl = 0.0
+    NPC += np.sum(OM_cost)
+    # Replacement costs (discounted)
     replacement_years = np.arange(self.lifetime, project_lifetime, self.lifetime)
     if len(replacement_years) > 0:
         NPV_repl = installation_cost / ((1 + discount_rate) ** replacement_years)
-    # Return total NPC
-    return np.sum(installation_cost + OM_cost + NPV_repl)
+        NPC += np.sum(NPV_repl)
+    return NPC

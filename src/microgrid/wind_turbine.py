@@ -4,14 +4,13 @@ class WindTurbine:
   ''' Class representing a DC wind turbine in a microgrid system.
   
   Args:
-    cost_per_kwp (:type:`int | float`): Wind turbine cost per kWp installed in [US$/kWp].
+    cost_per_kw (:type:`int | float`): Cost of the wind turbine per unit of rated power in [US$/kW].
     om_cost_rate (:type:`int | float`): Operation and maintenance cost rate for photovoltaic panels based on installation costs in [decimal].
     rated_power (:type:`int | float`): Rated power of the combined wind turbines in [kW].
     rated_wind_speed (:type:`int | float`): The rated wind speed in [m/s].
     cut_in (:type:`int | float`): The cut in speed in [m/s].
     cut_out (:type:`int | float`): The cut out speed in [m/s].
     height (:type:`int | float`): The wind turbine hub height in [m].
-    efficiency (:type:`int | float`): The wind turbine efficiency between 0 and 1.
     lifetime (:type:`int | float`): The wind turbine lifetime in [year].
 
   Raises:
@@ -20,18 +19,17 @@ class WindTurbine:
   '''
 
   def __init__(self,
-               cost_per_kwp: int | float,
+               cost_per_kw: int | float,
                om_cost_rate: int | float = 0.02,
                rated_power: int | float = 5,
                rated_wind_speed: int | float = 12.5,
                cut_in: int | float = 3,
                cut_out: int | float = 20,
                height: int | float = 30,
-               efficiency: int | float = 0.95,
                lifetime: int | float = 24):
     
-    self.cost_per_kwp: int | float
-    ''' Wind turbine cost per kWp installed in [US$/kWp]. '''
+    self.cost_per_kw: int | float
+    ''' Cost of the wind turbine per unit of rated power in [US$/kW]. '''
     self.om_cost_rate: int | float
     ''' Operation and maintenance cost rate for photovoltaic panels based on installation costs in [decimal]. '''
     self.rated_power: int | float
@@ -44,8 +42,6 @@ class WindTurbine:
     ''' The cut out speed in [m/s]. '''
     self.height: int | float
     ''' The wind turbine hub height in [m]. '''
-    self.efficiency: int | float
-    ''' The wind turbines efficiency between 0 and 1. '''
     self.lifetime: int | float
     ''' The wind turbines lifetime in [year]. '''
     self.operation_cost: float = 0.0
@@ -55,14 +51,13 @@ class WindTurbine:
     self.meet_demand: np.ndarray[np.float64] | None = None
     ''' Energy that will effectively meet demand in [kWh]. Default is ``None``. '''
 
-    self.cost_per_kwp = cost_per_kwp
+    self.cost_per_kw = cost_per_kw
     self.om_cost_rate = om_cost_rate
     self.rated_power = rated_power
     self.rated_wind_speed = rated_wind_speed
     self.cut_in = cut_in
     self.cut_out = cut_out
     self.height = height
-    self.efficiency = efficiency
     self.lifetime = lifetime
 
   def initialize(self, hour_steps: int) -> None:
@@ -85,17 +80,17 @@ class WindTurbine:
         P(v) =
         \begin{cases}
           0, & v < v_{ci}; \\
-          P_r \cdot \left(\frac{v^3 - v_{ci}^3}{v_r^3 - v_{ci}^3}\right), & v_{ci} \leq v < v_r; \\
-          P_r, & v_r \leq v \leq v_{co}; \\
+          P_{rated} \cdot \left(\frac{v^3 - v_{ci}^3}{v_{rated}^3 - v_{ci}^3}\right), & v_{ci} \leq v < v_{rated}; \\
+          P_{rated}, & v_{rated} \leq v \leq v_{co}; \\
           0, & v > v_{co}.
         \end{cases}
 
     Where:
       - :math:`v` is the wind speed at the hub height in [m/s];
       - :math:`v_{ci}` is the cut-in wind speed in [m/s];
-      - :math:`v_r` is the rated wind speed in [m/s];
+      - :math:`v_{rated}` is the rated wind speed in [m/s];
       - :math:`v_{co}` is the cut-out wind speed in [m/s];
-      - :math:`P_r` is the total rated power of all turbines combined [kW].
+      - :math:`P_{rated}` is the total rated power of all turbines combined [kW].
 
     Args:
         wind_speed (:type:`np.ndarray[np.float64]`): A numpy array with the wind speed measurements at the reference height.
@@ -120,21 +115,21 @@ class WindTurbine:
         NPC_{WT} = IC_{WT} + NPV_{OM} + NPV_{repl}.
 
     Where:
-      - :math:`IC_{WT}` is the initial installation cost;
+      - :math:`IC_{WT}` is the installation cost;
       - :math:`NPV_{OM}` is the Net Present Value of annual operation and maintenance costs;
       - :math:`NPV_{repl}` is the Net Present Value of replacement costs during the project lifetime.
 
     The installation cost is calculated as:
 
     .. math::
-        IC_{WT} = C_{kWp} \cdot P_{rated}.
+        IC_{WT} = C_{kW} \cdot P_{rated}.
 
-    :math:`C_{kWp}` is the cost per kWp of the wind turbines. The operation and maintenance costs are assumed to be constant each year as a percentage of the installation cost:
+    :math:`C_{kW}` is the cost per kW of nominal capacity for the wind turbines and :math:`P_{rated}` is the rated power of the wind turbines. The operation and maintenance costs are assumed to be constant each year as a percentage of the installation cost:
 
     .. math::
         OM_{annual} = IC_{WT} \cdot \tau_{OM}.
 
-    :math:`\tau_{OM}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the initial installation cost,
+    :math:`\tau_{OM}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost,
     discounted to present value.
 
     Args:
@@ -147,13 +142,15 @@ class WindTurbine:
     
     years = np.arange(project_lifetime)
     # Installation cost (CAPEX)
-    installation_cost = self.cost_per_kwp * self.rated_power
-    # O&M costs over the project lifetime (discounted)
+    installation_cost = self.cost_per_kw * self.rated_power
+    # Installation cost (CAPEX) - year 0 only
+    NPC = installation_cost
+    # O&M costs (discounted)
     OM_cost = (self.om_cost_rate * installation_cost) / ((1 + discount_rate) ** years)
-    # Replacement costs
-    NPV_repl = 0.0
+    NPC += np.sum(OM_cost)
+    # Replacement costs (discounted)
     replacement_years = np.arange(self.lifetime, project_lifetime, self.lifetime)
     if len(replacement_years) > 0:
         NPV_repl = installation_cost / ((1 + discount_rate) ** replacement_years)
-    # Return total NPC
-    return np.sum(installation_cost + OM_cost + NPV_repl)
+        NPC += np.sum(NPV_repl)
+    return NPC

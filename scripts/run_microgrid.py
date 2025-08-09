@@ -18,16 +18,13 @@ pv_om_cost_rate = 0.02
 pv_rated_power = 50
 pv_lifetime = 25
 
-pv_efficiency = 0.95
-
 # Wind turbine input
-wt_cost_per_kwp = 900
+wt_cost_per_kw = 900
 wt_om_cost_rate = 0.02
 wt_rated_power = 30
 wt_rated_wind_speed = 15
 cut_in = 2.5
 cut_out = 40
-wt_efficiency = 0.95
 wt_lifetime = 20
 wt_height = 30
 
@@ -49,12 +46,15 @@ grid_tariff_growth = 0.05
 grid_credit_rate = 0
 
 # Inverter input
-inverter_cost = 15000
+inverter_cost_per_kw = 200
+inverter_om_cost_rate = 0.02
+inverter_scaling_cost = 0.95
 inverter_efficiency = 0.95
 inverter_lifetime = 10
 
 # Converter input
-converter_cost = 10000
+converter_cost_per_kw = 150
+converter_om_cost_rate = 0.02
 converter_efficiency = 0.95
 converter_lifetime = 15
 
@@ -70,14 +70,13 @@ photovoltaic_panel = PhotovoltaicPanel(cost_per_kwp=pv_cost_per_kwp,
                                        om_cost_rate=pv_om_cost_rate,
                                        rated_power=pv_rated_power,
                                        lifetime=pv_lifetime)
-wind_turbine = WindTurbine(cost_per_kwp=wt_cost_per_kwp,
+wind_turbine = WindTurbine(cost_per_kw=wt_cost_per_kw,
                            om_cost_rate=wt_om_cost_rate,
                            rated_power=wt_rated_power,
                            rated_wind_speed=wt_rated_wind_speed,
                            cut_in=cut_in,
                            cut_out=cut_out,
                            height=wt_height,
-                           efficiency=wt_efficiency,
                            lifetime=wt_lifetime)
 battery = Battery(capacity=bat_cap,
                   cost_per_kwh=bat_cap_cost_list[select_bat] * exchange_rate,
@@ -87,10 +86,13 @@ battery = Battery(capacity=bat_cap,
 public_grid = PublicGrid(cost_per_kwh=grid_cost_per_kwh,
                          tariff_growth=grid_tariff_growth,
                          credit_rate=grid_credit_rate)
-inverter = Inverter(cost=inverter_cost,
+inverter = Inverter(cost_per_kw=inverter_cost_per_kw,
+                    om_cost_rate=inverter_om_cost_rate,
+                    scaling_cost=inverter_scaling_cost,
                     efficiency=inverter_efficiency,
                     lifetime=inverter_lifetime)
-converter = Converter(cost=converter_cost,
+converter = Converter(cost_per_kw=converter_cost_per_kw,
+                      om_cost_rate=converter_om_cost_rate,
                       efficiency=converter_efficiency,
                       lifetime=converter_lifetime)
 

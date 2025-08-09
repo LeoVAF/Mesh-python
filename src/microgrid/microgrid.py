@@ -197,26 +197,29 @@ class Microgrid:
   def economic_analysis(self) -> None:
     ''' Performs the economic analysis of the microgrid and its components. '''
 
-    BoP = 0.0
-
-    # Perform economic analysis for converter
-    # if self.converter:
-    #   self.converter.economic_analysis(self.lifetime, self.discount_rate)
-    # # Perform economic analysis for inverter
-    # if self.inverter:
-    #   self.inverter.economic_analysis(self.lifetime, self.discount_rate)
+    # Get the nominal power of the Distributed Energy Resources
+    der_rated_power = 0.0
     # Perform economic analysis for photovoltaic panels
     if self.photovoltaic_panel:
       self.planning_cost += self.photovoltaic_panel.economic_analysis(self.lifetime, self.discount_rate)
+      der_rated_power += self.photovoltaic_panel.rated_power
     # Perform economic analysis for wind turbines
     if self.wind_turbine:
       self.planning_cost += self.wind_turbine.economic_analysis(self.lifetime, self.discount_rate)
-    # # Perform economic analysis for battery
-    # if self.battery:
+      der_rated_power += self.wind_turbine.rated_power
+    # Perform economic analysis for battery
+    if self.battery:
     #   self.battery.economic_analysis(self.lifetime, self.discount_rate)
+      pass
     # Perform economic analysis for public grid
     if self.public_grid:
       self.planning_cost += self.public_grid.economic_analysis(self.lifetime, self.discount_rate)
+    # Perform economic analysis for inverter
+    if self.inverter:
+      self.planning_cost += self.inverter.economic_analysis(der_rated_power, self.lifetime, self.discount_rate)
+    # Perform economic analysis for converter
+    if self.converter:
+      self.planning_cost += self.converter.economic_analysis(der_rated_power, self.lifetime, self.discount_rate)
 
   def calculate_renewable_factor(self) -> None:
     r''' Calculates the Renewable Factor (RF) according to the following equation:
