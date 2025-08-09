@@ -5,7 +5,6 @@ class WindTurbine:
   
   Args:
     cost_per_kw (:type:`int | float`): Cost of the wind turbine per unit of rated power in [US$/kW].
-    om_cost_rate (:type:`int | float`): Operation and maintenance cost rate for photovoltaic panels based on installation costs in [decimal].
     rated_power (:type:`int | float`): Rated power of the combined wind turbines in [kW].
     rated_wind_speed (:type:`int | float`): The rated wind speed in [m/s].
     cut_in (:type:`int | float`): The cut in speed in [m/s].
@@ -20,7 +19,6 @@ class WindTurbine:
 
   def __init__(self,
                cost_per_kw: int | float,
-               om_cost_rate: int | float = 0.02,
                rated_power: int | float = 5,
                rated_wind_speed: int | float = 12.5,
                cut_in: int | float = 3,
@@ -30,8 +28,6 @@ class WindTurbine:
     
     self.cost_per_kw: int | float
     ''' Cost of the wind turbine per unit of rated power in [US$/kW]. '''
-    self.om_cost_rate: int | float
-    ''' Operation and maintenance cost rate for photovoltaic panels based on installation costs in [decimal]. '''
     self.rated_power: int | float
     ''' Rated power of the wind turbine in [kW]. '''
     self.rated_wind_speed: int | float
@@ -52,7 +48,6 @@ class WindTurbine:
     ''' Energy that will effectively meet demand in [kWh]. Default is ``None``. '''
 
     self.cost_per_kw = cost_per_kw
-    self.om_cost_rate = om_cost_rate
     self.rated_power = rated_power
     self.rated_wind_speed = rated_wind_speed
     self.cut_in = cut_in
@@ -106,34 +101,39 @@ class WindTurbine:
     self.output_power[mask] = np.minimum(turbine_power, self.rated_power)
 
   
-  def economic_analysis(self, project_lifetime: int, discount_rate: int | float) -> float:
+  def economic_analysis(self, project_lifetime: int | float, maintenance_cost_rate: int | float, discount_rate: int | float) -> float:
     r''' Performs the economic analysis of the wind turbine using the Net Present Cost (NPC) approach.
 
     The total NPC of the wind turbines is given by:
 
     .. math::
-        NPC_{WT} = IC_{WT} + NPV_{OM} + NPV_{repl}.
+        NPC_{wt} = IC_{wt} + NPV_{om} + NPV_{repl}.
 
     Where:
-      - :math:`IC_{WT}` is the installation cost;
-      - :math:`NPV_{OM}` is the Net Present Value of annual operation and maintenance costs;
+      - :math:`IC_{wt}` is the installation cost;
+      - :math:`NPV_{om}` is the Net Present Value of annual operation and maintenance costs;
       - :math:`NPV_{repl}` is the Net Present Value of replacement costs during the project lifetime.
 
     The installation cost is calculated as:
 
     .. math::
-        IC_{WT} = C_{kW} \cdot P_{rated}.
+        IC_{wt} = C_{kw} \cdot P_{rated}.
 
-    :math:`C_{kW}` is the cost per kW of nominal capacity for the wind turbines and :math:`P_{rated}` is the rated power of the wind turbines. The operation and maintenance costs are assumed to be constant each year as a percentage of the installation cost:
+    :math:`C_{kw}` is the cost per kW of nominal capacity for the wind turbines and :math:`P_{rated}` is the rated power of the wind turbines. The operation and maintenance costs are calculated as:
 
     .. math::
-        OM_{annual} = IC_{WT} \cdot \tau_{OM}.
+        NPV_{om} = \sum^{T-1}_{t=0}\frac{IC_{wt} \cdot \tau_{om}}{(1 + d)^t}.
 
-    :math:`\tau_{OM}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost,
-    discounted to present value.
+    :math:`T` is the project lifetime in [years], :math:`d` is the discount rate per year (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost, discounted to present value according to the following equation:
+    
+    .. math::
+        NPV_{repl} = \sum_{t \in T_{repl}}\frac{IC_{wt}}{(1 + d)^t},
+
+    where :math:`T_{repl}` is the set of replacement years.
 
     Args:
-        project_lifetime (:type:`int`): Total project lifetime in [years].
+        project_lifetime (:type:`int | float`): Total project lifetime in [years].
+        maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
         discount_rate (:type:`int | float`): Discount rate (per year) during the project lifetime in [decimal].
 
     Returns:
@@ -146,7 +146,7 @@ class WindTurbine:
     # Installation cost (CAPEX) - year 0 only
     NPC = installation_cost
     # O&M costs (discounted)
-    OM_cost = (self.om_cost_rate * installation_cost) / ((1 + discount_rate) ** years)
+    OM_cost = (installation_cost * maintenance_cost_rate) / ((1 + discount_rate) ** years)
     NPC += np.sum(OM_cost)
     # Replacement costs (discounted)
     replacement_years = np.arange(self.lifetime, project_lifetime, self.lifetime)

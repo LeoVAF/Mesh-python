@@ -18,6 +18,7 @@ class Microgrid:
     wind_velocity (:type:`np.ndarray[np.float64]`): A numpy array with the wind velocity in [m/s].
     wind_height (:type:`int | float`): The height where the wind speed was measured in [m].
     lifetime (:type:`int | float`): Microgrid lifetime project in [year].
+    maintenance_cost_rate (:type:`int | float`): Operations and maintenance cost rate for installed componentes based on installation costs in [decimal].
     discount_rate (:type:`int | float`): The discount rate during the lifetime project in [decimal].
     photovoltaic_panel (:class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` :type:`| None`): A :class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``.
     wind_turbine (:class:`~microgrid.wind_turbine.WindTurbine` :type:`| None`): A :class:`~microgrid.wind_turbine.WindTurbine` instance. Default is ``None``.
@@ -38,6 +39,7 @@ class Microgrid:
                wind_velocity: np.ndarray[np.float64],
                wind_height: int | float,
                lifetime: int | float = 24,
+               maintenance_cost_rate: int | float = 0.02,
                discount_rate: int | float = 0.15,
                photovoltaic_panel: PhotovoltaicPanel | None = None,
                wind_turbine: WindTurbine | None = None,
@@ -58,6 +60,8 @@ class Microgrid:
     ''' The height where the wind speed was measured in [m]. '''
     self.lifetime: int | float
     ''' Microgrid project lifetime in [year]. '''
+    self.maintenance_cost_rate: int | float
+    ''' Operations and maintenance cost rate for installed componentes based on installation costs in [decimal]. '''
     self.discount_rate: int | float
     ''' The discount rate during the lifetime project in [decimal]. '''
     self.photovoltaic_panel: PhotovoltaicPanel | None
@@ -90,6 +94,7 @@ class Microgrid:
     self.wind_velocity = wind_velocity
     self.wind_height = wind_height
     self.lifetime = lifetime
+    self.maintenance_cost_rate = maintenance_cost_rate
     self.discount_rate = discount_rate
     self.photovoltaic_panel = photovoltaic_panel
     self.wind_turbine = wind_turbine
@@ -201,25 +206,24 @@ class Microgrid:
     der_rated_power = 0.0
     # Perform economic analysis for photovoltaic panels
     if self.photovoltaic_panel:
-      self.planning_cost += self.photovoltaic_panel.economic_analysis(self.lifetime, self.discount_rate)
+      self.planning_cost += self.photovoltaic_panel.economic_analysis(self.lifetime, self.maintenance_cost_rate, self.discount_rate)
       der_rated_power += self.photovoltaic_panel.rated_power
     # Perform economic analysis for wind turbines
     if self.wind_turbine:
-      self.planning_cost += self.wind_turbine.economic_analysis(self.lifetime, self.discount_rate)
+      self.planning_cost += self.wind_turbine.economic_analysis(self.lifetime, self.maintenance_cost_rate, self.discount_rate)
       der_rated_power += self.wind_turbine.rated_power
     # Perform economic analysis for battery
     if self.battery:
-    #   self.battery.economic_analysis(self.lifetime, self.discount_rate)
-      pass
+      self.planning_cost += self.battery.economic_analysis(self.lifetime, self.maintenance_cost_rate, self.discount_rate)
     # Perform economic analysis for public grid
     if self.public_grid:
       self.planning_cost += self.public_grid.economic_analysis(self.lifetime, self.discount_rate)
     # Perform economic analysis for inverter
     if self.inverter:
-      self.planning_cost += self.inverter.economic_analysis(der_rated_power, self.lifetime, self.discount_rate)
+      self.planning_cost += self.inverter.economic_analysis(der_rated_power, self.lifetime, self.maintenance_cost_rate, self.discount_rate)
     # Perform economic analysis for converter
     if self.converter:
-      self.planning_cost += self.converter.economic_analysis(der_rated_power, self.lifetime, self.discount_rate)
+      self.planning_cost += self.converter.economic_analysis(der_rated_power, self.lifetime, self.maintenance_cost_rate, self.discount_rate)
 
   def calculate_renewable_factor(self) -> None:
     r''' Calculates the Renewable Factor (RF) according to the following equation:

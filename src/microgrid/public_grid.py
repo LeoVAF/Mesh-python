@@ -85,7 +85,7 @@ class PublicGrid:
     self.energy_purchased[t] = energy_to_purchase
     self.operation_cost += energy_to_purchase * self.cost_per_kwh
 
-  def economic_analysis(self, project_lifetime: int, discount_rate: int | float) -> float:
+  def economic_analysis(self, project_lifetime: int | float, discount_rate: int | float) -> float:
     r''' Performs the economic analysis of the public grid. It is calculated according to the following equation:
 
     .. math::
@@ -98,7 +98,7 @@ class PublicGrid:
     - :math:`d` is the discount rate during the project lifetime.
 
     Args:
-      project_lifetime (:type:`int`): The microgrid project lifetime in [years].
+      project_lifetime (:type:`int | float`): The microgrid project lifetime in [years].
       discout_rate (:type:`int | float`): Discount rate (per year) during the project lifetime.
     '''
 

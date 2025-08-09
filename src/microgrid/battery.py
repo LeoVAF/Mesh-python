@@ -40,6 +40,10 @@ class Battery:
     ''' Current state of charge in [kWh]. '''
     self.min_soc: int | float
     ''' Minimum battery state of charge in [kWh]. '''
+    self.cycles: float = 0.0
+    ''' Number of discharge cycles performed by the battery during the simulation. '''
+    self.energy_per_cycle: float
+    ''' Energy required to complete a discharge cycle in [kWh]. '''
     self.energy_charged: np.ndarray[np.float64] | None = None
     ''' Numpy array to store the energy charged at each time step in [kWh]. '''
     self.energy_discharged: np.ndarray[np.float64] | None = None
@@ -52,6 +56,7 @@ class Battery:
     self.efficiency = efficiency
     self.lifetime = lifetime
     self.number_of_cycles = number_of_cycles
+    self.energy_per_cycle = capacity * depth_of_discharge
     self.depth_of_discharge = depth_of_discharge
     self.min_soc = capacity * (1 - depth_of_discharge)
 
@@ -110,6 +115,65 @@ class Battery:
     self.state_of_charge[t_soc] = max(state_of_charge - energy_demanded_adjusted / self.efficiency, self.min_soc)
     energy_to_discharge = state_of_charge - self.state_of_charge[t_soc]
     self.energy_discharged[t] = energy_to_discharge
+    # Update the number of cycles
+    self.cycles += energy_to_discharge / self.energy_per_cycle
+    # The energy that effectively meets the demand
     self.meet_demand[t] = energy_to_discharge * self.efficiency * inverter_efficiency
     # Return the remaining demand adjusted after discharging
     return energy_demanded_adjusted - self.energy_discharged[t]
+
+  def economic_analysis(self, project_lifetime: int | float, maintenance_cost_rate: int | float, discount_rate: int | float) -> float:
+    r''' Performs the economic analysis of the battery using the Net Present Cost (NPC) approach.
+
+    The total NPC of the battery is given by:
+
+    .. math::
+        NPC_{bat} = IC_{bat} + NPV_{om} + NPV_{repl}.
+
+    Where:
+      - :math:`IC_{bat}` is the installation cost;
+      - :math:`NPV_{om}` is the Net Present Value of annual operation and maintenance costs;
+      - :math:`NPV_{repl}` is the Net Present Value of replacement costs during the project lifetime.
+
+    The installation cost is calculated as:
+
+    .. math::
+        IC_{bat} = C_{kwh} \cdot E_{bat}.
+
+    :math:`C_{kwh}` is the cost per kWh of nominal capacity for the battery and :math:`E_{bat}` is the nominal capacity of the battery. The operation and maintenance costs are calculated as:
+
+    .. math::
+        NPV_{om} = \sum^{T-1}_{t=0}\frac{IC_{bat} \cdot \tau_{om}}{(1 + d)^t}.
+
+    :math:`T` is the project lifetime in [years], :math:`d` is the discount rate per year (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost, discounted to present value according to the following equation:
+    
+    .. math::
+        NPV_{repl} = \sum_{t \in T_{repl}}\frac{IC_{bat}}{(1 + d)^t},
+
+    where :math:`T_{repl}` is the set of replacement years.
+
+    Args:
+        project_lifetime (:type:`int | float`): Total project lifetime in [years].
+        maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
+        discount_rate (:type:`int | float`): Discount rate (per year) during the project lifetime in [decimal].
+
+    Returns:
+        :type:`float`: Total Net Present Cost of the battery in present value in [US$].
+    '''
+
+    years = np.arange(project_lifetime)
+    # Installation cost (CAPEX)
+    installation_cost = self.cost_per_kwh * self.capacity
+    NPC = installation_cost
+    # O&M costs (discounted)
+    OM_cost = (installation_cost * maintenance_cost_rate) / ((1 + discount_rate) ** years)
+    NPC += np.sum(OM_cost)
+    # Replacement costs (discounted)
+    t_repl = min(self.lifetime, self.number_of_cycles / self.cycles)
+    replacement_years = np.arange(t_repl, project_lifetime, t_repl)
+    if len(replacement_years) > 0:
+        NPV_repl = installation_cost / ((1 + discount_rate) ** replacement_years)
+        NPC += np.sum(NPV_repl)
+    # Degradation costs
+
+    return NPC

@@ -5,7 +5,6 @@ class PhotovoltaicPanel:
   
   Args:
     cost_per_kwp (:type:`int | float`): Photovoltaic panels cost per kWp installed in [US$/kWp].
-    om_cost_rate (:type:`int | float`): Operation and maintenance cost rate for photovoltaic panels based on installation costs in [decimal].
     rated_power (:type:`int | float`): The maximum power output of the photovoltaic panels in [kW].
     lifetime (:type:`int | float`): The photovoltaic panels lifetime in [year].
   
@@ -16,14 +15,11 @@ class PhotovoltaicPanel:
 
   def __init__(self,
                cost_per_kwp: int | float,
-               om_cost_rate: int | float = 0.02,
                rated_power: int | float = 30,
                lifetime: int | float = 20):
     
     self.cost_per_kwp: int | float
     ''' Photovoltaic panel cost per kWp installed in [US$/kWp]. '''
-    self.om_cost_rate: int | float
-    ''' Operation and maintenance cost rate for photovoltaic panels based on installation costs in [decimal]. '''
     self.rated_power: int | float
     ''' Maximum power output of the photovoltaic panel in [kW]. '''
     self.lifetime: int | float
@@ -34,7 +30,6 @@ class PhotovoltaicPanel:
     ''' Energy that will effectively meet demand in [kWh]. Default is ``None``. '''
 
     self.cost_per_kwp = cost_per_kwp
-    self.om_cost_rate = om_cost_rate
     self.rated_power = rated_power
     self.lifetime = lifetime
 
@@ -80,34 +75,39 @@ class PhotovoltaicPanel:
     cell_temperature = temperature + 0.03125 * solar_radiation # Cell temperature
     self.output_power[:] = np.minimum(self.rated_power * (solar_radiation/irradiance_ref) * (1 + power_temperature_coefficient*(cell_temperature - temperature_ref)), self.rated_power)
 
-  def economic_analysis(self, project_lifetime: int, discount_rate: int | float) -> float:
+  def economic_analysis(self, project_lifetime: int | float, maintenance_cost_rate: int | float, discount_rate: int | float) -> float:
     r''' Performs the economic analysis of the photovoltaic panels using the Net Present Cost (NPC) approach.
 
     The total NPC of the photovoltaic system is given by:
 
     .. math::
-        NPC_{PV} = IC_{PV} + NPV_{OM} + NPV_{repl}.
+        NPC_{pv} = IC_{pv} + NPV_{om} + NPV_{repl}.
 
     Where:
-      - :math:`IC_{PV}` is the installation cost;
-      - :math:`NPV_{OM}` is the Net Present Value of annual operation and maintenance costs;
+      - :math:`IC_{pv}` is the installation cost;
+      - :math:`NPV_{om}` is the Net Present Value of annual operation and maintenance costs;
       - :math:`NPV_{repl}` is the Net Present Value of replacement costs during the project lifetime.
 
     The installation cost is calculated as:
 
     .. math::
-        IC_{PV} = C_{kWp} \cdot P_{rated}.
+        IC_{pv} = C_{kwp} \cdot P_{rated}.
 
-    :math:`C_{kWp}` is the cost per kWp of the photovoltaic panels and :math:`P_{rated}` is the rated power of the photovoltaic panel. The operation and maintenance costs are assumed to be constant each year as a percentage of the installation cost:
+    :math:`C_{kwp}` is the cost per kWp of the photovoltaic panels and :math:`P_{rated}` is the rated power of the photovoltaic panel. The operation and maintenance costs are calculated as:
 
     .. math::
-        OM_{annual} = IC_{PV} \cdot \tau_{OM}.
+        NPV_{om} = \sum^{T-1}_{t=0}\frac{IC_{pv} \cdot \tau_{om}}{(1 + d)^t}.
 
-    :math:`\tau_{OM}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost,
-    discounted to present value.
+    :math:`T` is the project lifetime in [years], :math:`d` is the discount rate per year (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost, discounted to present value according to the following equation:
+    
+    .. math::
+        NPV_{repl} = \sum_{t \in T_{repl}}\frac{IC_{pv}}{(1 + d)^t},
+
+    where :math:`T_{repl}` is the set of replacement years.
 
     Args:
-        project_lifetime (:type:`int`): Total project lifetime in [years].
+        project_lifetime (:type:`int | float`): Total project lifetime in [years].
+        maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
         discount_rate (:type:`int | float`): Discount rate (per year) during the project lifetime in [decimal].
 
     Returns:
@@ -120,7 +120,7 @@ class PhotovoltaicPanel:
     # Installation cost (CAPEX) - year 0 only
     NPC = installation_cost
     # O&M costs (discounted)
-    OM_cost = (self.om_cost_rate * installation_cost) / ((1 + discount_rate) ** years)
+    OM_cost = (installation_cost * maintenance_cost_rate) / ((1 + discount_rate) ** years)
     NPC += np.sum(OM_cost)
     # Replacement costs (discounted)
     replacement_years = np.arange(self.lifetime, project_lifetime, self.lifetime)

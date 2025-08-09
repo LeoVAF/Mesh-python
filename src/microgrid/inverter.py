@@ -5,8 +5,7 @@ class Inverter():
   
   Args:
     cost_per_kw (:type:`int | float`): Inverter cost per kW of nominal capacity in [US$/kW].
-    om_cost_rate (:type:`int | float`): Operation and maintenance cost rate for inverter based on installation costs in [decimal].
-    scaling_cost (:type:`int | float`): Scaling cost factor for inverter, where a higher power results in a lower cost per kW in [decimal].
+    cost_scale (:type:`int | float`): Cost scale factor for inverter, where a higher power results in a lower cost per kW in [decimal].
     efficiency (:type:`int | float`): Inverter efficiency between 0 and 1.
     lifetime (:type:`int | float`): Inverter lifetime in [year].
   
@@ -17,16 +16,13 @@ class Inverter():
 
   def __init__(self,
                cost_per_kw: int | float,
-               om_cost_rate: int | float = 0.02,
-               scaling_cost: int | float = 0.95,
+               cost_scale: int | float = 0.95,
                efficiency: int | float = 0.95,
-               lifetime = 10):
+               lifetime: int | float = 10):
 
     self.cost_per_kw: int | float
     ''' Inverter cost per kW of nominal capacity in [US$/kW]. '''
-    self.om_cost_rate: int | float
-    ''' Operation and maintenance cost rate for inverter based on installation costs in [decimal]. '''
-    self.scaling_cost: int | float
+    self.cost_scale: int | float
     ''' Scaling cost factor for inverter, where a higher power results in a lower cost per kW in [decimal]. '''
     self.efficiency: int | float
     ''' Inverter efficiency between 0 and 1. '''
@@ -36,40 +32,44 @@ class Inverter():
     ''' Total costs of the inverter in the microgrid during the operation simulation in [US$]. '''
 
     self.cost_per_kw = cost_per_kw
-    self.om_cost_rate = om_cost_rate
-    self.scaling_cost = scaling_cost
+    self.cost_scale = cost_scale
     self.efficiency = efficiency
     self.lifetime = lifetime
 
-  def economic_analysis(self, rated_power: int | float , project_lifetime: int, discount_rate: int | float) -> float:
+  def economic_analysis(self, rated_power: int | float , project_lifetime: int | float, maintenance_cost_rate: int | float, discount_rate: int | float) -> float:
     r''' Performs the economic analysis of the inverter using the Net Present Cost (NPC) approach.
 
     The total NPC of the inverter is given by:
 
     .. math::
-        NPC_{inv} = IC_{inv} + NPV_{OM} + NPV_{repl}.
+        NPC_{inv} = IC_{inv} + NPV_{om} + NPV_{repl}.
 
     Where:
       - :math:`IC_{inv}` is the installation cost;
-      - :math:`NPV_{OM}` is the Net Present Value of annual operation and maintenance costs;
+      - :math:`NPV_{om}` is the Net Present Value of annual operation and maintenance costs;
       - :math:`NPV_{repl}` is the Net Present Value of replacement costs during the project lifetime.
 
     The installation cost is calculated as:
 
     .. math::
-        IC_{inv} = C_{kW} \cdot P_{rated}^{C_s}.
+        IC_{inv} = C_{kw} \cdot P_{rated}^{\tau_{inv}}.
 
-    :math:`C_{kW}` is the cost per kW of nominal capacity for the inverter, :math:`P_{rated}` is the rated power of the distributed energy resources and :math:`C_s` is the inverter economies of scale. The operation and maintenance costs are assumed to be constant each year as a percentage of the installation cost:
+    :math:`C_{kw}` is the cost per kW of nominal capacity for the inverter, :math:`P_{rated}` is the rated power of the distributed energy resources and :math:`\tau` is the inverter economies of scale. The operation and maintenance costs are calculated as:
 
     .. math::
-        OM_{annual} = IC_{inv} \cdot \tau_{OM}.
+        NPV_{om} = \sum^{T-1}_{t=0}\frac{IC_{inv} \cdot \tau_{om}}{(1 + d)^t}.
 
-    :math:`\tau_{OM}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the initial installation cost,
-    discounted to present value.
+    :math:`T` is the project lifetime in [years], :math:`d` is the discount rate per year (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost, discounted to present value according to the following equation:
+    
+    .. math::
+        NPV_{repl} = \sum_{t \in T_{repl}}\frac{IC_{inv}}{(1 + d)^t},
+
+    where :math:`T_{repl}` is the set of replacement years.
 
     Args:
         rated_power (:type:`int | float`): The power supported by the inverter in [kW].
-        project_lifetime (:type:`int`): Total project lifetime in [years].
+        project_lifetime (:type:`int | float`): Total project lifetime in [years].
+        maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
         discount_rate (:type:`int | float`): Discount rate (per year) during the project lifetime in [decimal].
 
     Returns:
@@ -78,10 +78,10 @@ class Inverter():
     
     years = np.arange(project_lifetime)
     # Installation cost (CAPEX)
-    installation_cost = self.cost_per_kw * (rated_power ** self.scaling_cost)
+    installation_cost = self.cost_per_kw * (rated_power ** self.cost_scale)
     NPC = installation_cost
     # O&M costs (discounted)
-    OM_cost = (self.om_cost_rate * installation_cost) / ((1 + discount_rate) ** years)
+    OM_cost = (installation_cost * maintenance_cost_rate) / ((1 + discount_rate) ** years)
     NPC += np.sum(OM_cost)
     # Replacement costs (discounted)
     replacement_years = np.arange(self.lifetime, project_lifetime, self.lifetime)
