@@ -202,7 +202,7 @@ class Microgrid:
   def economic_analysis(self) -> None:
     ''' Performs the economic analysis of the microgrid and its components. '''
 
-    # Get the nominal power of the Distributed Energy Resources
+    # Get the rated power of the Distributed Energy Resources combined
     der_rated_power = 0.0
     # Perform economic analysis for photovoltaic panels
     if self.photovoltaic_panel:
@@ -229,14 +229,14 @@ class Microgrid:
     r''' Calculates the Renewable Factor (RF) according to the following equation:
 
     .. math::
-      RF = \frac{\sum^H_{h=1} P_{pv}(h) + P_{wt}(h) + P_{bat}(h)}{\sum^H_{h=1} P_l(h)},
+      RF = \frac{\sum^H_{h=1} E_{pv}(h) + E_{wt}(h) + E_{dch}(h)}{\sum^H_{h=1} E_l(h)},
 
     where:
 
-      - :math:`P_{pv}(h)` is the power effectively supplied to the load by the photovoltaic generator at hour :math:`h` [kW];
-      - :math:`P_{wt}(h)` is the power effectively supplied to the load by the wind turbine at hour :math:`h` [kW];
-      - :math:`P_{bat}(h)` is the power discharged from the battery to the load at hour :math:`h` [kW];
-      - :math:`P_l(h)` is the power demanded by the load at hour :math:`h` [kW].
+    - :math:`E_{pv}(h)` is the energy effectively supplied to the load by the photovoltaic generator at hour :math:`h` [kWh];
+    - :math:`E_{wt}(h)` is the energy effectively supplied to the load by the wind turbine at hour :math:`h` [kWh];
+    - :math:`E_{dch}(h)` is the energy discharged from the battery to the load at hour :math:`h` [kWh];
+    - :math:`E_l(h)` is the energy demanded by the load at hour :math:`h` [kWh].
 
     The Renewable Factor represents the fraction of the total demand met by renewable sources and battery storage over the simulation period.
 

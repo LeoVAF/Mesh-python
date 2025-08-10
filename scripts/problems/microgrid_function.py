@@ -14,7 +14,7 @@ def microgrid_function(select_bat: int, pv_rated_power: int | float, wt_rated_po
 
   # Photovoltaic panel input
   pv_cost_per_kwp = 210
-  pv_lifetime = 25
+  pv_lifetime = 20
 
   # Wind turbine input
   wt_cost_per_kw = 900

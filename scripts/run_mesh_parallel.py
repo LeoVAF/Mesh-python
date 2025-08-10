@@ -10,7 +10,7 @@ from functools import partial
 
 import numpy as np
 
-Path("result").mkdir(parents=False, exist_ok=True)
+Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
 
 def run_mesh(experiment_name,
 						num_runs, # Number of executions

@@ -89,9 +89,10 @@ class PublicGrid:
     r''' Performs the economic analysis of the public grid. It is calculated according to the following equation:
 
     .. math::
-      \sum^{T}_{t=1}\frac{C_{grid}(1 + e)^{t-1}}{(1 + d)^t},
+      \sum^{T-1}_{t=0}\frac{C_{grid}(1 + e)^t}{(1 + d)^t},
 
     where:
+    
     - :math:`T` is the project lifetime in [years];
     - :math:`C_{grid}` is the simulated purchasing cost during a year in [US$];
     - :math:`e` is the tariff growth rate during the project lifetime;

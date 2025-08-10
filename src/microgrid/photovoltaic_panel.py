@@ -49,7 +49,7 @@ class PhotovoltaicPanel:
       .. math::
         P_{out} = P_{rated} \cdot \left(\frac{G}{G_{ref}}\right) \cdot (1 + K_t \cdot (T_c - T_{ref})).
 
-      where:
+      Where:
       
       - :math:`P_{out}` is the output power in [kW];
       - :math:`P_{rated}` is the rated power under reference conditions in [kW];
@@ -81,27 +81,28 @@ class PhotovoltaicPanel:
     The total NPC of the photovoltaic system is given by:
 
     .. math::
-        NPC_{pv} = IC_{pv} + NPV_{om} + NPV_{repl}.
+        NPC_{pv} = \text{IC}_{pv} + \text{NPV}_{om} + \text{NPV}_{repl}.
 
     Where:
-      - :math:`IC_{pv}` is the installation cost;
-      - :math:`NPV_{om}` is the Net Present Value of annual operation and maintenance costs;
-      - :math:`NPV_{repl}` is the Net Present Value of replacement costs during the project lifetime.
+
+    - :math:`\text{IC}_{pv}` is the installation cost;
+    - :math:`\text{NPV}_{om}` is the Net Present Value of annual operation and maintenance costs;
+    - :math:`\text{NPV}_{repl}` is the Net Present Value of replacement costs during the project lifetime.
 
     The installation cost is calculated as:
 
     .. math::
-        IC_{pv} = C_{kwp} \cdot P_{rated}.
+        \text{IC}_{pv} = C_{kwp} \cdot P_{rated}.
 
     :math:`C_{kwp}` is the cost per kWp of the photovoltaic panels and :math:`P_{rated}` is the rated power of the photovoltaic panel. The operation and maintenance costs are calculated as:
 
     .. math::
-        NPV_{om} = \sum^{T-1}_{t=0}\frac{IC_{pv} \cdot \tau_{om}}{(1 + d)^t}.
+        \text{NPV}_{om} = \sum^{T-1}_{t=0}\frac{\text{IC}_{pv} \cdot \tau_{om}}{(1 + d)^t}.
 
     :math:`T` is the project lifetime in [years], :math:`d` is the discount rate per year (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost, discounted to present value according to the following equation:
     
     .. math::
-        NPV_{repl} = \sum_{t \in T_{repl}}\frac{IC_{pv}}{(1 + d)^t},
+        \text{NPV}_{repl} = \sum_{t \in T_{repl}}\frac{\text{IC}_{pv}}{(1 + d)^t},
 
     where :math:`T_{repl}` is the set of replacement years.
 

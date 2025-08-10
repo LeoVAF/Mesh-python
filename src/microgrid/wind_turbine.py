@@ -81,11 +81,12 @@ class WindTurbine:
         \end{cases}
 
     Where:
-      - :math:`v` is the wind speed at the hub height in [m/s];
-      - :math:`v_{ci}` is the cut-in wind speed in [m/s];
-      - :math:`v_{rated}` is the rated wind speed in [m/s];
-      - :math:`v_{co}` is the cut-out wind speed in [m/s];
-      - :math:`P_{rated}` is the total rated power of all turbines combined [kW].
+
+    - :math:`v` is the wind speed at the hub height in [m/s];
+    - :math:`v_{ci}` is the cut-in wind speed in [m/s];
+    - :math:`v_{rated}` is the rated wind speed in [m/s];
+    - :math:`v_{co}` is the cut-out wind speed in [m/s];
+    - :math:`P_{rated}` is the total rated power of all turbines combined [kW].
 
     Args:
         wind_speed (:type:`np.ndarray[np.float64]`): A numpy array with the wind speed measurements at the reference height.
@@ -107,27 +108,28 @@ class WindTurbine:
     The total NPC of the wind turbines is given by:
 
     .. math::
-        NPC_{wt} = IC_{wt} + NPV_{om} + NPV_{repl}.
+        NPC_{wt} = \text{IC}_{wt} + \text{NPV}_{om} + \text{NPV}_{repl}.
 
     Where:
-      - :math:`IC_{wt}` is the installation cost;
-      - :math:`NPV_{om}` is the Net Present Value of annual operation and maintenance costs;
-      - :math:`NPV_{repl}` is the Net Present Value of replacement costs during the project lifetime.
+    
+    - :math:`\text{IC}_{wt}` is the installation cost;
+    - :math:`\text{NPV}_{om}` is the Net Present Value of annual operation and maintenance costs;
+    - :math:`\text{NPV}_{repl}` is the Net Present Value of replacement costs during the project lifetime.
 
     The installation cost is calculated as:
 
     .. math::
-        IC_{wt} = C_{kw} \cdot P_{rated}.
+        \text{IC}_{wt} = C_{kw} \cdot P_{rated}.
 
     :math:`C_{kw}` is the cost per kW of nominal capacity for the wind turbines and :math:`P_{rated}` is the rated power of the wind turbines. The operation and maintenance costs are calculated as:
 
     .. math::
-        NPV_{om} = \sum^{T-1}_{t=0}\frac{IC_{wt} \cdot \tau_{om}}{(1 + d)^t}.
+        \text{NPV}_{om} = \sum^{T-1}_{t=0}\frac{\text{IC}_{wt} \cdot \tau_{om}}{(1 + d)^t}.
 
     :math:`T` is the project lifetime in [years], :math:`d` is the discount rate per year (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost, discounted to present value according to the following equation:
     
     .. math::
-        NPV_{repl} = \sum_{t \in T_{repl}}\frac{IC_{wt}}{(1 + d)^t},
+        \text{NPV}_{repl} = \sum_{t \in T_{repl}}\frac{\text{IC}_{wt}}{(1 + d)^t},
 
     where :math:`T_{repl}` is the set of replacement years.
 

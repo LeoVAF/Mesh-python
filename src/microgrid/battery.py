@@ -128,29 +128,36 @@ class Battery:
     The total NPC of the battery is given by:
 
     .. math::
-        NPC_{bat} = IC_{bat} + NPV_{om} + NPV_{repl}.
+        NPC_{bat} = \text{IC}_{bat} + \text{NPV}_{om} + \text{NPV}_{repl} + C_{deg}.
 
     Where:
-      - :math:`IC_{bat}` is the installation cost;
-      - :math:`NPV_{om}` is the Net Present Value of annual operation and maintenance costs;
-      - :math:`NPV_{repl}` is the Net Present Value of replacement costs during the project lifetime.
+    
+    - :math:`\text{IC}_{bat}` is the installation cost;
+    - :math:`\text{NPV}_{om}` is the Net Present Value of annual operation and maintenance costs;
+    - :math:`\text{NPV}_{repl}` is the Net Present Value of replacement costs during the project lifetime;
+    - :math:`C_{deg}` is the degradation cost of the battery.
 
     The installation cost is calculated as:
 
     .. math::
-        IC_{bat} = C_{kwh} \cdot E_{bat}.
+      \text{IC}_{bat} = C_{kwh} \cdot E^{nominal}_{bat}.
 
-    :math:`C_{kwh}` is the cost per kWh of nominal capacity for the battery and :math:`E_{bat}` is the nominal capacity of the battery. The operation and maintenance costs are calculated as:
+    :math:`C_{kwh}` is the cost per kWh of nominal capacity for the battery and :math:`E^{nominal}_{bat}` is the nominal capacity of the battery. The operation and maintenance costs are calculated as:
 
     .. math::
-        NPV_{om} = \sum^{T-1}_{t=0}\frac{IC_{bat} \cdot \tau_{om}}{(1 + d)^t}.
+      \text{NPV}_{om} = \sum^{T-1}_{t=0}\frac{\text{IC}_{bat} \cdot \tau_{om}}{(1 + d)^t}.
 
     :math:`T` is the project lifetime in [years], :math:`d` is the discount rate per year (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost, discounted to present value according to the following equation:
     
     .. math::
-        NPV_{repl} = \sum_{t \in T_{repl}}\frac{IC_{bat}}{(1 + d)^t},
+      \text{NPV}_{repl} = \sum_{t \in T_{repl}}\frac{\text{IC}_{bat}}{(1 + d)^t},
 
-    where :math:`T_{repl}` is the set of replacement years.
+    where :math:`T_{repl}` is the set of replacement years. The degradation costs of the battery :math:`C_{deg}` are calculated as:
+
+    .. math::
+      C_{deg} = \sum^{T-1}_{t=0}\frac{C_{kwh} \cdot E_{dch}}{\text{DoD} \cdot N_{cycles} \cdot (1 + d)^t},
+
+    where :math:`E^{dch}` is the total energy discharged by the battery during the simulation, :math:`\text{DoD}` is the depth of discharge and :math:`N_{cycles}` is the number of cycles performed by the battery.
 
     Args:
         project_lifetime (:type:`int | float`): Total project lifetime in [years].
@@ -162,11 +169,12 @@ class Battery:
     '''
 
     years = np.arange(project_lifetime)
+    discount = ((1 + discount_rate) ** years)
     # Installation cost (CAPEX)
     installation_cost = self.cost_per_kwh * self.capacity
     NPC = installation_cost
     # O&M costs (discounted)
-    OM_cost = (installation_cost * maintenance_cost_rate) / ((1 + discount_rate) ** years)
+    OM_cost = (installation_cost * maintenance_cost_rate) / discount
     NPC += np.sum(OM_cost)
     # Replacement costs (discounted)
     t_repl = min(self.lifetime, self.number_of_cycles / self.cycles)
@@ -175,5 +183,6 @@ class Battery:
         NPV_repl = installation_cost / ((1 + discount_rate) ** replacement_years)
         NPC += np.sum(NPV_repl)
     # Degradation costs
-
+    degradation_cost = (self.cost_per_kwh * np.sum(self.energy_discharged)) / (self.depth_of_discharge * self.number_of_cycles * discount)
+    NPC += np.sum(degradation_cost)
     return NPC
