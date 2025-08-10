@@ -55,7 +55,7 @@ class Inverter():
     .. math::
         \text{IC}_{inv} = C_{kw} \cdot P_{rated}^{\tau_{inv}}.
 
-    :math:`C_{kw}` is the cost per kW of nominal capacity for the inverter, :math:`P_{rated}` is the rated power of the distributed energy resources and :math:`\tau` is the inverter economies of scale. The operation and maintenance costs are calculated as:
+    :math:`C_{kw}` is the cost per kW of nominal capacity for the inverter, :math:`P_{rated}` is the rated power of the distributed energy resources and :math:`\tau_{inv}` is the inverter economies of scale. The operation and maintenance costs are calculated as:
 
     .. math::
         \text{NPV}_{om} = \sum^{T-1}_{t=0}\frac{\text{IC}_{inv} \cdot \tau_{om}}{(1 + d)^t}.
