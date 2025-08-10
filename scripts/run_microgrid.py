@@ -78,7 +78,8 @@ battery = Battery(capacity=bat_cap,
                   cost_per_kwh=bat_cap_cost_list[select_bat] * exchange_rate,
                   efficiency=bat_efficiency_list[select_bat],
                   lifetime=bat_lf_list[select_bat],
-                  number_of_cycles=bat_cycle_list[select_bat])
+                  number_of_cycles=bat_cycle_list[select_bat],
+                  depth_of_discharge=bat_dod)
 public_grid = PublicGrid(cost_per_kwh=grid_cost_per_kwh,
                          tariff_growth=grid_tariff_growth,
                          credit_rate=grid_credit_rate)

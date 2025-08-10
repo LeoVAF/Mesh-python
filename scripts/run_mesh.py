@@ -34,7 +34,8 @@
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
 from microgrid_old.techno_ka import techno_ka
-from problems.problems import get_problem
+from problems.microgrid_function import microgrid_function
+from problems.benchmark_problems import get_problem
 
 from pathlib import Path
 from tqdm import tqdm
@@ -53,17 +54,24 @@ def main():
     num_runs = 1 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
-    # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
-    select_bat = 3
-    bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
-    
-    # experiment_name = bat_name[select_bat]
-    experiment_name = 'wfg1'
+    # experiment_name = 'wfg1'
 
-    objective_dim = 3 # Number of objectives
-    position_dim = 10 # Design space dimension
-    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
+    objective_dim = 2 # Number of objectives
+    position_dim = 3 # Design space dimension
     
+    # Benchmark problems
+    # experiment_name = 'wfg1'
+    # func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
+    
+    # New microgrid function
+    select_bat = 0 # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
+    bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
+    experiment_name = bat_name[select_bat]
+    func = lambda args: microgrid_function(select_bat, args[0], args[1], args[2])
+    position_min_value = np.array([10, 10, 50]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
+    position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
+
+    # Old microgrid function
     # position_min_value = np.array([10, 1, 50]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
     # position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
     # def func(args):
@@ -73,7 +81,7 @@ def main():
     #     return r
 
     max_iterations = None # Maximum number of iterations
-    max_fitness_eval = 15000 # Maximum fitness evaluations
+    max_fitness_eval = 1000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
     communication_probability = 0.2 # Communication probability

@@ -225,7 +225,7 @@ class Microgrid:
     if self.converter:
       self.planning_cost += self.converter.economic_analysis(der_rated_power, self.lifetime, self.maintenance_cost_rate, self.discount_rate)
 
-  def calculate_renewable_factor(self) -> None:
+  def calculate_renewable_factor(self, sum_of_loads: int | float) -> None:
     r''' Calculates the Renewable Factor (RF) according to the following equation:
 
     .. math::
@@ -239,6 +239,9 @@ class Microgrid:
       - :math:`P_l(h)` is the power demanded by the load at hour :math:`h` [kW].
 
     The Renewable Factor represents the fraction of the total demand met by renewable sources and battery storage over the simulation period.
+
+    Args:
+      sum_of_loads (:type:`int | float`): The total load demand over the simulation period in [kWh].
     '''
 
     if self.photovoltaic_panel:
@@ -253,7 +256,7 @@ class Microgrid:
       bat_meet = self.battery.meet_demand
     else:
       bat_meet = 0
-    self.renewable_factor = np.sum(pv_meet + wt_meet + bat_meet) / np.sum(self.load)
+    self.renewable_factor = np.sum(pv_meet + wt_meet + bat_meet) / sum_of_loads
 
   def run(self) -> np.ndarray[np.float64]:
     ''' Runs the Microgrid simulation. '''
@@ -267,8 +270,9 @@ class Microgrid:
     # Performs economic analysis
     self.economic_analysis()
     # Calculate the renewable factor
-    self.calculate_renewable_factor()
-    return np.array([self.planning_cost, self.renewable_factor])
+    sum_of_loads = np.sum(self.load)
+    self.calculate_renewable_factor(sum_of_loads)
+    return np.array([self.planning_cost / sum_of_loads, self.renewable_factor])
 
   def logging(self, file_name: str) -> None:
     ''' Logs the microgrid information into a excel file.
