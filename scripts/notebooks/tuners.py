@@ -14,6 +14,7 @@ from typing import Callable
 
 import numpy as np
 import optuna
+optuna.logging.set_verbosity(optuna.logging.WARNING)  # Suppress Optuna logs
 import statistics
 
 
