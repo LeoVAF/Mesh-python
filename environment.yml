@@ -6,7 +6,6 @@ dependencies:
   - python=3.13
   # Project libraries
   - cython=3.0
-  - ipykernel=7.0
   - ipywidgets=8.1
   - matplotlib=3.10
   - nbformat=5.10
@@ -25,7 +24,7 @@ dependencies:
   - pytest=8.2
   - pytest-cov=6.0
   - pytest-mock=3.14
-  - scikit-learn=1.6
+  - scikit-learn=1.7
   - scipy=1.15
 
   # Project management
