@@ -6,17 +6,19 @@ dependencies:
   - python=3.13
   # Project libraries
   - cython=3.0
+  - ipykernel=7.0
+  - ipywidgets=8.1
   - matplotlib=3.10
   - nbformat=5.10
   - numpy=2.2
   - openpyxl=3.0
+  - optuna=4.3
+  - pandas=2.2
   - pip=25.1
   - pip:
       - optproblems
       - diversipy
       - -e .
-  - optuna=4.3
-  - pandas=2.2
   - plotly=5.24
   - pygmo=2.19
   - pymoo=0.6
