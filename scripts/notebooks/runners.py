@@ -3,15 +3,15 @@ from mesh.parameters import MeshParameters
 from mesh.MESH_old import MESH_old, MESH_Params_old
 
 from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.core.problem import Problem
 from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PolynomialMutation
 from pymoo.optimize import minimize
-from pymoo.core.problem import Problem
 
-from tqdm import tqdm
 from pathlib import Path
 from pickle import dump
 from pygmo import fast_non_dominated_sorting, select_best_N_mo
+from tqdm import tqdm
 
 import numpy as np
 import os
@@ -122,7 +122,7 @@ def run_mesh(experiment: tuple, # Information to run the experiments
 	
 	# Store the results
 	dump_results(experiment_configuration, experiment_folder, results, combined_P, combined_F, population_size)
-	return f'{experiment_configuration} was successfully executed!'
+	return f'{experiment_configuration} with tunable parameters ({communication_probability}, {mutation_rate}, {personal_guide_array_size}) was successfully executed!'
 
 def run_mesh_old(experiment: tuple, # Information to run the experiments
 								 										# (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
@@ -145,8 +145,6 @@ def run_mesh_old(experiment: tuple, # Information to run the experiments
 	communication_probability = tuned_parameters_dict['communication_probability'] if ('communication_probability' in tuned_parameters_dict) else tunable_parameters[0]
 	mutation_rate = tuned_parameters_dict['mutation_rate'] if ('mutation_rate' in tuned_parameters_dict) else tunable_parameters[1]
 	personal_guide_array_size = tuned_parameters_dict['personal_guide_array_size'] if ('personal_guide_array_size' in tuned_parameters_dict) else tunable_parameters[2]
-
-	print(communication_probability, mutation_rate, personal_guide_array_size)
 
 	results = {}
 	combined_F = None
@@ -185,7 +183,7 @@ def run_mesh_old(experiment: tuple, # Information to run the experiments
 
 	# Store the results
 	dump_results(experiment_configuration, experiment_folder, results, combined_P, combined_F, population_size)
-	return f'{experiment_configuration} was successfully executed!'
+	return f'{experiment_configuration} with tunable parameters ({communication_probability}, {mutation_rate}, {personal_guide_array_size}) was successfully executed!'
 
 def run_nsga2(experiment: tuple, # Information to run the experiments
 																 # (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
@@ -213,8 +211,6 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
 	eta_recombination = tuned_parameters_dict['eta_recombination'] if ('eta_recombination' in tuned_parameters_dict) else tunable_parameters[1]
 	mutation_probability = tuned_parameters_dict['mutation_probability'] if ('mutation_probability' in tuned_parameters_dict) else tunable_parameters[2]
 	eta_mutation = tuned_parameters_dict['eta_mutation'] if ('eta_mutation' in tuned_parameters_dict) else tunable_parameters[3]
-
-	print(recombination_probability, eta_recombination, mutation_probability, eta_mutation)
 
 	# Instantiate NSGA2
 	crossover = SBX(prob=recombination_probability, prob_var=1.0, eta=eta_recombination)
@@ -247,4 +243,4 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
 	
 	# Store the results
 	dump_results(experiment_configuration, experiment_folder, results, combined_P, combined_F, population_size)
-	return f'{experiment_configuration} was successfully executed!'
+	return f'{experiment_configuration} with tunable parameters ({recombination_probability}, {eta_recombination}, {mutation_probability}, {eta_mutation}) was successfully executed!'

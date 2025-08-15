@@ -1,20 +1,18 @@
 from mesh.core import *
 from mesh.MESH_old import *
 
-from pymoo.problems import get_problem
+from problems.benchmark_problems import get_problem
 
 import numpy as np
-import timeit
-import statistics
 import cProfile
 import pstats
 
 
-objective_dim = 5
+objective_dim = 2
 position_dim = 10
 max_iterations = None
-max_fitness_eval = 10000
-population_size = 500
+max_fitness_eval = 15000
+population_size = 100
 
 random_state = 42
 
@@ -30,6 +28,7 @@ dm_pool_type = 0
 dm_operation_type = 0
 crowding_distance_type = 0
 optimization_type = [False]*objective_dim
+
 def generate_objective_function(objective_dim):
     def objective_function(position):
         position = np.array(position)
@@ -52,6 +51,8 @@ def generate_objective_function(objective_dim):
     return objective_function
 func = generate_objective_function(objective_dim)
 
+func, position_min_value, position_max_value = get_problem('zdt2', n_obj=objective_dim, n_var=position_dim)
+
 def run_new():
     params = MeshParameters(objective_dim,
                              position_dim, position_min_value, position_max_value, 
@@ -61,10 +62,7 @@ def run_new():
                              max_gen=max_iterations, max_fit_eval=max_fitness_eval,
                              max_personal_guides=personal_guide_array_size,
                              random_state=random_state)
-    ##########################################################
-    #experiment_name = 'zdt2'
-    #func = get_problem(experiment_name, n_var=position_dim).evaluate
-    ##########################################################
+
     new_mesh = Mesh(params, func)
     new_mesh.run()
 
@@ -87,34 +85,8 @@ def run_old():
     old_mesh = MESH_old(params_old, func)
     old_mesh.run()
 
-
-# print("Estatísticas para algoritmo original:")
-# times = timeit.repeat("run_old()", globals=globals(), repeat=30, number=1)
-# # Estatísticas
-# mean_time = statistics.mean(times)
-# std_dev_time = statistics.stdev(times)
-# min_time = min(times)
-# max_time = max(times)
-# print(f"Tempo médio: {mean_time:.6f} segundos")
-# print(f"Desvio padrão: {std_dev_time:.6f} segundos")
-# print(f"Tempo mínimo: {min_time:.6f} segundos")
-# print(f"Tempo máximo: {max_time:.6f} segundos\n\n")
-
-
-print("Estatísticas para algoritmo otimizado:")
-times = timeit.repeat("run_new()", globals=globals(), repeat=30, number=1)
-# Estatísticas
-mean_time = statistics.mean(times)
-std_dev_time = statistics.stdev(times)
-min_time = min(times)
-max_time = max(times)
-print(f"Tempo médio: {mean_time:.6f} segundos")
-print(f"Desvio padrão: {std_dev_time:.6f} segundos")
-print(f"Tempo mínimo: {min_time:.6f} segundos")
-print(f"Tempo máximo: {max_time:.6f} segundos")
-
-# cProfile.run('run_new()', sort='time', filename="profile.prof")
-# stats = pstats.Stats('profile.prof')
-# stats.strip_dirs()
-# stats.sort_stats('time')
-# stats.print_stats(10)
+cProfile.run('run_new()', sort='time', filename="profile.prof")
+stats = pstats.Stats('profile.prof')
+stats.strip_dirs()
+stats.sort_stats('time')
+stats.print_stats(10)

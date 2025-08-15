@@ -4,9 +4,9 @@ from mesh.MESH_old import MESH_old, MESH_Params_old
 
 from pathlib import Path
 
+from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
-from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PolynomialMutation
 
