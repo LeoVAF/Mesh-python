@@ -91,7 +91,7 @@ def run_mesh(experiment: tuple, # Information to run the experiments
 	results = {}
 	combined_F = None
 	combined_P = None
-	for i in tqdm(range(num_runs)):
+	for i in range(num_runs):
 		params = MeshParameters(objective_dim = objective_dim,
 														position_dim = position_dim,
 														position_lower_bounds = lower_bound_array,
@@ -149,7 +149,7 @@ def run_mesh_old(experiment: tuple, # Information to run the experiments
 	results = {}
 	combined_F = None
 	combined_P = None
-	for i in tqdm(range(num_runs)):
+	for i in range(num_runs):
 		params_old = MESH_Params_old(objectives_dim = objective_dim,
 																 optimizations_type = [False]*objective_dim,
 																 max_iterations = 0,
@@ -224,7 +224,7 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
 	results = {}
 	combined_F = None
 	combined_P = None
-	for i in tqdm(range(num_runs)):
+	for i in range(num_runs):
 		res = minimize(nsga2_fit_function,
                 	 nsga2,
                 	 ('n_eval', max_fitness_eval),
