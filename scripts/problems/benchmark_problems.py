@@ -1,6 +1,7 @@
+from .wfg_pareto_generation import wfg_pareto_generation_by_algorithms
 from problems.DTLZ import dtlz1_pareto, dtlz2_pareto, dtlz3_pareto, dtlz4_pareto, dtlz5_pareto, dtlz6_pareto, dtlz7_pareto
 
-from pygmo import problem, dtlz, wfg, zdt, fast_non_dominated_sorting
+from pygmo import problem, dtlz, zdt, fast_non_dominated_sorting
 from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
 from optproblems import zdt as opt_zdt, wfg as opt_wfg
 from typing import Callable
@@ -90,20 +91,36 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     return pareto_solutions[name]
   
   elif name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
-    prob_classes = {'wfg1': opt_wfg.WFG1(n_obj, n_var, wfg_k), 'wfg4': opt_wfg.WFG4(n_obj, n_var, wfg_k), 'wfg5': opt_wfg.WFG5(n_obj, n_var, wfg_k), 'wfg6': opt_wfg.WFG6(n_obj, n_var, wfg_k),
-                    'wfg7': opt_wfg.WFG7(n_obj, n_var, wfg_k), 'wfg8': opt_wfg.WFG8(n_obj, n_var, wfg_k), 'wfg9': opt_wfg.WFG9(n_obj, n_var, wfg_k)}
+    # Pymoo Pareto front generation
+    pareto_classes = {'wfg1': WFG1(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg4': WFG4(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(),
+                      'wfg5': WFG5(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg6': WFG6(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(),
+                      'wfg7': WFG7(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg8': WFG8(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(),
+                      'wfg9': WFG9(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()}
+    objective_values = pareto_classes[name]
+    # Optproblems Pareto front generation
+    prob_classes = {'wfg1': opt_wfg.WFG1(n_obj, n_var, wfg_k), 'wfg4': opt_wfg.WFG4(n_obj, n_var, wfg_k), 'wfg5': opt_wfg.WFG5(n_obj, n_var, wfg_k),
+                    'wfg6': opt_wfg.WFG6(n_obj, n_var, wfg_k), 'wfg7': opt_wfg.WFG7(n_obj, n_var, wfg_k), 'wfg8': opt_wfg.WFG8(n_obj, n_var, wfg_k),
+                    'wfg9': opt_wfg.WFG9(n_obj, n_var, wfg_k)}
     prob_class = prob_classes[name]
     optimal_solutions = prob_class.get_optimal_solutions(N)
     for individual in optimal_solutions:
       prob_class.evaluate(individual)
-    objective_values = np.array([individual.objective_values for individual in optimal_solutions])
+    objective_values = np.vstack((objective_values,
+                                  wfg_pareto_generation_by_algorithms(name, N, n_var, n_obj, wfg_k),
+                                  np.array([individual.objective_values for individual in optimal_solutions])))
   elif name in {'wfg2', 'wfg3'}:
+    # Pymoo Pareto front generation
+    pareto_dict = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()}
+    objective_values = pareto_dict[name]
+    # Optproblems Pareto front generation
     prob_classes = {'wfg2': opt_wfg.WFG2(n_obj, n_var, wfg_k), 'wfg3': opt_wfg.WFG3(n_obj, n_var, wfg_k)}
     prob_class = prob_classes[name]
     optimal_solutions = prob_class.get_optimal_solutions(N)
     for individual in optimal_solutions:
       prob_class.evaluate(individual)
-    objective_values = np.array([individual.objective_values for individual in optimal_solutions])
+    objective_values = np.vstack((objective_values,
+                                  wfg_pareto_generation_by_algorithms(name, N, n_var, n_obj, wfg_k),
+                                  np.array([individual.objective_values for individual in optimal_solutions])))
 
   # Get the non dominated objective values
   pareto_solutions = objective_values[fast_non_dominated_sorting(points=objective_values)[0][0]]

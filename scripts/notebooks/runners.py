@@ -93,20 +93,20 @@ def run_mesh(experiment: tuple, # Information to run the experiments
 	combined_P = None
 	for i in range(num_runs):
 		params = MeshParameters(objective_dim = objective_dim,
-														position_dim = position_dim,
-														position_lower_bounds = lower_bound_array,
-														position_upper_bounds = upper_bound_array, 
-														population_size = population_size,
-														memory_size = memory_size,
-														global_guide_method = global_best_attribution_type,
-														dm_pool_type = dm_pool_type,
-														dm_operation_type = dm_operation_type,
-														communication_probability = communication_probability,
-														mutation_rate = mutation_rate,
-														max_gen = None,
-														max_fit_eval = max_fitness_eval,
-														max_personal_guides = personal_guide_array_size,
-														random_state = random_state)
+								position_dim = position_dim,
+								position_lower_bounds = lower_bound_array,
+								position_upper_bounds = upper_bound_array, 
+								population_size = population_size,
+								memory_size = memory_size,
+								global_guide_method = global_best_attribution_type,
+								dm_pool_type = dm_pool_type,
+								dm_operation_type = dm_operation_type,
+								communication_probability = communication_probability,
+								mutation_rate = mutation_rate,
+								max_gen = None,
+								max_fit_eval = max_fitness_eval,
+								max_personal_guides = personal_guide_array_size,
+								random_state = random_state)
 		mesh = Mesh(params = params, fitness_function = fit_function)
 		mesh.run()
 
@@ -216,9 +216,9 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
 	crossover = SBX(prob=recombination_probability, prob_var=1.0, eta=eta_recombination)
 	mutation = PolynomialMutation(prob=mutation_probability, eta=eta_mutation)
 	nsga2 = NSGA2(pop_size=population_size,
-								crossover=crossover,
-								mutation=mutation,
-								eliminate_duplicates=True)
+				crossover=crossover,
+				mutation=mutation,
+				eliminate_duplicates=True)
 
 	# Execute NSGA2
 	results = {}
