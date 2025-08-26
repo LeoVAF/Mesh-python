@@ -1,7 +1,7 @@
-from .wfg_pareto_generation import wfg_pareto_generation_by_algorithms
+from .WFG import wfg_pareto_generation_by_algorithms
 from problems.DTLZ import dtlz1_pareto, dtlz2_pareto, dtlz3_pareto, dtlz4_pareto, dtlz5_pareto, dtlz6_pareto, dtlz7_pareto
 
-from pygmo import problem, dtlz, zdt, fast_non_dominated_sorting
+from pygmo import problem, dtlz, zdt, fast_non_dominated_sorting, select_best_N_mo
 from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
 from optproblems import zdt as opt_zdt, wfg as opt_wfg
 from typing import Callable
@@ -123,5 +123,7 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
                                   np.array([individual.objective_values for individual in optimal_solutions])))
 
   # Get the non dominated objective values
-  pareto_solutions = objective_values[fast_non_dominated_sorting(points=objective_values)[0][0]]
+  best_idxs = select_best_N_mo(objective_values, N)
+  best_objective_values = objective_values[best_idxs]
+  pareto_solutions = best_objective_values[fast_non_dominated_sorting(points=best_objective_values)[0][0]]
   return pareto_solutions

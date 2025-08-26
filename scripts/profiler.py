@@ -34,17 +34,12 @@ def generate_objective_function(objective_dim):
         position = np.array(position)
         objectives = []
         for i in range(objective_dim):
-            # Alterna entre diferentes padrões para criar trade-offs
             if i % 3 == 0:
-                # Função do tipo esfera com deslocamento
                 obj = np.sum((position - (i + 1))**2)
             elif i % 3 == 1:
-                # Função baseada em ondas (oscilação não-linear)
                 obj = np.sum(np.sin(position * (i + 1))**2)
             else:
-                # Função mista: produto entre posição e índice do objetivo
                 obj = np.prod(1 + position / (i + 1))
-            # Normaliza cada objetivo em relação ao índice
             obj /= (i + 1) * 10
             objectives.append(obj)
         return np.array(objectives)

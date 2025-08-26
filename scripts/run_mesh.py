@@ -81,8 +81,8 @@ def main():
     #     return r
 
     max_iterations = None # Maximum number of iterations
-    max_fitness_eval = 1000 # Maximum fitness evaluations
-    population_size = 100 # Population size
+    max_fitness_eval = 50 # Maximum fitness evaluations
+    population_size = 10 # Population size
     memory_size = population_size # Maximum number of particles in memory
     communication_probability = 0.2 # Communication probability
     mutation_rate = 0.8 # Mutation rate
@@ -125,17 +125,18 @@ def main():
     # Getting the unique points
     unique_combined_P, unique_idxs = np.unique(combined_P, axis=0, return_index=True)
     unique_combined_F = combined_F[unique_idxs]
-    # Sorting the vector Fit
+    # Sorting the vector Fit with unique values
     # Return: (non dominated front, domination list, domination counter, non domination ranks)
     if len(unique_combined_F) == 1:
-        ndf = [[0]]
+        best_idxs = np.array([0])
+        ndf = [np.array([0])]
     else:
-        ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_F)
-    n = min(len(ndf[0]), population_size)
+        best_idxs = select_best_N_mo(unique_combined_F, population_size)
+        ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_F[best_idxs])
     # Get the best indexes based on number of final solutions
-    pareto_front = unique_combined_F[ndf[0]]
-    best_idx = select_best_N_mo(pareto_front, n)
-    result['combined'] = (unique_combined_P[ndf[0]][best_idx], pareto_front[best_idx])
+    ndf_idxs = ndf[0]
+    pareto_front = unique_combined_F[best_idxs][ndf_idxs]
+    result['combined'] = (unique_combined_P[best_idxs][ndf_idxs], pareto_front)
     with open(f'./scripts/results/{config}_{objective_dim}_{position_dim}.pkl', 'wb') as file:
         dump(result, file)
 
