@@ -8,6 +8,8 @@ from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WF
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.optimize import minimize
 
+from joblib import Parallel, delayed
+
 import numpy as np
 
 from pygmo import problem, wfg
@@ -80,6 +82,7 @@ for z in X:
   assert np.linalg.norm(F1 - F2) < 1e-10
 ##################################################################################
 
+import time
 
 def wfg_pareto_generation_by_algorithms(name, N, n_var, n_obj, wfg_k):
   ref_dirs = get_reference_directions("das-dennis", n_obj, n_partitions=12)
@@ -97,11 +100,10 @@ def wfg_pareto_generation_by_algorithms(name, N, n_var, n_obj, wfg_k):
     problem_class = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k), 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k)}
 
   alg_list = [nsga2, nsga3, ctaea, smsemoa, moead]
+
+  algorithm_results_parallel = Parallel(n_jobs=len(alg_list))(delayed(minimize)(problem_class[name], algorithm=alg, termination=('n_gen', 50)) for alg in alg_list)
   algorithm_results = np.empty((0, n_obj))
-  for alg in alg_list:
-    res = minimize(problem_class[name],
-                   algorithm=alg,
-                   termination=('n_gen', 50))
+  for res in algorithm_results_parallel:
     algorithm_results = np.vstack((algorithm_results, res.F))
 
   return algorithm_results[fast_non_dominated_sorting(algorithm_results)[0][0]]

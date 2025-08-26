@@ -17,6 +17,7 @@ dependencies:
   - pip:
       - optproblems
       - diversipy
+      - scikit-posthocs
       - -e .
   - plotly=5.24
   - pygmo=2.19
