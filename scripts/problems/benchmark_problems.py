@@ -1,4 +1,3 @@
-from .WFG import wfg_pareto_generation_by_algorithms
 from problems.DTLZ import dtlz1_pareto, dtlz2_pareto, dtlz3_pareto, dtlz4_pareto, dtlz5_pareto, dtlz6_pareto, dtlz7_pareto
 
 from pygmo import problem, dtlz, zdt, fast_non_dominated_sorting, select_best_N_mo
@@ -106,7 +105,6 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     for individual in optimal_solutions:
       prob_class.evaluate(individual)
     objective_values = np.vstack((objective_values,
-                                  wfg_pareto_generation_by_algorithms(name, N, n_var, n_obj, wfg_k),
                                   np.array([individual.objective_values for individual in optimal_solutions])))
   elif name in {'wfg2', 'wfg3'}:
     # Pymoo Pareto front generation
@@ -119,7 +117,6 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     for individual in optimal_solutions:
       prob_class.evaluate(individual)
     objective_values = np.vstack((objective_values,
-                                  wfg_pareto_generation_by_algorithms(name, N, n_var, n_obj, wfg_k),
                                   np.array([individual.objective_values for individual in optimal_solutions])))
 
   # Get the non dominated objective values
