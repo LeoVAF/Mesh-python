@@ -43,7 +43,7 @@ class PhotovoltaicPanel:
     self.output_power = np.zeros(hour_steps)
     self.meet_demand = np.zeros(hour_steps)
 
-  def generate_power(self, temperature: np.ndarray[np.float64], solar_radiation: np.ndarray[np.float64]) -> None:
+  def generate_power(self, temperature: np.ndarray[np.float64], solar_irradiance: np.ndarray[np.float64]) -> None:
     r''' Generates the output power according to the following equation:
       
       .. math::
@@ -53,8 +53,8 @@ class PhotovoltaicPanel:
       
       - :math:`P_{out}` is the output power in [kW];
       - :math:`P_{rated}` is the rated power under reference conditions in [kW];
-      - :math:`G` is the solar radiation in [kW/m^2];
-      - :math:`G_{ref}` is the solar radiation at reference conditions in [kW/m^2];
+      - :math:`G` is the solar irradiance in [kW/m^2];
+      - :math:`G_{ref}` is the solar irradiance at reference conditions in [kW/m^2];
       - :math:`K_t` is the power temperature coefficient of the photovoltaic panels in [1/ºC];
       - :math:`T_{amb}` is the ambient temperature in [ºC];
       - :math:`T_c` is the cell temperature in [ºC] estimated according to the following equation, considering :math:`NOCT = 45`:
@@ -66,14 +66,14 @@ class PhotovoltaicPanel:
     
       Args:
         temperature (:type:`np.ndarray[np.float64]`): Numpy array with the temperature in [ºC] at each hour.
-        solar_radiation (:type:`np.ndarray[np.float64]`): Numpy array with the solar radiation in [kW/m^2] at each hour.
+        solar_irradiance (:type:`np.ndarray[np.float64]`): Numpy array with the solar radiation in [kW/m^2] at each hour.
     '''
 
     irradiance_ref = 1 # Reference irradiance [kW/m^2]
     temperature_ref = 25 # Reference temperature in [ºC]
     power_temperature_coefficient = 3.7e-3 # Power temperature coefficient of maximum power in [1/°C]
-    cell_temperature = temperature + 0.03125 * solar_radiation # Cell temperature
-    self.output_power[:] = np.minimum(self.rated_power * (solar_radiation/irradiance_ref) * (1 + power_temperature_coefficient*(cell_temperature - temperature_ref)), self.rated_power)
+    cell_temperature = temperature + 0.03125 * solar_irradiance # Cell temperature
+    self.output_power[:] = np.minimum(self.rated_power * (solar_irradiance/irradiance_ref) * (1 + power_temperature_coefficient*(cell_temperature - temperature_ref)), self.rated_power)
 
   def economic_analysis(self, project_lifetime: int | float, maintenance_cost_rate: int | float, discount_rate: int | float) -> float:
     r''' Performs the economic analysis of the photovoltaic panels using the Net Present Cost (NPC) approach.
