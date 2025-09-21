@@ -1,7 +1,7 @@
 import numpy as np
 
 class Inverter():
-  ''' Class to simulate the microgrid inverter.
+  ''' Class to simulate the microgrid DC/AC inverter.
   
   Args:
     cost_per_kw (:type:`int | float`): Inverter cost per kW of nominal capacity in [US$/kW].

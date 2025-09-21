@@ -1,7 +1,7 @@
 import numpy as np
 
 class Converter():
-  ''' Class to simulate the microgrid converter.
+  ''' Class to simulate the microgrid DC/DC converter.
   
   Args:
     cost_per_kw (:type:`int | float`): Converter cost per kW of nominal capacity in [US$/kW].
