@@ -41,7 +41,7 @@ bat_cycle_list = [1400,8000,600,5000,1500,4000,3000,1000,3000,3250,1250,1000,100
 # Public grid input
 grid_cost_per_kwh = 0.2
 grid_tariff_growth = 0.05
-grid_credit_rate = 0
+grid_credit_rate = 0.1
 
 # Inverter input
 inverter_cost_per_kw = 200

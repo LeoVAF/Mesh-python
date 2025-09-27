@@ -51,15 +51,20 @@ class PublicGrid:
     self.energy_purchased = np.zeros(hour_steps)
     self.energy_compensated = np.zeros(hour_steps)
 
-  def store_energy_credit(self, surplus_energy_adjusted: int | float) -> None:
+  def store_energy_credit(self, surplus_energy: int | float, inverter_efficiency: int | float) -> None:
     ''' Stores the energy credit to compensate.
 
     Args:
       surplus_energy_adjusted (:type:`int | float`): The amount of surplus energy adjusted by the microgrid inverter to store in [kWh].
+      inverter_efficiency (:type:`int | float`): The efficiency of the inverter between 0 and 1.
       indexes (:type:`int`): The time step at which the energy is stored.
+    
+    Returns:
+      :type:`float`: Returns 0.0 for compatibility with the Microgrid class.
     '''
 
-    self.energy_to_compensate += surplus_energy_adjusted * self.credit_rate
+    self.energy_to_compensate += surplus_energy * inverter_efficiency * self.credit_rate
+    return 0.0
 
   def purchase_energy(self, energy_demanded: int | float, t: int) -> int | float:
     ''' Purchases energy from the public grid, compensating with available credits.
@@ -101,6 +106,9 @@ class PublicGrid:
     Args:
       project_lifetime (:type:`int | float`): The microgrid project lifetime in [years].
       discout_rate (:type:`int | float`): Discount rate (per year) during the project lifetime.
+    
+    Returns:
+      :type:`float`: Total Net Present Cost of purchasing from the public grid in present value in [US$].
     '''
 
     # Calculate the Net Present Cost for the purchasing from public grid
