@@ -186,7 +186,7 @@ class Microgrid:
       if there_is_surplus:
         remaining_surplus_energy = energy_flow_adjusted[t]
         # Charge the battery with the surplus energy (if the battery is connected)
-        remaining_surplus_energy_after_charging = charge_battery(remaining_surplus_energy * converter_efficiency, t) / converter_efficiency
+        remaining_surplus_energy_after_charging = charge_battery(remaining_surplus_energy, converter_efficiency, t) / converter_efficiency
         # Send the surplus energy to the public grid (if the public grid is connected)
         self.surplus_energy[t] = compensate(remaining_surplus_energy_after_charging * inverter_efficiency) / inverter_efficiency
       # If there is deficit energy

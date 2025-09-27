@@ -74,11 +74,12 @@ class Battery:
     # Start the state of charge with maximum capacity
     self.state_of_charge[0] = self.capacity
 
-  def charge(self, surplus_energy: int | float, t: int) -> int | float:
+  def charge(self, surplus_energy: int | float, converter_efficiency: int | float, t: int) -> int | float:
     ''' Charges the battery with surplus power.
     
     Args:
       surplus_energy (:type:`int | float`): Surplus energy to charge the battery in [kWh].
+      converter_efficiency (:type:`int | float`): The efficiency of the converter between 0 and 1.
       t (:type:`int`): Time step.
 
     Returns:
@@ -90,7 +91,7 @@ class Battery:
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
     # Charge the battery
-    self.state_of_charge[t_soc] = min(state_of_charge + surplus_energy, self.capacity)
+    self.state_of_charge[t_soc] = min(state_of_charge + surplus_energy * converter_efficiency, self.capacity)
     self.energy_charged[t] = self.state_of_charge[t_soc] - state_of_charge
     # Return the remaining surplus energy after charging
     return surplus_energy - self.energy_charged[t]
