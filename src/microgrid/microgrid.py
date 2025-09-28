@@ -220,10 +220,10 @@ class Microgrid:
       self.planning_cost += self.public_grid.economic_analysis(self.lifetime, self.discount_rate)
     # Perform economic analysis for inverter
     if self.inverter:
-      self.planning_cost += self.inverter.economic_analysis(der_rated_power, self.lifetime, self.maintenance_cost_rate, self.discount_rate)
+      self.planning_cost += self.inverter.economic_analysis(der_rated_power * 1.2, self.lifetime, self.maintenance_cost_rate, self.discount_rate)
     # Perform economic analysis for converter
     if self.converter:
-      self.planning_cost += self.converter.economic_analysis(der_rated_power, self.lifetime, self.maintenance_cost_rate, self.discount_rate)
+      self.planning_cost += self.converter.economic_analysis(der_rated_power * 1.2, self.lifetime, self.maintenance_cost_rate, self.discount_rate)
 
   def calculate_renewable_factor(self, sum_of_loads: int | float) -> None:
     r''' Calculates the Renewable Factor (RF) according to the following equation:
