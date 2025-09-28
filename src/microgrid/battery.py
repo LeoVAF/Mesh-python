@@ -91,13 +91,14 @@ class Battery:
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
     # Charge the battery
-    self.state_of_charge[t_soc] = min(state_of_charge + surplus_energy * converter_efficiency, self.capacity)
+    surplus_energy_adjusted = surplus_energy * converter_efficiency
+    self.state_of_charge[t_soc] = min(state_of_charge + surplus_energy_adjusted, self.capacity)
     energy_to_charge = self.state_of_charge[t_soc] - state_of_charge
     self.energy_charged[t] = energy_to_charge
     # Update the number of cycles
     self.cycles += energy_to_charge / (2 * self.energy_per_cycle)
     # Return the remaining surplus energy after charging
-    return surplus_energy - self.energy_charged[t]
+    return surplus_energy_adjusted - self.energy_charged[t]
 
   def discharge(self, energy_demanded_adjusted: int | float, inverter_efficiency: int | float, t: int) -> int | float:
     ''' Discharges the battery to meet demand considering the battery efficiency in this operation.
