@@ -36,6 +36,8 @@ class PublicGrid:
     ''' Variable to mark the month to account for energy compensated. '''
     self.energy_compensated: np.ndarray[np.float64] | None = None
     ''' Numpy array to store the energy compensated at each time step in [kWh]. '''
+    self.meet_demand: np.ndarray[np.float64] | None = None
+    ''' Energy that will effectively meet demand in [kWh]. '''
 
     self.cost_per_kwh = cost_per_kwh
     self.tariff_growth = tariff_growth
@@ -50,6 +52,7 @@ class PublicGrid:
     
     self.energy_purchased = np.zeros(hour_steps)
     self.energy_compensated = np.zeros(hour_steps)
+    self.meet_demand = np.zeros(hour_steps)
 
   def store_energy_credit(self, surplus_energy: int | float, inverter_efficiency: int | float) -> None:
     ''' Stores the energy credit to compensate.
@@ -88,6 +91,9 @@ class PublicGrid:
     # Buy the remaining energy
     energy_to_purchase = energy_demanded - compensated
     self.energy_purchased[t] = energy_to_purchase
+    # The energy that effectively meets the demand
+    self.meet_demand[t] = compensated + energy_to_purchase
+    # Calculate the operation cost
     self.operation_cost += energy_to_purchase * self.cost_per_kwh
 
   def economic_analysis(self, project_lifetime: int | float, discount_rate: int | float) -> float:
