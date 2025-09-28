@@ -229,14 +229,14 @@ class Microgrid:
     r''' Calculates the Renewable Factor (RF) according to the following equation:
 
     .. math::
-      RF = \frac{\sum^H_{h=1} E_{pv}(h) + E_{wt}(h) + E_{dch}(h)}{\sum^H_{h=1} E_l(h)},
+      RF = \frac{\sum^H_{h=1} E^{meet}_{pv}(h) + E^{meet}_{wt}(h) + E^{meet}_{bat}(h)}{\sum^H_{h=1} E_{load}(h)},
 
     where:
 
-    - :math:`E_{pv}(h)` is the energy effectively supplied to the load by the photovoltaic generator at hour :math:`h` [kWh];
-    - :math:`E_{wt}(h)` is the energy effectively supplied to the load by the wind turbine at hour :math:`h` [kWh];
-    - :math:`E_{dch}(h)` is the energy discharged from the battery to the load at hour :math:`h` [kWh];
-    - :math:`E_l(h)` is the energy demanded by the load at hour :math:`h` [kWh].
+    - :math:`E^{meet}_{pv}(h)` is the energy effectively supplied to the load by the photovoltaic generator at hour :math:`h` [kWh];
+    - :math:`E^{meet}_{wt}(h)` is the energy effectively supplied to the load by the wind turbine at hour :math:`h` [kWh];
+    - :math:`E^{meet}_{bat}(h)` is the energy discharged from the battery to the load at hour :math:`h` [kWh];
+    - :math:`E_{load}(h)` is the energy demanded by the load at hour :math:`h` [kWh].
 
     The Renewable Factor represents the fraction of the total demand met by renewable sources and battery storage over the simulation period.
 
