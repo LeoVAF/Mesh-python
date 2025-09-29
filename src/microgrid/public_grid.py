@@ -54,19 +54,37 @@ class PublicGrid:
     self.energy_compensated = np.zeros(hour_steps)
     self.meet_demand = np.zeros(hour_steps)
 
-  def store_energy_credit(self, surplus_energy: int | float, inverter_efficiency: int | float) -> None:
+  def update_month(self, t: int) -> None:
+    ''' Updates the month to account for energy compensated.
+
+    Args:
+      t (:type:`int`): Time step.
+    '''
+
+    # Get month number
+    month_number = t // 720
+    # Update credit if new month started
+    if self.next_month < month_number:
+        self.next_month = month_number
+        self.energy_credit += self.energy_to_compensate
+        self.energy_to_compensate = 0.0
+
+  def store_energy_credit(self, surplus_energy: int | float, inverter_efficiency: int | float, t: int) -> None:
     ''' Stores the energy credit to compensate.
 
     Args:
       surplus_energy_adjusted (:type:`int | float`): The amount of surplus energy adjusted by the microgrid inverter to store in [kWh].
       inverter_efficiency (:type:`int | float`): The efficiency of the inverter between 0 and 1.
-      indexes (:type:`int`): The time step at which the energy is stored.
+      t (:type:`int`): Time step.
     
     Returns:
       :type:`float`: Returns 0.0 for compatibility with the Microgrid class.
     '''
 
+    # Compensate the energy sent to the public grid
     self.energy_to_compensate += surplus_energy * inverter_efficiency * self.credit_rate
+    # Accounts for compensated energy
+    self.update_month(t)
     return 0.0
 
   def purchase_energy(self, energy_demanded: int | float, t: int) -> int | float:
@@ -77,13 +95,6 @@ class PublicGrid:
       t (:type:`int`): Time step.
     '''
     
-    # Get month number
-    month_number = t // 720
-    # Update credit if new month started
-    if self.next_month < month_number:
-        self.next_month = month_number
-        self.energy_credit += self.energy_to_compensate
-        self.energy_to_compensate = 0.0
     # Compensate as much as possible
     compensated = min(energy_demanded, self.energy_credit)
     self.energy_compensated[t] = compensated
@@ -95,6 +106,8 @@ class PublicGrid:
     self.meet_demand[t] = compensated + energy_to_purchase
     # Calculate the operation cost
     self.operation_cost += energy_to_purchase * self.cost_per_kwh
+    # Accounts for compensated energy
+    self.update_month(t)
 
   def economic_analysis(self, project_lifetime: int | float, discount_rate: int | float) -> float:
     r''' Performs the economic analysis of the public grid. It is calculated according to the following equation:
