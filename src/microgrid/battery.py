@@ -98,7 +98,7 @@ class Battery:
     # Update the number of cycles
     self.cycles += energy_to_charge / (2 * self.energy_per_cycle)
     # Return the remaining surplus energy after charging
-    return surplus_energy_adjusted - self.energy_charged[t]
+    return surplus_energy_adjusted - energy_to_charge
 
   def discharge(self, energy_demanded_adjusted: int | float, inverter_efficiency: int | float, t: int) -> int | float:
     ''' Discharges the battery to meet demand considering the battery efficiency in this operation.
