@@ -4,7 +4,7 @@ class PublicGrid:
   ''' Represents a AC public grid in the microgrid system. This class is used to manage the public grid's properties and behaviors.
   
   Args:
-    cost_per_kwh (:type:`int | float`): Cost per kWh of the public grid in [US$].
+    cost_per_kwh (:type:`int | float`): Cost per kWh of the public grid in [$].
     tariff_growth (:type:`int | float`): Tariff growth over the course of the microgrid project between 0 and 1.
     credit_rate (:type:`int | float`): Credit rate when sending energy to the public grid between 0 and 1.
 
@@ -19,13 +19,13 @@ class PublicGrid:
                credit_rate: int | float = 0):
     
     self.cost_per_kwh: int | float
-    ''' Cost per kWh of the public grid in [US$/kWh]. '''
+    ''' Cost per kWh of the public grid in [$/kWh]. '''
     self.tariff_growth: int | float
     ''' Tariff growth over the course of the microgrid project between 0 and 1. '''
     self.credit_rate: int | float
     ''' Compensation percentage when sending energy to the public grid between 0 and 1. '''
     self.operation_cost: float = 0.0
-    ''' Grid purchasing costs in [US$]. '''
+    ''' Grid purchasing costs in [$]. '''
     self.energy_purchased: np.ndarray[np.float64] | None = None
     ''' Numpy array to store the energy purchased at each time step in [kWh]. '''
     self.energy_credit: float = 0.0
@@ -113,12 +113,12 @@ class PublicGrid:
     r''' Performs the economic analysis of the public grid. It is calculated according to the following equation:
 
     .. math::
-      \sum^{T-1}_{t=0}\frac{C_{grid}(1 + e)^t}{(1 + d)^t},
+      \sum^{T}_{t=1}\frac{C_{grid}(1 + e)^t}{(1 + d)^t},
 
     where:
     
     - :math:`T` is the project lifetime in [years];
-    - :math:`C_{grid}` is the simulated purchasing cost during a year in [US$];
+    - :math:`C_{grid}` is the simulated purchasing cost during a year in [$];
     - :math:`e` is the tariff growth rate during the project lifetime;
     - :math:`d` is the discount rate during the project lifetime.
 
@@ -127,11 +127,14 @@ class PublicGrid:
       discout_rate (:type:`int | float`): Discount rate (per year) during the project lifetime.
     
     Returns:
-      :type:`float`: Total Net Present Cost of purchasing from the public grid in present value in [US$].
+      :type:`float`: Total Net Present Cost of purchasing from the public grid in present value in [$].
     '''
 
     # Calculate the Net Present Cost for the purchasing from public grid
-    years = np.arange(project_lifetime)
-    future_cost = self.operation_cost * ((1 + discount_rate) ** years)
-    NPV = future_cost / ((1 + self.tariff_growth) ** years)
-    return np.sum(NPV)
+    if self.tariff_growth == discount_rate:
+      # If the tariff growth is equal to the discount rate, the NPV is simply the operation cost times the project lifetime
+      NPV = self.operation_cost * project_lifetime
+    else:
+      NPV = self.operation_cost * (1 + self.tariff_growth) / (discount_rate - self.tariff_growth) * (1 - ((1 + self.tariff_growth) / (1 + discount_rate)) ** project_lifetime)
+
+    return NPV
