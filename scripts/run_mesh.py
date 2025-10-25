@@ -52,11 +52,11 @@ def main():
     load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
     
     num_runs = 1 # Number of runs
-    num_proc = None # Number of processes to execute the fitness function in parallel
+    num_proc = 6 # Number of processes to execute the fitness function in parallel
 
     # experiment_name = 'wfg1'
 
-    objective_dim = 2 # Number of objectives
+    objective_dim = 3 # Number of objectives
     position_dim = 3 # Design space dimension
     
     # Benchmark problems
@@ -68,7 +68,7 @@ def main():
     bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     experiment_name = bat_name[select_bat]
     func = lambda args: microgrid_function(select_bat, args[0], args[1], args[2])
-    position_min_value = np.array([10, 10, 50]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
+    position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
     position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
 
     # Old microgrid function
@@ -81,8 +81,8 @@ def main():
     #     return r
 
     max_iterations = None # Maximum number of iterations
-    max_fitness_eval = 50 # Maximum fitness evaluations
-    population_size = 10 # Population size
+    max_fitness_eval = 2000 # Maximum fitness evaluations
+    population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
     communication_probability = 0.2 # Communication probability
     mutation_rate = 0.8 # Mutation rate

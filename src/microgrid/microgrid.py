@@ -87,6 +87,8 @@ class Microgrid:
     ''' Levelized Cost of Energy in [$/kWh]. '''
     self.renewable_factor: float = 0.0
     ''' Renewable Factor between 0 and 1. '''
+    self.surplus_rate: float = 0.0
+    ''' Surplus Rate between 0 and 1. '''
 
     self.load = load
     self.temperature = temperature
@@ -156,8 +158,8 @@ class Microgrid:
       else:
         converter_efficiency = 1.0
     else:
-      charge_battery = lambda x, y: x
-      discharge_battery = lambda x, y, z: x
+      charge_battery = lambda x, y, t: x
+      discharge_battery = lambda x, y, t: x
     # Check if the microgrid inverter is connected and get its efficiency
     if self.inverter:
       inverter_efficiency = self.inverter.efficiency
@@ -168,10 +170,10 @@ class Microgrid:
       compensate = self.public_grid.store_energy_credit
       buy = self.public_grid.purchase_energy
     elif self.public_grid:
-      compensate = lambda x: x
+      compensate = lambda x, y, t: x
       buy = self.public_grid.purchase_energy
     else:
-      compensate = lambda x: x
+      compensate = lambda x, y, t: x
       buy = lambda x, t: None
     # Adjust load demanded by inverter efficiency
     energy_demanded_adjusted = self.load / inverter_efficiency
@@ -187,6 +189,8 @@ class Microgrid:
         remaining_surplus_energy = energy_flow_adjusted[t]
         # Charge the battery with the surplus energy (if the battery is connected)
         remaining_surplus_energy_after_charging = charge_battery(remaining_surplus_energy, converter_efficiency, t) / converter_efficiency
+        # Take into account the surplus energy that could not be stored in the battery
+        self.surplus_rate += remaining_surplus_energy_after_charging
         # Send the surplus energy to the public grid (if the public grid is connected)
         self.surplus_energy[t] = compensate(remaining_surplus_energy_after_charging, inverter_efficiency, t) / inverter_efficiency
       # If there is deficit energy
@@ -285,8 +289,10 @@ class Microgrid:
     self.economic_analysis(sum_of_loads)
     # Calculate the Renewable Factor
     self.calculate_renewable_factor(sum_of_loads)
+    # Calculate the Surplus Rate
+    self.surplus_rate /= np.sum(self.energy_generated)
     # Return the Levelized Cost of Energy (LCOE) in $/kWh and the Renewable Factor
-    return np.array([self.LCOE, self.renewable_factor])
+    return np.array([self.LCOE, self.renewable_factor, self.surplus_rate])
 
   def logging(self, file_name: str) -> None:
     ''' Logs the microgrid information into a excel file.

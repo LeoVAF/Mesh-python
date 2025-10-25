@@ -37,7 +37,7 @@ def microgrid_function(select_bat: int, pv_rated_power: int | float, wt_rated_po
   # Public grid input
   grid_cost_per_kwh = 0.2
   grid_tariff_growth = 0.05
-  grid_credit_rate = 0
+  grid_credit_rate = 0.1
 
   # Inverter input
   inverter_cost_per_kw = 200
@@ -106,5 +106,5 @@ def microgrid_function(select_bat: int, pv_rated_power: int | float, wt_rated_po
   # Run microgrid
   objectives = microgrid.run()
   # Maximizing renewable factor
-  objectives[-1] = -objectives[-1] 
+  objectives[1] = -objectives[1]
   return objectives 
