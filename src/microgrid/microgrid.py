@@ -14,7 +14,7 @@ class Microgrid:
   Args:
     load (:type:`np.ndarray[np.float64]`): A numpy array with the demanding load in [kWh].
     temperature (:type:`np.ndarray[np.float64]`): A numpy array with the temperature in [ºC].
-    solar_radiation (:type:`np.ndarray[np.float64]`): A numpy array with solar radiation in [kWh/m^2].
+    solar_radiation (:type:`np.ndarray[np.float64]`): A numpy array with solar irradiance in [kW/m^2].
     wind_velocity (:type:`np.ndarray[np.float64]`): A numpy array with the wind velocity in [m/s].
     wind_height (:type:`int | float`): The height where the wind speed was measured in [m].
     lifetime (:type:`int | float`): Microgrid lifetime project in [year].
