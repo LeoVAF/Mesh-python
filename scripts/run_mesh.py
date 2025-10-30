@@ -46,13 +46,9 @@ import numpy as np
 
 def main():
     Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
-    solar_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/solreal.txt')
-    wind_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/wind_data.txt')
-    load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
-    load_res = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadres.txt')
-    
+
     num_runs = 1 # Number of runs
-    num_proc = 6 # Number of processes to execute the fitness function in parallel
+    num_proc = None # Number of processes to execute the fitness function in parallel
 
     # experiment_name = 'wfg1'
 
@@ -70,15 +66,6 @@ def main():
     func = lambda args: microgrid_function(select_bat, args[0], args[1], args[2])
     position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
     position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
-
-    # Old microgrid function
-    # position_min_value = np.array([10, 1, 50]) # Lower bound of problem [max PV generation, number of wind turbines, battery capacity]
-    # position_max_value = np.array([450, 5, 500]) # Upper bound of problem [max PV generation, number of wind turbines, battery capacity]
-    # def func(args):
-    #     r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[:objective_dim]
-    #     #r = techno_ka(args[0], args[1], 0.8, args[2], select_bat, solar_data, wind_data, load_ind)[1:3]
-    #     r[-1] = -r[-1] # Maximizing renewable factor
-    #     return r
 
     max_iterations = None # Maximum number of iterations
     max_fitness_eval = 2000 # Maximum fitness evaluations
