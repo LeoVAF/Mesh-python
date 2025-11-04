@@ -291,7 +291,7 @@ class Microgrid:
     self.calculate_renewable_factor(sum_of_loads)
     # Calculate the Surplus Rate
     self.surplus_rate /= np.sum(self.energy_generated)
-    # Return the Levelized Cost of Energy (LCOE) in $/kWh and the Renewable Factor
+    # Return the Levelized Cost of Energy (LCOE) in $/kWh, Renewable Factor and Microgrid Energy Surplus Rate
     return np.array([self.LCOE, self.renewable_factor, self.surplus_rate])
 
   def logging(self, file_name: str) -> None:
