@@ -17,6 +17,7 @@ dependencies:
   - pip:
       - optproblems
       - diversipy
+      - autorank
       - scikit-posthocs
       - -e .
   - plotly=5.24
