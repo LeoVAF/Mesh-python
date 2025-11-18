@@ -1,7 +1,7 @@
 from mesh.core import *
 from mesh.parameters import MeshParameters
 from microgrid_old.techno_ka import techno_ka
-from problems.problems import get_problem
+from problems.benchmark_problems import get_problem
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
@@ -10,7 +10,7 @@ from functools import partial
 
 import numpy as np
 
-Path("result").mkdir(parents=False, exist_ok=True)
+Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
 
 def run_mesh(experiment_name,
 						num_runs, # Number of executions
@@ -31,8 +31,8 @@ def run_mesh(experiment_name,
 	personal_guide_array_size = 3 # Number of personal guides
 	random_state = None # Defines a seed for random numbers (not used if it is None)
 
-	config = f"E{global_guide_method+1}V{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
-	print(f"Running E{global_guide_method+1}V{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name} on MG")
+	config = f"MESH_G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
+	print(f"Running MESH G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
 
 	result = {}
 	combined_F = None

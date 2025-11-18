@@ -1,11 +1,11 @@
 from problems.DTLZ import dtlz1_pareto, dtlz2_pareto, dtlz3_pareto, dtlz4_pareto, dtlz5_pareto, dtlz6_pareto, dtlz7_pareto
 
+from pygmo import problem, dtlz, zdt, fast_non_dominated_sorting, select_best_N_mo
 from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
-from pygmo import problem, dtlz, wfg, zdt, fast_non_dominated_sorting
+from optproblems import zdt as opt_zdt, wfg as opt_wfg
 from typing import Callable
 
 import numpy as np
-from optproblems import zdt as opt_zdt, wfg as opt_wfg
 
 def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> tuple[Callable, np.ndarray[np.float64], np.ndarray[np.float64]]:
   # Validation of inputs
@@ -36,17 +36,17 @@ def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> 
     func = {'dtlz1':problem(dtlz(prob_id=1, dim=n_var, fdim=n_obj)).fitness, 'dtlz2':problem(dtlz(prob_id=2, dim=n_var, fdim=n_obj)).fitness,
             'dtlz3':problem(dtlz(prob_id=3, dim=n_var, fdim=n_obj)).fitness, 'dtlz4':problem(dtlz(prob_id=4, dim=n_var, fdim=n_obj)).fitness,
             'dtlz5':problem(dtlz(prob_id=5, dim=n_var, fdim=n_obj)).fitness, 'dtlz6':problem(dtlz(prob_id=6, dim=n_var, fdim=n_obj)).fitness,
-            'dtlz7':problem(dtlz(prob_id=7, dim=n_var, fdim=n_obj)).fitness,}
+            'dtlz7':problem(dtlz(prob_id=7, dim=n_var, fdim=n_obj)).fitness}
     return func[name], np.zeros((n_var)), np.ones((n_var))
 
   elif name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
-    func = {'wfg1': problem(wfg(prob_id=1, dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k)).fitness, 'wfg4': problem(wfg(prob_id=4, dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k)).fitness,
-            'wfg5': problem(wfg(prob_id=5, dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k)).fitness, 'wfg6': problem(wfg(prob_id=6, dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k)).fitness,
-            'wfg7': problem(wfg(prob_id=7, dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k)).fitness, 'wfg8': problem(wfg(prob_id=8, dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k)).fitness,
-            'wfg9': problem(wfg(prob_id=9, dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k)).fitness}
+    func = {'wfg1': WFG1(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg4': WFG4(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate,
+            'wfg5': WFG5(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg6': WFG6(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate,
+            'wfg7': WFG7(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg8': WFG8(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate,
+            'wfg9': WFG9(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate}
     return func[name], np.zeros((n_var)), np.arange(1, n_var+1) * 2
   elif name in {'wfg2', 'wfg3'}:
-    func = {'wfg2': problem(wfg(prob_id=2, dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k)).fitness, 'wfg3': problem(wfg(prob_id=3, dim_dvs=n_var, dim_obj=n_obj, dim_k=wfg_k)).fitness}
+    func = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate}
     return func[name], np.zeros((n_var)), np.arange(1, n_var+1) * 2
 
   else:
@@ -75,7 +75,6 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     if name in {'wfg2', 'wfg3'} and ((n_var - wfg_k) % 2) != 0:
       raise ValueError(f'For WFG problems, the number of distance-related variables (n_var - wfg_k) must be divisible by two.')
 
-
   # Pareto function selection
   if name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}:
     prob_classes = {'zdt1': opt_zdt.ZDT1(n_var), 'zdt2': opt_zdt.ZDT2(n_var), 'zdt3': opt_zdt.ZDT3(n_var), 'zdt4': opt_zdt.ZDT4(n_var), 'zdt6': opt_zdt.ZDT6(n_var)}
@@ -91,21 +90,37 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     return pareto_solutions[name]
   
   elif name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
-    prob_classes = {'wfg1': opt_wfg.WFG1(n_obj, n_var, wfg_k), 'wfg4': opt_wfg.WFG4(n_obj, n_var, wfg_k), 'wfg5': opt_wfg.WFG5(n_obj, n_var, wfg_k), 'wfg6': opt_wfg.WFG6(n_obj, n_var, wfg_k),
-                    'wfg7': opt_wfg.WFG7(n_obj, n_var, wfg_k), 'wfg8': opt_wfg.WFG8(n_obj, n_var, wfg_k), 'wfg9': opt_wfg.WFG9(n_obj, n_var, wfg_k)}
+    # Pymoo Pareto front generation
+    pareto_classes = {'wfg1': WFG1(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg4': WFG4(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(),
+                      'wfg5': WFG5(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg6': WFG6(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(),
+                      'wfg7': WFG7(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg8': WFG8(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(),
+                      'wfg9': WFG9(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()}
+    objective_values = pareto_classes[name]
+    # Optproblems Pareto front generation
+    prob_classes = {'wfg1': opt_wfg.WFG1(n_obj, n_var, wfg_k), 'wfg4': opt_wfg.WFG4(n_obj, n_var, wfg_k), 'wfg5': opt_wfg.WFG5(n_obj, n_var, wfg_k),
+                    'wfg6': opt_wfg.WFG6(n_obj, n_var, wfg_k), 'wfg7': opt_wfg.WFG7(n_obj, n_var, wfg_k), 'wfg8': opt_wfg.WFG8(n_obj, n_var, wfg_k),
+                    'wfg9': opt_wfg.WFG9(n_obj, n_var, wfg_k)}
     prob_class = prob_classes[name]
     optimal_solutions = prob_class.get_optimal_solutions(N)
     for individual in optimal_solutions:
       prob_class.evaluate(individual)
-    objective_values = np.array([individual.objective_values for individual in optimal_solutions])
+    objective_values = np.vstack((objective_values,
+                                  np.array([individual.objective_values for individual in optimal_solutions])))
   elif name in {'wfg2', 'wfg3'}:
+    # Pymoo Pareto front generation
+    pareto_dict = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()}
+    objective_values = pareto_dict[name]
+    # Optproblems Pareto front generation
     prob_classes = {'wfg2': opt_wfg.WFG2(n_obj, n_var, wfg_k), 'wfg3': opt_wfg.WFG3(n_obj, n_var, wfg_k)}
     prob_class = prob_classes[name]
     optimal_solutions = prob_class.get_optimal_solutions(N)
     for individual in optimal_solutions:
       prob_class.evaluate(individual)
-    objective_values = np.array([individual.objective_values for individual in optimal_solutions])
+    objective_values = np.vstack((objective_values,
+                                  np.array([individual.objective_values for individual in optimal_solutions])))
 
   # Get the non dominated objective values
-  pareto_solutions = objective_values[fast_non_dominated_sorting(points=objective_values)[0][0]]
+  best_idxs = select_best_N_mo(objective_values, N)
+  best_objective_values = objective_values[best_idxs]
+  pareto_solutions = best_objective_values[fast_non_dominated_sorting(points=best_objective_values)[0][0]]
   return pareto_solutions

@@ -6,24 +6,27 @@ dependencies:
   - python=3.13
   # Project libraries
   - cython=3.0
+  - ipywidgets=8.1
   - matplotlib=3.10
   - nbformat=5.10
   - numpy=2.2
   - openpyxl=3.0
+  - optuna=4.3
+  - pandas=2.2
   - pip=25.1
   - pip:
       - optproblems
       - diversipy
+      - autorank
+      - scikit-posthocs
       - -e .
-  - optuna=4.3
-  - pandas=2.2
   - plotly=5.24
   - pygmo=2.19
   - pymoo=0.6
   - pytest=8.2
   - pytest-cov=6.0
   - pytest-mock=3.14
-  - scikit-learn=1.6
+  - scikit-learn=1.7
   - scipy=1.15
 
   # Project management

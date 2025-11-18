@@ -1,6 +1,17 @@
-from pygmo import fast_non_dominated_sorting
+from pygmo import fast_non_dominated_sorting, select_best_N_mo
+from pymoo.algorithms.moo.ctaea import CTAEA
+from pymoo.algorithms.moo.moead import MOEAD
+from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.algorithms.moo.nsga3 import NSGA3
+from pymoo.algorithms.moo.sms import SMSEMOA
+from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
+from pymoo.util.ref_dirs import get_reference_directions
+from pymoo.optimize import minimize
+
+from joblib import Parallel, delayed
 
 import numpy as np
+
 from pygmo import problem, wfg
 
 ################################ Auxiliar Functions ################################
@@ -54,7 +65,7 @@ def wfg4(z, n_obj, k):
 
 
 
-# Testing the functions
+############################# Testing the functions #############################
 n_var = 10
 n_obj = 3
 k = 2
@@ -69,3 +80,30 @@ for z in X:
   F1 = wfg4(z, 3, 2)
   F2 = pygmo_wfg(z)
   assert np.linalg.norm(F1 - F2) < 1e-10
+##################################################################################
+
+import time
+
+def wfg_pareto_generation_by_algorithms(name, N, n_var, n_obj, wfg_k):
+  ref_dirs = get_reference_directions("das-dennis", n_obj, n_partitions=12)
+  nsga2 = NSGA2(pop_size=N, eliminate_duplicates=True)
+  nsga3 = NSGA3(ref_dirs=ref_dirs, pop_size=N)
+  ctaea = CTAEA(ref_dirs=ref_dirs)
+  smsemoa = SMSEMOA(pop_size=N)
+  moead = MOEAD(ref_dirs=ref_dirs, n_neighbors=N)
+  if name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
+    problem_class = {'wfg1': WFG1(n_var=n_var, n_obj=n_obj, k=wfg_k), 'wfg4': WFG4(n_var=n_var, n_obj=n_obj, k=wfg_k),
+                      'wfg5': WFG5(n_var=n_var, n_obj=n_obj, k=wfg_k), 'wfg6': WFG6(n_var=n_var, n_obj=n_obj, k=wfg_k),
+                      'wfg7': WFG7(n_var=n_var, n_obj=n_obj, k=wfg_k), 'wfg8': WFG8(n_var=n_var, n_obj=n_obj, k=wfg_k),
+                      'wfg9': WFG9(n_var=n_var, n_obj=n_obj, k=wfg_k)}
+  elif name in {'wfg2', 'wfg3'}:
+    problem_class = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k), 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k)}
+
+  alg_list = [nsga2, nsga3, ctaea, smsemoa, moead]
+
+  algorithm_results_parallel = Parallel(n_jobs=len(alg_list))(delayed(minimize)(problem_class[name], algorithm=alg, termination=('n_gen', 50)) for alg in alg_list)
+  algorithm_results = np.empty((0, n_obj))
+  for res in algorithm_results_parallel:
+    algorithm_results = np.vstack((algorithm_results, res.F))
+
+  return algorithm_results[fast_non_dominated_sorting(algorithm_results)[0][0]]
