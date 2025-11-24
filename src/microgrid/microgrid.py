@@ -83,12 +83,12 @@ class Microgrid:
     self.energy_generated: np.ndarray[np.float64] | None = None
     ''' Energy generated at each time step in [kWh]. Default is ``None``. '''
     # Objectives
-    self.LCOE: float = 0.0
+    self.lcoe: float = 0.0
     ''' Levelized Cost of Energy in [$/kWh]. '''
     self.renewable_factor: float = 0.0
     ''' Renewable Factor between 0 and 1. '''
-    self.surplus_rate: float = 0.0
-    ''' Surplus Rate between 0 and 1. '''
+    self.meef: float = 0.0
+    ''' Microgrid Energy Excess Factor between 0 and 1. '''
 
     self.load = load
     self.temperature = temperature
@@ -190,7 +190,7 @@ class Microgrid:
         # Charge the battery with the surplus energy (if the battery is connected)
         remaining_surplus_energy_after_charging = charge_battery(remaining_surplus_energy, converter_efficiency, t) / converter_efficiency
         # Take into account the surplus energy that could not be stored in the battery
-        self.surplus_rate += remaining_surplus_energy_after_charging
+        self.meef += remaining_surplus_energy_after_charging
         # Send the surplus energy to the public grid (if the public grid is connected)
         self.surplus_energy[t] = compensate(remaining_surplus_energy_after_charging, inverter_efficiency, t) / inverter_efficiency
       # If there is deficit energy
@@ -219,26 +219,26 @@ class Microgrid:
     der_rated_power = 0.0
     # Perform economic analysis for photovoltaic panels
     if self.photovoltaic_panel:
-      self.LCOE += self.photovoltaic_panel.economic_analysis(self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
+      self.lcoe += self.photovoltaic_panel.economic_analysis(self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
       der_rated_power += self.photovoltaic_panel.rated_power
     # Perform economic analysis for wind turbines
     if self.wind_turbine:
-      self.LCOE += self.wind_turbine.economic_analysis(self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
+      self.lcoe += self.wind_turbine.economic_analysis(self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
       der_rated_power += self.wind_turbine.rated_power
     # Perform economic analysis for battery
     if self.battery:
-      self.LCOE += self.battery.economic_analysis(self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
+      self.lcoe += self.battery.economic_analysis(self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
     # Perform economic analysis for public grid
     if self.public_grid:
-      self.LCOE += self.public_grid.economic_analysis(self.lifetime, self.discount_rate)
+      self.lcoe += self.public_grid.economic_analysis(self.lifetime, self.discount_rate)
     # Perform economic analysis for inverter
     if self.inverter:
-      self.LCOE += self.inverter.economic_analysis(der_rated_power * 1.2, self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
+      self.lcoe += self.inverter.economic_analysis(der_rated_power * 1.2, self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
     # Perform economic analysis for converter
     if self.converter:
-      self.LCOE += self.converter.economic_analysis(der_rated_power * 1.2, self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
-    # Calculate the Levelized Cost of Energy (LCOE)
-    self.LCOE *= CRF / sum_of_loads
+      self.lcoe += self.converter.economic_analysis(der_rated_power * 1.2, self.lifetime, self.maintenance_cost_rate, self.discount_rate, CRF)
+    # Calculate the Levelized Cost of Energy (lcoe)
+    self.lcoe *= CRF / sum_of_loads
 
   def calculate_renewable_factor(self, sum_of_loads: int | float) -> None:
     r''' Calculates the Renewable Factor (RF) according to the following equation:
@@ -289,10 +289,10 @@ class Microgrid:
     self.economic_analysis(sum_of_loads)
     # Calculate the Renewable Factor
     self.calculate_renewable_factor(sum_of_loads)
-    # Calculate the Surplus Rate
-    self.surplus_rate /= np.sum(self.energy_generated)
-    # Return the Levelized Cost of Energy (LCOE) in $/kWh, Renewable Factor and Microgrid Energy Surplus Rate
-    return np.array([self.LCOE, self.renewable_factor, self.surplus_rate])
+    # Calculate the Microgrid Energy Excess Factor (meef)
+    self.meef /= np.sum(self.energy_generated)
+    # Return the Levelized Cost of Energy (lcoe) in $/kWh, Renewable Factor and Microgrid Energy Excess Factor (meef)
+    return np.array([self.lcoe, self.renewable_factor, self.meef])
 
   def logging(self, file_name: str) -> None:
     ''' Logs the microgrid information into a excel file.
