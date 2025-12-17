@@ -312,6 +312,7 @@ class Microgrid:
       'Battery Discharge [kWh]': self.battery.energy_discharged if self.battery else np.zeros(self.hour_steps),
       'Battery Supply [kWh]': self.battery.meet_demand if self.battery else np.zeros(self.hour_steps),
       'Energy Purchased [kWh]': self.public_grid.energy_purchased if self.public_grid else np.zeros(self.hour_steps),
+      'Energy Credited [kWh]': self.public_grid.energy_credited if self.public_grid else np.zeros(self.hour_steps),
       'Energy Compensated [kWh]': self.public_grid.energy_compensated if self.public_grid else np.zeros(self.hour_steps),
       'Energy Surplus [kWh]': self.surplus_energy
     })
