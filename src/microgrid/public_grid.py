@@ -139,6 +139,6 @@ class PublicGrid:
       # If the tariff growth is equal to the discount rate, the NPV is simply the operation cost times the project lifetime
       NPV = self.operation_cost * project_lifetime
     else:
-      NPV = self.operation_cost * (1 + self.tariff_growth) / (discount_rate - self.tariff_growth) * (1 - ((1 + self.tariff_growth) / (1 + discount_rate)) ** project_lifetime)
+      NPV = self.operation_cost * (1 + discount_rate) / (discount_rate - self.tariff_growth) * (1 - ((1 + self.tariff_growth) / (1 + discount_rate)) ** project_lifetime)
 
     return NPV
