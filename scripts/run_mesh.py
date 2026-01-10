@@ -33,7 +33,6 @@
 
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
-from microgrid_old.techno_ka import techno_ka
 from problems.microgrid_function import microgrid_function
 from problems.benchmark_problems import get_problem
 

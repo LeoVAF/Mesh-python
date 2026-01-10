@@ -125,7 +125,7 @@ class Battery:
     # The energy that effectively meets the demand
     self.meet_demand[t] = energy_to_discharge * self.efficiency * inverter_efficiency
     # Return the remaining demand adjusted after discharging
-    return energy_demanded_adjusted - self.energy_discharged[t]
+    return energy_demanded_adjusted - energy_to_discharge * self.efficiency
 
   def economic_analysis(self, project_lifetime: int | float, maintenance_cost_rate: int | float, discount_rate: int | float, CRF: int | float) -> float:
     r''' Performs the economic analysis of the battery using the Net Present Cost (NPC) approach.

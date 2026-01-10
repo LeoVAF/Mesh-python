@@ -30,10 +30,12 @@ class PublicGrid:
     ''' Numpy array to store the energy purchased at each time step in [kWh]. '''
     self.energy_credit: float = 0.0
     ''' Energy credit stored on the public grid in [kWh]. '''
-    self.energy_to_compensate: float = 0.0
+    self.energy_credited: np.ndarray[np.float64] | None = None
+    ''' Numpy array to store the energy credited at each time step in [kWh]. '''
+    self.energy_to_credit: float = 0.0
     ''' Energy that will be credited next month in [kWh]. '''
     self.next_month: int = 0
-    ''' Variable to mark the month to account for energy compensated. '''
+    ''' Variable to mark the month to account for energy credited. '''
     self.energy_compensated: np.ndarray[np.float64] | None = None
     ''' Numpy array to store the energy compensated at each time step in [kWh]. '''
     self.meet_demand: np.ndarray[np.float64] | None = None
@@ -51,6 +53,7 @@ class PublicGrid:
     '''
     
     self.energy_purchased = np.zeros(hour_steps)
+    self.energy_credited = np.zeros(hour_steps)
     self.energy_compensated = np.zeros(hour_steps)
     self.meet_demand = np.zeros(hour_steps)
 
@@ -66,8 +69,9 @@ class PublicGrid:
     # Update credit if new month started
     if self.next_month < month_number:
         self.next_month = month_number
-        self.energy_credit += self.energy_to_compensate
-        self.energy_to_compensate = 0.0
+        self.energy_credit += self.energy_to_credit
+        self.energy_credited[t] = self.energy_to_credit
+        self.energy_to_credit = 0.0
 
   def store_energy_credit(self, surplus_energy: int | float, inverter_efficiency: int | float, t: int) -> None:
     ''' Stores the energy credit to compensate.
@@ -81,9 +85,9 @@ class PublicGrid:
       :type:`float`: Returns 0.0 for compatibility with the Microgrid class.
     '''
 
-    # Compensate the energy sent to the public grid
-    self.energy_to_compensate += surplus_energy * inverter_efficiency * self.credit_rate
-    # Accounts for compensated energy
+    # Credit the energy sent to the public grid
+    self.energy_to_credit += surplus_energy * inverter_efficiency * self.credit_rate
+    # Accounts for credited energy
     self.update_month(t)
     return 0.0
 
@@ -135,6 +139,6 @@ class PublicGrid:
       # If the tariff growth is equal to the discount rate, the NPV is simply the operation cost times the project lifetime
       NPV = self.operation_cost * project_lifetime
     else:
-      NPV = self.operation_cost * (1 + self.tariff_growth) / (discount_rate - self.tariff_growth) * (1 - ((1 + self.tariff_growth) / (1 + discount_rate)) ** project_lifetime)
+      NPV = self.operation_cost * (1 + discount_rate) / (discount_rate - self.tariff_growth) * (1 - ((1 + self.tariff_growth) / (1 + discount_rate)) ** project_lifetime)
 
     return NPV
