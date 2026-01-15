@@ -1,6 +1,6 @@
-# mesh
+# MESH
 
-Implementation of MESH.
+Implementation of MESH in Python.
 
 ## License
 
