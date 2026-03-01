@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 class Battery:
   ''' Battery object for microgrid simulation.
@@ -7,7 +8,7 @@ class Battery:
     capacity (:type:`int | float`): Nominal battery capacity in [kWh].
     cost_per_kwh (:type:`int | float`): Cost per kWh of the battery in [$].
     efficiency (:type:`int | float`): Battery efficiency between 0 and 1.
-    lifetime (:type:`int | float`): Battery lifetime in [year].
+    lifetime (:type:`int | float`): Battery lifetime in time intervals.
     number_of_cycles (:type:`int`): Number of charge/discharge cycles the battery can perform. 
     depth_of_discharge (:type:`int | float`): Depth of discharge between 0 and 1.
 
@@ -31,12 +32,12 @@ class Battery:
     self.efficiency: int | float
     ''' Battery efficiency as a fraction between 0 and 1. '''
     self.lifetime: int | float
-    ''' Battery lifetime in [year]. '''
+    ''' Battery lifetime in time intervals. '''
     self.number_of_cycles: int
     ''' Number of cycles the battery can perform. '''
     self.depth_of_discharge: int | float
     ''' Depth of discharge as a fraction between 0 and 1. '''
-    self.state_of_charge: np.array[np.float64] | None = None
+    self.state_of_charge: npt.NDArray[np.floating]
     ''' Current state of charge in [kWh]. '''
     self.min_soc: int | float
     ''' Minimum battery state of charge in [kWh]. '''
@@ -44,11 +45,11 @@ class Battery:
     ''' Number of discharge cycles performed by the battery during the simulation. '''
     self.energy_per_cycle: float
     ''' Energy required to complete a discharge cycle in [kWh]. '''
-    self.energy_charged: np.ndarray[np.float64] | None = None
+    self.energy_charged: npt.NDArray[np.floating]
     ''' Numpy array to store the energy charged at each time step in [kWh]. '''
-    self.energy_discharged: np.ndarray[np.float64] | None = None
+    self.energy_discharged: npt.NDArray[np.floating]
     ''' Numpy array to store the energy discharged at each time step in [kWh]. '''
-    self.meet_demand: np.ndarray[np.float64] | None = None
+    self.meet_demand: npt.NDArray[np.floating]
     ''' Energy that will effectively meet demand in [kWh]. '''
 
     self.capacity = capacity
@@ -127,51 +128,49 @@ class Battery:
     # Return the remaining demand adjusted after discharging
     return energy_demanded_adjusted - energy_to_discharge * self.efficiency
 
-  def economic_analysis(self, project_lifetime: int | float, maintenance_cost_rate: int | float, discount_rate: int | float, CRF: int | float) -> float:
+  def economic_analysis(self,
+                        project_lifetime_intervals: npt.NDArray[np.integer],
+                        maintenance_cost_rate: int | float,
+                        discount_rate: int | float,
+                        CRF: int | float) -> float:
     r''' Performs the economic analysis of the battery using the Net Present Cost (NPC) approach.
 
     The total NPC of the battery is given by:
 
     .. math::
-        NPC_{bat} = \text{IC}_{bat} + \text{NPV}_{om} + \text{NPV}_{repl} + C_{deg}.
+      NPC_{bat} = \text{IC}_{bat} + \text{NPV}_{om} + \text{NPV}_{repl}.
 
     Where:
     
     - :math:`\text{IC}_{bat}` is the installation cost;
     - :math:`\text{NPV}_{om}` is the Net Present Value of annual operation and maintenance costs;
     - :math:`\text{NPV}_{repl}` is the Net Present Value of replacement costs during the project lifetime;
-    - :math:`C_{deg}` is the degradation cost of the battery.
 
     The installation cost is calculated as:
 
     .. math::
-      \text{IC}_{bat} = C_{kwh} \cdot E^{nominal}_{bat}.
+      \text{IC}_{bat} = C_{kwh} \cdot B_{cap}.
 
-    :math:`C_{kwh}` is the cost per kWh of nominal capacity for the battery and :math:`E^{nominal}_{bat}` is the nominal capacity of the battery. The operation and maintenance costs are calculated as:
+    :math:`C_{kwh}` is the cost per kWh of nominal capacity for the battery and :math:`B_{cap}` is the nominal capacity of the battery. The operation and maintenance costs are calculated as:
 
     .. math::
       \text{NPV}_{om} = \sum^{T}_{t=1}\frac{\text{IC}_{bat} \cdot \tau_{om}}{(1 + d)^t}.
 
-    :math:`T` is the project lifetime in [years], :math:`d` is the discount rate per year (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost, discounted to present value according to the following equation:
+    :math:`T` is the project lifetime in time intervals, :math:`d` is the discount rate per interval (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` intervals and are equal to the installation cost, discounted to present value according to the following equation:
     
     .. math::
-      \text{NPV}_{repl} = \sum_{t \in T_{repl}}\frac{\text{IC}_{bat}}{(1 + d)^t},
+      \text{NPV}_{repl} = \sum^{T}_{t=1}\frac{\left(\left\lfloor \frac{t}{T_{\text{repl}}} \right\rfloor - \left\lfloor \frac{t-1}{T_{\text{repl}}} \right\rfloor\right) \cdot \text{IC}_{bat}}{(1 + d)^t},
 
-    where :math:`T_{repl}` is the set of replacement years. The degradation costs of the battery :math:`C_{deg}` are calculated as:
-
-    .. math::
-      C_{deg} = \sum^{T}_{t=1}\frac{C_{kwh} \cdot E_{dch}}{\text{DoD} \cdot N_{cycles} \cdot (1 + d)^t},
-
-    where :math:`E^{dch}` is the total energy discharged by the battery during the simulation, :math:`\text{DoD}` is the depth of discharge and :math:`N_{cycles}` is the number of cycles performed by the battery.
+    where :math:`T_{repl} = \min\left(I^{\text{lifetime}}_{\text{bat}},\ \dfrac{B^{\text{max}}_{\text{cycles}}}{\sum^{H}_{h=1}B_{\text{cycles}}(h)}\right)` is the time when the equipment must be replaced.
 
     Args:
-        project_lifetime (:type:`int | float`): Total project lifetime in [years].
-        maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
-        discount_rate (:type:`int | float`): Discount rate (per year) during the project lifetime in [decimal].
-        CRF (:type:`int | float`): Capital Recovery Factor (CRF) during the project lifetime in [decimal].
+      project_lifetime_intervals (:type:`npt.NDArray[np.integer]`): Intervals of project lifetime.
+      maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
+      discount_rate (:type:`int | float`): Discount rate (per interval) during the project lifetime in [decimal].
+      CRF (:type:`int | float`): Capital Recovery Factor (CRF) during the project lifetime in [decimal].
 
     Returns:
-        :type:`float`: Total Net Present Cost of the battery in present value in [$].
+      :type:`float`: Total Net Present Cost of the battery in present value in [$].
     '''
 
     # Installation cost (CAPEX)
@@ -179,12 +178,13 @@ class Battery:
     NPC = installation_cost
     # O&M costs (discounted)
     NPC += (installation_cost * maintenance_cost_rate) / CRF
+    # Effective lifetime
+    if self.cycles > 0:
+      lifetime_cycles = self.number_of_cycles / self.cycles
+    else:
+      lifetime_cycles = np.inf
+    t_eff = min(self.lifetime, lifetime_cycles)
     # Replacement costs (discounted)
-    t_repl = min(self.lifetime, self.number_of_cycles / self.cycles)
-    replacement_years = np.arange(t_repl, project_lifetime, t_repl)
-    if len(replacement_years) > 0:
-        NPV_repl = installation_cost / ((1 + discount_rate) ** replacement_years)
-        NPC += np.sum(NPV_repl)
-    # Degradation costs
-    NPC += (self.cost_per_kwh * np.sum(self.energy_discharged)) / (self.depth_of_discharge * self.number_of_cycles * CRF)
-    return NPC
+    n_repl = np.ceil(project_lifetime_intervals / t_eff)
+    NPC += installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:])
+    return float(NPC)

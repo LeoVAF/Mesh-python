@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 class Converter():
   ''' Class to simulate the microgrid DC/DC converter.
@@ -7,7 +8,7 @@ class Converter():
     cost_per_kw (:type:`int | float`): Converter cost per kW of nominal capacity in [$/kW].
     cost_scale (:type:`int | float`): Cost scale factor for converter, where a higher power results in a lower cost per kW in [decimal].
     efficiency (:type:`int | float`): Converter efficiency between 0 and 1.
-    lifetime (:type:`int | float`): Converter lifetime in [year].
+    lifetime (:type:`int | float`): Converter lifetime in time intervals.
   
   Raises:
     TypeError: If the input is not the expected type.
@@ -27,7 +28,7 @@ class Converter():
     self.efficiency: int | float
     ''' Converter efficiency between 0 and 1. '''
     self.lifetime: int | float
-    ''' Converter lifetime in [year]. '''
+    ''' Converter lifetime in time intervals. '''
     self.operation_cost: float = 0.0
     ''' Total costs of the converter in the microgrid during the operation simulation in [$]. '''
 
@@ -36,7 +37,12 @@ class Converter():
     self.efficiency = efficiency
     self.lifetime = lifetime
 
-  def economic_analysis(self, rated_power: int | float , project_lifetime: int | float, maintenance_cost_rate: int | float, discount_rate: int | float, CRF: int | float) -> float:
+  def economic_analysis(self,
+                        rated_power: int | float,
+                        project_lifetime_intervals: npt.NDArray[np.integer],
+                        maintenance_cost_rate: int | float,
+                        discount_rate: int | float,
+                        CRF: int | float) -> float:
     r''' Performs the economic analysis of the converter using the Net Present Cost (NPC) approach.
 
     The total NPC of the converter is given by:
@@ -60,18 +66,18 @@ class Converter():
     .. math::
         \text{NPV}_{om} = \sum^{T}_{t=1}\frac{\text{IC}_{conv} \cdot \tau_{om}}{(1 + d)^t}.
 
-    :math:`T` is the project lifetime in [years], :math:`d` is the discount rate per year (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` years and are equal to the installation cost, discounted to present value according to the following equation:
+    :math:`T` is the project lifetime in time intervals, :math:`d` is the discount rate per interval (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` intervals and are equal to the installation cost, discounted to present value according to the following equation:
     
     .. math::
-        \text{NPV}_{repl} = \sum_{t \in T_{repl}}\frac{\text{IC}_{conv}}{(1 + d)^t},
+      \text{NPV}_{repl} = \sum^{T}_{t=1}\frac{\left(\left\lfloor \frac{t}{T_{\text{repl}}} \right\rfloor - \left\lfloor \frac{t-1}{T_{\text{repl}}} \right\rfloor\right) \cdot \text{IC}_{conv}}{(1 + d)^t},
 
-    where :math:`T_{repl}` is the set of replacement years.
+    where :math:`T_{repl} = I^{\text{lifetime}}_{\text{conv}}` is the time when the euipament must to be replaced.
 
     Args:
         rated_power (:type:`int | float`): The power supported by the converter in [kW].
-        project_lifetime (:type:`int | float`): Total project lifetime in [years].
+        project_lifetime_intervals (:type:`npt.NDArray[np.integer]`): Intervals of project lifetime.
         maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
-        discount_rate (:type:`int | float`): Discount rate (per year) during the project lifetime in [decimal].
+        discount_rate (:type:`int | float`): Discount rate (per interval) during the project lifetime in [decimal].
         CRF (:type:`int | float`): Capital Recovery Factor (CRF) during the project lifetime in [decimal].
 
     Returns:
@@ -84,8 +90,6 @@ class Converter():
     # O&M costs (discounted)
     NPC += (installation_cost * maintenance_cost_rate) / CRF
     # Replacement costs (discounted)
-    replacement_years = np.arange(self.lifetime, project_lifetime, self.lifetime)
-    if len(replacement_years) > 0:
-        NPV_repl = installation_cost / ((1 + discount_rate) ** replacement_years)
-        NPC += np.sum(NPV_repl)
-    return NPC
+    n_repl = np.ceil(project_lifetime_intervals / self.lifetime)
+    NPC += installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:])
+    return float(NPC)
