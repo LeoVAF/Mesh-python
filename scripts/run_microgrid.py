@@ -94,7 +94,7 @@ converter = Converter(cost_per_kw=converter_cost_per_kw,
 
 microgrid = Microgrid(load=load_ind[:8640],
                       temperature=temperature[:8640],
-                      solar_radiation=solar_data[:8640],
+                      solar_irradiance=solar_data[:8640],
                       wind_velocity=wind_data[:8640],
                       wind_height=wind_height,
                       lifetime=microgrid_lifetime,

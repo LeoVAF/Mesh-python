@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 class PublicGrid:
   ''' Represents a AC public grid in the microgrid system. This class is used to manage the public grid's properties and behaviors.
@@ -26,19 +27,19 @@ class PublicGrid:
     ''' Compensation percentage when sending energy to the public grid between 0 and 1. '''
     self.operation_cost: float = 0.0
     ''' Grid purchasing costs in [$]. '''
-    self.energy_purchased: np.ndarray[np.float64] | None = None
+    self.energy_purchased: npt.NDArray[np.floating]
     ''' Numpy array to store the energy purchased at each time step in [kWh]. '''
     self.energy_credit: float = 0.0
     ''' Energy credit stored on the public grid in [kWh]. '''
-    self.energy_credited: np.ndarray[np.float64] | None = None
+    self.energy_credited: npt.NDArray[np.floating]
     ''' Numpy array to store the energy credited at each time step in [kWh]. '''
     self.energy_to_credit: float = 0.0
     ''' Energy that will be credited next month in [kWh]. '''
     self.next_month: int = 0
     ''' Variable to mark the month to account for energy credited. '''
-    self.energy_compensated: np.ndarray[np.float64] | None = None
+    self.energy_compensated: npt.NDArray[np.floating]
     ''' Numpy array to store the energy compensated at each time step in [kWh]. '''
-    self.meet_demand: np.ndarray[np.float64] | None = None
+    self.meet_demand: npt.NDArray[np.floating]
     ''' Energy that will effectively meet demand in [kWh]. '''
 
     self.cost_per_kwh = cost_per_kwh
@@ -73,7 +74,7 @@ class PublicGrid:
         self.energy_credited[t] = self.energy_to_credit
         self.energy_to_credit = 0.0
 
-  def store_energy_credit(self, surplus_energy: int | float, inverter_efficiency: int | float, t: int) -> None:
+  def export_energy(self, surplus_energy: int | float, inverter_efficiency: int | float, t: int) -> float:
     ''' Stores the energy credit to compensate.
 
     Args:
@@ -82,7 +83,7 @@ class PublicGrid:
       t (:type:`int`): Time step.
     
     Returns:
-      :type:`float`: Returns 0.0 for compatibility with the Microgrid class.
+      :type:`float`: There is no surplus when store credit.
     '''
 
     # Credit the energy sent to the public grid
@@ -91,8 +92,8 @@ class PublicGrid:
     self.update_month(t)
     return 0.0
 
-  def purchase_energy(self, energy_demanded: int | float, t: int) -> int | float:
-    ''' Purchases energy from the public grid, compensating with available credits.
+  def import_energy(self, energy_demanded: int | float, t: int) -> None:
+    ''' Import energy from the public grid, compensating with available credits.
 
     Args:
       energy_demanded (:type:`int | float`): Energy demanded in [kWh].
@@ -113,7 +114,9 @@ class PublicGrid:
     # Accounts for compensated energy
     self.update_month(t)
 
-  def economic_analysis(self, project_lifetime: int | float, discount_rate: int | float) -> float:
+  def economic_analysis(self,
+                        project_lifetime: int | float,
+                        discount_rate: int | float) -> float:
     r''' Performs the economic analysis of the public grid. It is calculated according to the following equation:
 
     .. math::
@@ -121,14 +124,14 @@ class PublicGrid:
 
     where:
     
-    - :math:`T` is the project lifetime in [years];
-    - :math:`C_{grid}` is the simulated purchasing cost during a year in [$];
+    - :math:`T` is the project lifetime in time intervals;
+    - :math:`C_{grid}` is the simulated purchasing cost during a interval in [$];
     - :math:`e` is the tariff growth rate during the project lifetime;
     - :math:`d` is the discount rate during the project lifetime.
 
     Args:
-      project_lifetime (:type:`int | float`): The microgrid project lifetime in [years].
-      discout_rate (:type:`int | float`): Discount rate (per year) during the project lifetime.
+      project_lifetime (:type:`int | float`): The microgrid project lifetime in time intervals.
+      discout_rate (:type:`int | float`): Discount rate (per interval) during the project lifetime.
     
     Returns:
       :type:`float`: Total Net Present Cost of purchasing from the public grid in present value in [$].
