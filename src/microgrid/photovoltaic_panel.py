@@ -128,5 +128,5 @@ class PhotovoltaicPanel:
     NPC += (installation_cost * maintenance_cost_rate) / CRF
     # Replacement costs (discounted)
     n_repl = np.ceil(project_lifetime_intervals / self.lifetime)
-    NPC += installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:])
+    NPC += np.sum(installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:]))
     return float(NPC)

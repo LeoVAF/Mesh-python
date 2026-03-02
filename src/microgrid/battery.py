@@ -186,5 +186,5 @@ class Battery:
     t_eff = min(self.lifetime, lifetime_cycles)
     # Replacement costs (discounted)
     n_repl = np.ceil(project_lifetime_intervals / t_eff)
-    NPC += installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:])
+    NPC += np.sum(installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:]))
     return float(NPC)

@@ -47,7 +47,7 @@ def main():
     Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
 
     num_runs = 1 # Number of runs
-    num_proc = 5 # Number of processes to execute the fitness function in parallel
+    num_proc = None # Number of processes to execute the fitness function in parallel
 
     objective_dim = 3 # Number of objectives
     position_dim = 3 # Design space dimension

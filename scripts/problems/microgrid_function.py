@@ -90,7 +90,7 @@ def microgrid_function(pv_rated_power: int | float,
 
   microgrid = Microgrid(load=load,
                         temperature=temperature,
-                        solar_radiation=solar_data,
+                        solar_irradiance=solar_data,
                         wind_velocity=wind_data,
                         wind_height=wind_height,
                         lifetime=microgrid_lifetime,
