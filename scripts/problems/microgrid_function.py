@@ -1,10 +1,10 @@
-from microgrid.microgrid import Microgrid
-from microgrid.photovoltaic_panel import PhotovoltaicPanel
-from microgrid.wind_turbine import WindTurbine
-from microgrid.battery import Battery
-from microgrid.public_grid import PublicGrid
-from microgrid.inverter import Inverter
-from microgrid.converter import Converter
+from simulation.microgrid import Microgrid
+from simulation.photovoltaic_panel import PhotovoltaicPanel
+from simulation.wind_turbine import WindTurbine
+from simulation.battery import Battery
+from simulation.public_grid import PublicGrid
+from simulation.inverter import Inverter
+from simulation.converter import Converter
 
 import numpy as np
 
@@ -116,7 +116,7 @@ def simulation(pv_rated_power: int | float,
               load: np.ndarray[np.number],
               temperature: np.ndarray[np.number],
               solar_data: np.ndarray[np.number],
-              wind_data: np.ndarray[np.number]) -> np.ndarray[np.float64]:
+              wind_data: np.ndarray[np.number]) -> Microgrid:
   # Photovoltaic panel input
   pv_cost_per_kwp = 654
   pv_lifetime = 20
@@ -191,7 +191,7 @@ def simulation(pv_rated_power: int | float,
 
   microgrid = Microgrid(load=load,
                         temperature=temperature,
-                        solar_radiation=solar_data,
+                        solar_irradiance=solar_data,
                         wind_velocity=wind_data,
                         wind_height=wind_height,
                         lifetime=microgrid_lifetime,

@@ -1,10 +1,10 @@
-from microgrid.microgrid import Microgrid
-from microgrid.photovoltaic_panel import PhotovoltaicPanel
-from microgrid.wind_turbine import WindTurbine
-from microgrid.battery import Battery
-from microgrid.public_grid import PublicGrid
-from microgrid.inverter import Inverter
-from microgrid.converter import Converter
+from simulation.microgrid import Microgrid
+from simulation.photovoltaic_panel import PhotovoltaicPanel
+from simulation.wind_turbine import WindTurbine
+from simulation.battery import Battery
+from simulation.public_grid import PublicGrid
+from simulation.inverter import Inverter
+from simulation.converter import Converter
 
 import numpy as np
 
