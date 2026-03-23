@@ -1,9 +1,9 @@
-from microgrid.photovoltaic_panel import PhotovoltaicPanel
-from microgrid.wind_turbine import WindTurbine
-from microgrid.battery import Battery
-from microgrid.public_grid import PublicGrid
-from microgrid.inverter import Inverter
-from microgrid.converter import Converter
+from simulation.photovoltaic_panel import PhotovoltaicPanel
+from simulation.wind_turbine import WindTurbine
+from simulation.battery import Battery
+from simulation.public_grid import PublicGrid
+from simulation.inverter import Inverter
+from simulation.converter import Converter
 
 import numpy as np
 import numpy.typing as npt
@@ -21,12 +21,12 @@ class Microgrid:
     lifetime (:type:`int`): Microgrid project lifetime in time intervals.
     maintenance_cost_rate (:type:`int | float`): Operations and maintenance cost rate for installed componentes based on installation costs in [decimal].
     discount_rate (:type:`int | float`): The discount rate during the lifetime project in [decimal].
-    photovoltaic_panel (:class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` :type:`| None`): A :class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``.
-    wind_turbine (:class:`~microgrid.wind_turbine.WindTurbine` :type:`| None`): A :class:`~microgrid.wind_turbine.WindTurbine` instance. Default is ``None``.
-    battery (:class:`~microgrid.battery.Battery` :type:`| None`): A :class:`~microgrid.battery.Battery` instance. Default is ``None``.
-    public_grid (:class:`~microgrid.public_grid.PublicGrid` :type:`| None`): A :class:`~microgrid.public_grid.PublicGrid` instance. Default is ``None``.
-    inverter (:class:`~microgrid.inverter.Inverter` :type:`| None`): A :class:`microgrid.inverter.Inverter` instance. Default is ``None``.
-    converter (:class:`~microgrid.converter.Converter` :type:`| None`): A :class:`microgrid.converter.Converter` instance. Default is ``None``.
+    photovoltaic_panel (:class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` :type:`| None`): A :class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``.
+    wind_turbine (:class:`~simulation.wind_turbine.WindTurbine` :type:`| None`): A :class:`~simulation.wind_turbine.WindTurbine` instance. Default is ``None``.
+    battery (:class:`~simulation.battery.Battery` :type:`| None`): A :class:`~simulation.battery.Battery` instance. Default is ``None``.
+    public_grid (:class:`~simulation.public_grid.PublicGrid` :type:`| None`): A :class:`~simulation.public_grid.PublicGrid` instance. Default is ``None``.
+    inverter (:class:`~simulation.inverter.Inverter` :type:`| None`): A :class:`simulation.inverter.Inverter` instance. Default is ``None``.
+    converter (:class:`~simulation.converter.Converter` :type:`| None`): A :class:`simulation.converter.Converter` instance. Default is ``None``.
 
   Raises:
     TypeError: If the input is not the expected type.
@@ -66,17 +66,17 @@ class Microgrid:
     self.discount_rate: int | float
     ''' The discount rate during the lifetime project in [decimal]. '''
     self.photovoltaic_panel: PhotovoltaicPanel | None
-    ''' A :class:`~microgrid.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``. '''
+    ''' A :class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``. '''
     self.wind_turbine: WindTurbine | None
-    ''' A :class:`~microgrid.wind_turbine.WindTurbine` instance. Default is ``None``. '''
+    ''' A :class:`~simulation.wind_turbine.WindTurbine` instance. Default is ``None``. '''
     self.battery: Battery | None
-    ''' A :class:`~microgrid.battery.Battery` instance. Default is ``None``. '''
+    ''' A :class:`~simulation.battery.Battery` instance. Default is ``None``. '''
     self.public_grid: PublicGrid | None
-    ''' A :class:`~microgrid.public_grid.PublicGrid` instance. Default is ``None``.'''
+    ''' A :class:`~simulation.public_grid.PublicGrid` instance. Default is ``None``.'''
     self.inverter: Inverter | None
-    ''' A :class:`microgrid.inverter.Inverter` instance. Default is ``None``.'''
+    ''' A :class:`simulation.inverter.Inverter` instance. Default is ``None``.'''
     self.converter: Converter | None
-    ''' A :class:`microgrid.converter.Converter` instance. Default is ``None``.'''
+    ''' A :class:`simulation.converter.Converter` instance. Default is ``None``.'''
     self.hour_steps: int
     ''' Number of hour steps in the simulation. '''
     self.surplus_energy: npt.NDArray[np.floating]

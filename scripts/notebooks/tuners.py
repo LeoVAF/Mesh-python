@@ -14,8 +14,9 @@ from typing import Callable
 
 import numpy as np
 import optuna
-optuna.logging.set_verbosity(optuna.logging.WARNING)  # Suppress Optuna logs
 import statistics
+
+optuna.logging.set_verbosity(optuna.logging.WARNING)  # Suppress Optuna logs
 
 
 def tuning_fitness(value_list: list) -> float:
@@ -222,7 +223,7 @@ def fine_tune_nsga2(experiment: tuple, # Information to run the experiments
 										 verbose=False)
 
 			# Get the result and calculate the loss value
-			Pos, Fit = res.X, res.F
+			_, Fit = res.X, res.F
 			loss = indicator(Fit)
 			trial.report(loss, step)
 
