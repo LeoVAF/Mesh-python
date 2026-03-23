@@ -1,17 +1,18 @@
-from mesh.core import *
-from mesh.MESH_old import *
+from mesh.core import Mesh, MeshParameters
+from mesh.MESH_old import MESH_old, MESH_Params_old
 
 from problems.benchmark_problems import get_problem
+from problems.microgrid_function import microgrid_function
 
 import numpy as np
 import cProfile
 import pstats
 
 
-objective_dim = 2
-position_dim = 10
+objective_dim = 3
+position_dim = 3
 max_iterations = None
-max_fitness_eval = 15000
+max_fitness_eval = 5000
 population_size = 100
 
 random_state = 42
@@ -46,7 +47,18 @@ def generate_objective_function(objective_dim):
     return objective_function
 func = generate_objective_function(objective_dim)
 
-func, position_min_value, position_max_value = get_problem('zdt2', n_obj=objective_dim, n_var=position_dim)
+# func, position_min_value, position_max_value = get_problem('dtlz1', n_obj=objective_dim, n_var=position_dim)
+
+select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
+position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
+position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
+load = np.genfromtxt('scripts/seasonal_data/load.txt')
+temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
+solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
+wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
+bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
+experiment_name = bat_name[select_bat]
+func = lambda args: microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
 
 def run_new():
     params = MeshParameters(objective_dim,

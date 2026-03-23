@@ -108,6 +108,21 @@ class Microgrid:
     self.hour_steps = len(load)
     self.surplus_energy = np.zeros(self.hour_steps)
 
+  # Defining private functions to handle with None components
+  @staticmethod
+  def _no_battery_charge(surplus_energy: float, converter_efficiency: int | float, t: int) -> float:
+    return surplus_energy
+  @staticmethod
+  def _no_battery_discharge(energy_demanded_adjusted: float, inverter_efficiency: int | float, t: int) -> float:
+    return energy_demanded_adjusted
+  @staticmethod
+  def _no_public_grid_export(surplus_energy: float, inverter_efficiency: int | float, t: int) -> float:
+    return surplus_energy
+  @staticmethod
+  def _no_public_grid_import(energy_demanded: float, t: int) -> None:
+    return None
+  # --------------------------------------------------------
+
   def initialize(self) -> None:
     ''' Initializes the microgrid components. '''
     
@@ -159,17 +174,6 @@ class Microgrid:
   def dispatch_energy(self) -> None:
     ''' Runs the hourly simulation of the microgrid. '''
 
-    # Defining inner functions to handle with None components
-    def _no_battery_charge(surplus_energy: int | float, converter_efficiency: int | float, t: int) -> int | float:
-      return surplus_energy
-    def _no_battery_discharge(energy_demanded_adjusted: int | float, inverter_efficiency: int | float, t: int) -> int | float:
-      return energy_demanded_adjusted
-    def _no_public_grid_export(surplus_energy: int | float, inverter_efficiency: int | float, t: int) -> float:
-      return surplus_energy
-    def _no_public_grid_import(energy_demanded: int | float, t: int) -> None:
-      return None
-    # --------------------------------------------------------
-
     # Get the functions to charge and discharge the battery
     converter_efficiency = 1.0
     if self.battery:
@@ -179,8 +183,8 @@ class Microgrid:
       if self.converter:
         converter_efficiency = self.converter.efficiency
     else:
-      charge_battery = _no_battery_charge
-      discharge_battery = _no_battery_discharge
+      charge_battery = self._no_battery_charge
+      discharge_battery = self._no_battery_discharge
     # Check if the microgrid inverter is connected and get its efficiency
     if self.inverter:
       inverter_efficiency = self.inverter.efficiency
@@ -191,11 +195,11 @@ class Microgrid:
       export_energy = self.public_grid.export_energy
       import_energy = self.public_grid.import_energy
     elif self.public_grid:
-      export_energy = _no_public_grid_export
+      export_energy = self._no_public_grid_export
       import_energy = self.public_grid.import_energy
     else:
-      export_energy = _no_public_grid_export
-      import_energy = _no_public_grid_import
+      export_energy = self._no_public_grid_export
+      import_energy = self._no_public_grid_import
     # Adjust load demanded by inverter efficiency
     energy_demanded_adjusted = self.load / inverter_efficiency
     # Calculate the energy dispatched by generators that met demand
@@ -225,11 +229,11 @@ class Microgrid:
     if self.battery:
       self.battery.state_of_charge = self.battery.state_of_charge[1:]
 
-  def economic_analysis(self, sum_of_loads: int | float) -> None:
+  def economic_analysis(self, sum_of_loads: float) -> None:
     ''' Performs the economic analysis of the microgrid and its components.
     
     Args:
-      sum_of_loads (:type:`int | float`): The total load demand over the simulation period in [kWh].
+      sum_of_loads (:type:`float`): The total load demand over the simulation period in [kWh].
     '''
 
     # Calculate the Capital Recovery Factor (CRF)

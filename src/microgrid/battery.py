@@ -101,16 +101,16 @@ class Battery:
     # Return the remaining surplus energy after charging
     return surplus_energy_adjusted - energy_to_charge
 
-  def discharge(self, energy_demanded_adjusted: int | float, inverter_efficiency: int | float, t: int) -> int | float:
+  def discharge(self, energy_demanded_adjusted: float, inverter_efficiency: int | float, t: int) -> float:
     ''' Discharges the battery to meet demand considering the battery efficiency in this operation.
     
     Args:
-      energy_demanded_adjusted (:type:`int | float`): Energy demanded adjusted by the microgrid inverter to discharge the battery in [kWh].
+      energy_demanded_adjusted (:type:`float`): Energy demanded adjusted by the microgrid inverter to discharge the battery in [kWh].
       inverter_efficiency (:type:`int | float`): The efficiency of the inverter between 0 and 1.
       t (:type:`int`): Time step.
 
     Returns:
-      :type:`int | float`: Amount of remaining demand adjusted after discharging the battery in [kWh].
+      :type:`float`: Amount of remaining demand adjusted after discharging the battery in [kWh].
     '''
     
     # Adjust the state of charge array index to avoid out of bounds error

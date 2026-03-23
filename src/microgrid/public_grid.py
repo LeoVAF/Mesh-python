@@ -74,11 +74,11 @@ class PublicGrid:
         self.energy_credited[t] = self.energy_to_credit
         self.energy_to_credit = 0.0
 
-  def export_energy(self, surplus_energy: int | float, inverter_efficiency: int | float, t: int) -> float:
+  def export_energy(self, surplus_energy: float, inverter_efficiency: int | float, t: int) -> float:
     ''' Stores the energy credit to compensate.
 
     Args:
-      surplus_energy_adjusted (:type:`int | float`): The amount of surplus energy adjusted by the microgrid inverter to store in [kWh].
+      surplus_energy_adjusted (:type:`float`): The amount of surplus energy adjusted by the microgrid inverter to store in [kWh].
       inverter_efficiency (:type:`int | float`): The efficiency of the inverter between 0 and 1.
       t (:type:`int`): Time step.
     
@@ -92,11 +92,11 @@ class PublicGrid:
     self.update_month(t)
     return 0.0
 
-  def import_energy(self, energy_demanded: int | float, t: int) -> None:
+  def import_energy(self, energy_demanded: float, t: int) -> None:
     ''' Import energy from the public grid, compensating with available credits.
 
     Args:
-      energy_demanded (:type:`int | float`): Energy demanded in [kWh].
+      energy_demanded (:type:`float`): Energy demanded in [kWh].
       t (:type:`int`): Time step.
     '''
     

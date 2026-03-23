@@ -74,7 +74,7 @@ def main():
     ################ Microgrid function ###############
 
     max_iterations = None # Maximum number of iterations
-    max_fitness_eval = 2000 # Maximum fitness evaluations
+    max_fitness_eval = 10000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
     communication_probability = 0.2 # Communication probability
