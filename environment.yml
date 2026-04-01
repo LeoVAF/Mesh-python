@@ -5,7 +5,6 @@ dependencies:
   # Development support tools
   - python=3.13
   # Project libraries
-  - cython=3.0
   - ipywidgets=8.1
   - matplotlib=3.10
   - nbformat=5.10
