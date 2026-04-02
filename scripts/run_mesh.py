@@ -14,30 +14,31 @@ def main():
     Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
 
     num_runs = 1 # Number of runs
-    num_proc = None # Number of processes to execute the fitness function in parallel
+    num_proc = 6 # Number of processes to execute the fitness function in parallel
 
     objective_dim = 3 # Number of objectives
-    position_dim = 4 # Design space dimension
+    position_dim = 3 # Design space dimension
     
     # Benchmark problems
-    experiment_name = 'dtlz1'
-    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
+    #experiment_name = 'dtlz1'
+    #func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
     
     ############### Microgrid function ###############
-    # select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
-    # position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
-    # position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
+    select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
+    position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
+    position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
     ''' ###### '''
-    # select_bat = 0 # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
-    # bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
+    select_bat = 0 # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
+    bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     ''' ###### '''
-    # load = np.genfromtxt('scripts/seasonal_data/load.txt')
-    # temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
-    # solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
-    # wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
-    # bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
-    # experiment_name = bat_name[select_bat]
-    # func = lambda args: microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
+    load = np.genfromtxt('scripts/seasonal_data/load.txt')
+    temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
+    solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
+    wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
+    bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
+    experiment_name = bat_name[select_bat]
+    def func(args):
+        return microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
     ################ Microgrid function ###############
 
     max_iterations = None # Maximum number of iterations

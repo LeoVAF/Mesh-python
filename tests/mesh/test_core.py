@@ -34,8 +34,10 @@ params = MeshParameters(
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-toy_function = lambda x: np.array([(1 - 2 * (i % 2)) * x[i % position_dim] for i in range(objective_dim)])
-rank_function = lambda x: np.array([x[0] + x[1], x[0] + 1 - x[1]] + [x[0] for _ in range(objective_dim-2)]) # x[0] controls the particle rank
+def toy_function(x):
+  return np.array([x[0], 1 - x[0]] + [x[0] for _ in range(objective_dim-2)])
+def rank_function(x):
+  return np.array([x[0] + x[1], x[0] + 1 - x[1]] + [x[0] for _ in range(objective_dim-2)]) # x[0] controls the particle rank
 
 equal_tolerance_for_array = 1e-15
 
@@ -143,7 +145,6 @@ def test_differential_evolution():
     mesh.differential_evolution()
     # Check if the strategy particles are in the population
     st_idxs = np.arange(1, test_population_size, 2)
-    Fst = np.array([mesh.fitness_function(Xst[i]) for i in range(population_size)])
     for i, idx in enumerate(st_idxs):
       assert np.array_equal(mesh.population.position[idx], Xst[i])
 
@@ -229,7 +230,9 @@ def test_elitism():
     initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh = Mesh(test_params, lambda x: [x[0] for _ in range(objective_dim)])
+  def f1(x):
+    return np.array([x[0] for _ in range(objective_dim)])
+  mesh = Mesh(test_params, f1)
   mesh.initialize()
 
   # Set the velocity
@@ -271,7 +274,9 @@ def test_elitism():
     initial_positions=initial_positions,
     random_state=random_state
   )
-  mesh = Mesh(test_params, lambda x: [x[0] for _ in range(objective_dim)])
+  def f2(x):
+    return np.array([x[0] for _ in range(objective_dim)])
+  mesh = Mesh(test_params, f2)
   mesh.initialize()
 
   # Set the velocity

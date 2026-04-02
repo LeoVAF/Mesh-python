@@ -40,7 +40,6 @@ def test_Population():
   assert hasattr(mesh_population, 'position')
   assert hasattr(mesh_population, 'velocity')
   assert hasattr(mesh_population, 'fitness')
-  assert hasattr(mesh_population, 'rank')
   assert hasattr(mesh_population, 'sigma')
   assert hasattr(mesh_population, 'global_guide')
   assert hasattr(mesh_population, 'personal_guide_pos')

@@ -19,9 +19,11 @@ random_state = None
 
 equal_tolerance_for_array = 1e-15
 
-# Function for testing
-toy_function = lambda x: np.array([x[0], 1 - x[0]] + [x[0] for _ in range(objective_dim-2)])
-rank_function = lambda x: np.array([x[0] + x[1], x[0] + 1 - x[1]] + [x[0] for _ in range(objective_dim-2)]) # x[0] controls the particle rank
+def toy_function(x):
+  return np.array([x[0], 1 - x[0]] + [x[0] for _ in range(objective_dim-2)])
+def rank_function(x):
+  return np.array([x[0] + x[1], x[0] + 1 - x[1]] + [x[0] for _ in range(objective_dim-2)]) # x[0] controls the particle rank
+
 
 def test_sigma_evaluation():
   # Create a Mesh instance with a toy function

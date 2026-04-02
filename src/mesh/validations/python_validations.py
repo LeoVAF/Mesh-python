@@ -20,14 +20,14 @@ def assert_type(var: Any,
   if not isinstance(var_name, str):
     raise TypeError(f'The parameter "var_name" has type {type(var_name)}, but expected <class \'str\'>.')
   if not isinstance(expected_types, type) and not (isinstance(expected_types, tuple) and all(isinstance(item, type) for item in expected_types)):
-    raise TypeError(f'The parameter "expected_types" has type {type(expected_types)}, but expected (<class \'type\'>, <class \'tuple\'>).')
+    raise TypeError(f'The parameter "expected_types" has type {type(expected_types)}, but expected <class \'type\'> or tuple of <class \'type\'>.')
   if not isinstance(is_optional, bool):
-    raise TypeError(f'The parameter "is_optional" has type {type(is_optional)}, but expected (<class \'bool\'>, <class \'numpy.bool\'>).')
+    raise TypeError(f'The parameter "is_optional" has type {type(is_optional)}, but expected <class \'bool\'>.')
   
   # Check the optional case
   if var is None:
     if not is_optional:
-      raise TypeError(f'The input "{var_name}" is None, but it is not optional.')
+      raise TypeError(f'The input "{var_name}" is None, but it must not be None.')
     return
   # Check the var type
   if not isinstance(var, expected_types):

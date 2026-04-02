@@ -2,7 +2,6 @@ from mesh.parameters import MeshParameters
 from mesh.validations.python_validations import assert_type
 
 from math import comb
-from typing import Optional
 from numpy.typing import NDArray
 
 import numpy as np
@@ -73,5 +72,5 @@ class Memory:
         """ Numpy matrix with the memory position. """
         self.fitness: NDArray[np.number] = np.empty((0, params.objective_dim))
         """ Numpy matrix with the memory fitness. """
-        self.sigma: Optional[NDArray[np.number]] = None
+        self.sigma: NDArray[np.number] = np.empty((0, 0))
         """ Numpy matrix with the memory sigma values. This attribute is only used when the Sigma method is used. """

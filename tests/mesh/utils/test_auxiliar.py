@@ -1,5 +1,4 @@
 from mesh.parameters import MeshParameters
-from mesh.validations.numpy_validations import assert_np_array_for_operations, assert_np_vector_index
 from mesh.utils import auxiliar as aux
 
 import numpy as np
@@ -50,4 +49,4 @@ def test_PreAllocated_failure():
   # Create a PreAllocated instance with a non MeshParameters instance
   test_params = object()
   with pytest.raises(TypeError, match=r'The input "params" has type <class \'object\'>, but expected <class \'mesh.parameters.MeshParameters\'>.'):
-    aux.PreAllocated(test_params)
+    aux.PreAllocated(test_params) # type: ignore

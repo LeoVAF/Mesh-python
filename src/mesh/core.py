@@ -3,8 +3,8 @@ from mesh.operations.differential_mutation import get_differential_mutation
 from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
 from mesh.operations.global_guide_method import get_global_guide_method
 from mesh.parameters import MeshParameters
-from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
 from mesh.particles import Population, Memory
+from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
 from mesh.validations.python_validations import assert_type, is_greater_in_type, is_function
 
 from joblib import Parallel, delayed
@@ -114,12 +114,12 @@ class Mesh():
         else:
             self.evaluation_way = self.sequential_fitness_evaluation
         # Check if generation is a stopping criterion
-        if params.max_gen is not None:
+        if params.max_gen > 0:
             self.count_generation = self.stopping_by_generation
         else:
             self.count_generation = lambda : None
         # Check if the fitness evaluation is a stopping criterion
-        if params.max_fit_eval is not None:
+        if params.max_fit_eval > 0:
             self.evaluate = self.stopping_by_fitness_evaluation
         else:
             self.evaluate = self.evaluation_way

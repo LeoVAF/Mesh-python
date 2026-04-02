@@ -21,7 +21,8 @@ max_fit_eval = 200
 max_personal_guides = 3
 random_state = None
 
-toy_function = lambda x: np.random.rand(objective_dim)
+def toy_function(x):
+  return np.random.rand(objective_dim)
 
 equal_tolerance_for_array = 1e-15
 
@@ -68,7 +69,7 @@ def test_rand_1():
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
       x2 = pool[r_idxs[2]]
-      xst = np.clip(x0 + operation_weight[i] * (x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(x0 + operation_weight[i] * (x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -122,7 +123,7 @@ def test_rand_2():
       x2 = pool[r_idxs[2]]
       x3 = pool[r_idxs[3]]
       x4 = pool[r_idxs[4]]
-      xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -174,7 +175,7 @@ def test_best_1():
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
       xgb = mesh.population.global_guide[idxs[i]]
-      xst = np.clip(xgb + operation_weight[i] * (x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(xgb + operation_weight[i] * (x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -227,7 +228,7 @@ def test_current_to_best_1():
       x1 = pool[r_idxs[1]]
       x = mesh.population.position[idxs[i]]
       xgb = mesh.population.global_guide[idxs[i]]
-      xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -280,7 +281,7 @@ def test_current_to_rand_1():
       x1 = pool[r_idxs[1]]
       x2 = pool[r_idxs[2]]
       x = mesh.population.position[idxs[i]]
-      xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 

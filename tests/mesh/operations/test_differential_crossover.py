@@ -20,7 +20,8 @@ max_fit_eval = 200
 max_personal_guides = 3
 random_state = None
 
-toy_function = lambda x: np.random.rand(objective_dim)
+def toy_function(x):
+  return np.random.rand(objective_dim)
 
 test_size = 10
 
@@ -63,7 +64,7 @@ def test_binomial_crossover():
     # Check if the crossover was applied correctly
     for i, x in enumerate(Xcross):
       for j, c in enumerate(x):
-        if (crossover_chances[i, j] <= crossover_rates[i]) or (j == crossover_idxs[i]):
+        if (crossover_chances[i, j] <= crossover_rates[i]) or (j == crossover_idxs[i]): # type: ignore
           assert c == X2[i][j]
         else:
           assert c == X1[i][j]
