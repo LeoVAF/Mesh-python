@@ -36,7 +36,7 @@ def fine_tune_mesh(experiment: tuple, # Information to run the experiments
                                       # (experiment name, experiment folder, fine tuning folder, maximum fitness evaluations, population size, random seed)
                    tuning_configuration: tuple, # Fine tuning configuration (n_trials, n_steps, pruner)
                    problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-                   fixed_parameters: tuple, # MESH fixed parameters
+                   fixed_parameters: tuple,
                    indicator: Callable # Performance indicator
               ) -> str:
 	# Get the experiment name and folder to store results
@@ -106,7 +106,7 @@ def fine_tune_mesh_old(experiment: tuple, # Information to run the experiments
                                       # (experiment name, experiment folder, fine tuning folder, maximum fitness evaluations, population size, random seed)
                    tuning_configuration: tuple, # Fine tuning configuration (n_trials, n_steps, pruner)
                    problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-                   fixed_parameters: tuple, # MESH fixed parameters
+                   fixed_parameters: tuple,
                    indicator: Callable # Performance indicator
               ) -> str:
 	# Get the experiment name and folder to store results
