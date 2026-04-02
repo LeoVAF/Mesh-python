@@ -1,36 +1,3 @@
-###########################################################################
-# Lucas Braga, MS.c. (email: lucas.braga.deo@gmail.com )
-# Gabriel Matos Leite, PhD candidate (email: gmatos@cos.ufrj.br)
-# Carolina Marcelino, PhD (email: carolimarc@ic.ufrj.br)
-# June 16, 2021
-###########################################################################
-# Copyright (c) 2021, Lucas Braga, Gabriel Matos Leite, Carolina Marcelino
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
-#    * Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions and the following disclaimer in
-#      the documentation and/or other materials provided with the
-#      distribution
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS USING 
-# THE CREATIVE COMMONS LICENSE: CC BY-NC-ND "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
 from problems.microgrid_function import microgrid_function
@@ -38,7 +5,7 @@ from problems.benchmark_problems import get_problem
 
 from pathlib import Path
 from tqdm import tqdm
-from pygmo import fast_non_dominated_sorting, select_best_N_mo
+from pygmo import fast_non_dominated_sorting, select_best_N_mo # type: ignore
 from pickle import dump
 
 import numpy as np
@@ -50,27 +17,27 @@ def main():
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     objective_dim = 3 # Number of objectives
-    position_dim = 3 # Design space dimension
+    position_dim = 4 # Design space dimension
     
     # Benchmark problems
-    # experiment_name = 'wfg1'
-    # func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
+    experiment_name = 'dtlz1'
+    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
     
     ############### Microgrid function ###############
-    select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
-    position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
-    position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
+    # select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
+    # position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
+    # position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
     ''' ###### '''
     # select_bat = 0 # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     # bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
     ''' ###### '''
-    load = np.genfromtxt('scripts/seasonal_data/load.txt')
-    temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
-    solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
-    wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
-    bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
-    experiment_name = bat_name[select_bat]
-    func = lambda args: microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
+    # load = np.genfromtxt('scripts/seasonal_data/load.txt')
+    # temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
+    # solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
+    # wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
+    # bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
+    # experiment_name = bat_name[select_bat]
+    # func = lambda args: microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
     ################ Microgrid function ###############
 
     max_iterations = None # Maximum number of iterations

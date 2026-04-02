@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from numpy.typing import NDArray
 from scipy.stats import truncnorm
 from typing import TYPE_CHECKING, Callable
 
@@ -8,7 +9,7 @@ import numpy as np
 if TYPE_CHECKING:
     from mesh.core import Mesh
 
-def binomial_crossover(self: Mesh, X1: np.ndarray[np.any, 2], X2: np.ndarray[np.any, 2]) -> np.ndarray[np.bool, 2]:
+def binomial_crossover(self: Mesh, X1: NDArray[np.number], X2: NDArray[np.number]) -> NDArray[np.number]:
   r''' Apply the Binomial Crossover in ``X1`` in-place from information in ``X2`` according to:
 
   .. math::
@@ -23,12 +24,12 @@ def binomial_crossover(self: Mesh, X1: np.ndarray[np.any, 2], X2: np.ndarray[np.
     The crossover probability is calculated by a Truncated Normal Distribution between 0 and 1 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
   
   Args:
-    X1 (:type:`np.ndarray[np.any, 2]`): The numpy matrix to apply the crossover.
-    X2 (:type:`np.ndarray[np.any, 2]`): The second numpy matrix that will share information in the crossover.
+    X1 (:type:`NDArray[np.number]`): The numpy matrix to apply the crossover.
+    X2 (:type:`NDArray[np.number]`): The second numpy matrix that will share information in the crossover.
     params (:class:`~mesh.parameters.MeshParameters`): The parameters :attr:`~mesh.parameters.MeshParameters.position_dim` and :attr:`~mesh.parameters.MeshParameters.mutation_rate` are used to apply the crossover.
     
   Returns:
-    :type:`np.ndarray[np.any, 2]`: ``X1`` after applying the Binomial Crossover.
+    :type:`NDArray[np.number]`: ``X1`` after applying the Binomial Crossover.
   '''
 
   # Get the size of the X1 to apply the crossover
@@ -47,7 +48,7 @@ def binomial_crossover(self: Mesh, X1: np.ndarray[np.any, 2], X2: np.ndarray[np.
   return X1
 
 # The options of Differential Crossover operation
-differential_crossover_options = {
+differential_crossover_options: dict[str, Callable[[Mesh, NDArray[np.number], NDArray[np.number]], NDArray[np.number]]] = {
   'binomial': binomial_crossover
 }
 ''' The options of Differential Mutation operation. They are:
@@ -55,14 +56,14 @@ differential_crossover_options = {
   - :type:`binomial`: Applies the Binomial Crossover from Differential Evolution.
 '''
 
-def get_differential_crossover(option: {'binomial'}) -> Callable[[Mesh, np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]], np.ndarray[np.float64, 2]]:
+def get_differential_crossover(option: str) -> Callable[[Mesh, NDArray[np.number], NDArray[np.number]], NDArray[np.number]]:
   ''' Sets the Differential Crossover from Differential Evolution according to :attr:`~mesh.operations.differential_crossover.differential_crossover_options`. 
   
   Args:
-    option (:type:`{'binomial'}`): Defines the Differential Crossover option.
+    option (:type:`str`): Differential Crossover option.
 
   Returns:
-    :type:`Callable[[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2], MeshParameters], np.ndarray[np.float64, 2]]`: The Differential Crossover function.
+    :type:`Callable[[`~mesh.core.Mesh`, NDArray[np.number], NDArray[np.number]], NDArray[np.number]]`: The Differential Crossover function.
   '''
 
   return differential_crossover_options[option]

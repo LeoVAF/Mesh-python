@@ -1,50 +1,18 @@
-###########################################################################
-# Lucas Braga, MS.c. (email: lucas.braga.deo@gmail.com )
-# Gabriel Matos Leite, PhD candidate (email: gmatos@cos.ufrj.br)
-# Carolina Marcelino, PhD (email: carolimarc@ic.ufrj.br)
-# June 16, 2021
-###########################################################################
-# Copyright (c) 2021, Lucas Braga, Gabriel Matos Leite, Carolina Marcelino
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
-#    * Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions and the following disclaimer in
-#      the documentation and/or other materials provided with the
-#      distribution
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS USING 
-# THE CREATIVE COMMONS LICENSE: CC BY-NC-ND "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
 from mesh.operations.differential_crossover import get_differential_crossover
 from mesh.operations.differential_mutation import get_differential_mutation
 from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
 from mesh.operations.global_guide_method import get_global_guide_method
 from mesh.parameters import MeshParameters
 from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
-from mesh.utils.particles import Population, Memory
+from mesh.particles import Population, Memory
 from mesh.validations.python_validations import assert_type, is_greater_in_type, is_function
 
 from joblib import Parallel, delayed
-from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance
+from numpy.typing import NDArray
+from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance # type: ignore
 from tqdm import tqdm
 from types import MethodType
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 import random
@@ -54,7 +22,7 @@ class Mesh():
     
     Args:
         params (:class:`~mesh.parameters.MeshParameters`): MESH parameters.
-        fitness_function (:type:`Callable[[np.ndarray[np.number]], np.ndarray[np.number]]`): A fitness function that returns a numpy array with each objective value in the respective component.
+        fitness_function (:type:`Callable[[NDArray[np.number]], NDArray[np.number]]`): A fitness function that returns a numpy vector with each objective value in the respective component.
         log_memory (:type:`str | None`): A string to log the memory. If its value is ``None``, then the memory location and fitness will not be logged in a file.
         num_proc (:type:`int | None`): Number of processes to execute the fitness function in parallel. If it is ``None``, so the fitness function will execute sequentially.
     
@@ -68,46 +36,46 @@ class Mesh():
 
     def __init__(self,
                 params: MeshParameters,
-                fitness_function: Callable[[np.ndarray[np.number]], np.ndarray[np.number]],
+                fitness_function: Callable[[NDArray[np.number]], NDArray[np.number]],
                 log_memory: Optional[str] = None,
                 num_proc: Optional[int] = None):
         
         self.params: MeshParameters
         ''' Mesh parameters. '''
-        self.global_guide_method: MethodType[Callable[[Mesh], None]]
+        self.global_guide_method: Callable[[], None]
         ''' Function to find the global guides for the particles. '''
-        self.differential_mutation_pool: MethodType[Callable[[Mesh], list[np.ndarray[np.float64, 2]]]]
+        self.differential_mutation_pool: Callable[[], tuple[NDArray[np.number], list[NDArray[np.intp]]]]
         ''' Function to make the Differential Mutation pool where the solutions are samppled. '''
-        self.differential_mutation: MethodType[Callable[[Mesh, tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.integer, 2]]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]]
+        self.differential_mutation: Callable[[tuple[NDArray[np.number], list[NDArray[np.intp]]]], tuple[NDArray[np.number], NDArray[np.intp]]]
         ''' Function to do the Differential Mutation operation. '''
-        self.differential_crossover: MethodType[Callable[[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]], np.ndarray[np.float64, 2]]]
+        self.differential_crossover: Callable[[NDArray[np.number], NDArray[np.number]], NDArray[np.number]]
         ''' Function to do the Differential Crossover operation. '''
         self.population: Population = Population(params)
         ''' Population of particles. '''
         self.memory: Memory = Memory(params)
         ''' Memory of particles. '''
-        self.fitness_function: Callable[..., np.ndarray[np.number]]
+        self.fitness_function: Callable[[NDArray[np.number]], NDArray[np.number]]
         ''' Fitness function. '''
         self.generation_counter: int
         ''' Generation counter. Used to stop the algorithm if its value is greater than 0. '''
         self.fitness_eval_counter: int
         ''' Fitness evaluation counter. Used to stop the algorithm if its value is greater than 0. '''
-        self.weights: np.ndarray[np.float64, 2]
-        ''' Weights for the algorithm operations moving the population. '''
+        self.weights: NDArray[np.number]
+        ''' Weight matrix for the algorithm operations moving the population. '''
         self.pre_allocated: PreAllocated
         ''' Pre-allocated data for the algorithm. '''
         self.log_memory: Optional[str]
         ''' A string to log the memory. If its value is ``None``, then the memory location and fitness will not be logged in a file. '''
         self.num_proc: Optional[int]
         ''' Number of processes to execute the fitness function in parallel. If it is ``None``, so the fitness function will execute sequentially. '''
-        self.evaluation_way: Callable[[np.ndarray[np.float64, 2]], tuple[np.ndarray[np.float64, 2], int]]
+        self.evaluation_way: Callable[[NDArray[np.number]], NDArray[np.number]]
         ''' The way to evaluate the fitness function. It can be sequentially or parallelly. If :attr:`num_proc` is not None, so the fitness evaluations will be parallel with :attr:`num_proc` processes. '''
-        self.evaluate: Callable[[np.ndarray[np.float64, 2]], np.ndarray[np.float64, 2]]
+        self.evaluate: Callable[[NDArray[np.number]], NDArray[np.number]]
         ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is not None, so the fitness evaluations will be counted. '''
         self.count_generation: Callable[[], None]
         ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is not None. '''
-        self.update_memory: Callable[[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]]
-        ''' Function to update the memory. When the :attr:`~mesh.parameters.MeshParameters.memory_size` is less or equal :attr:`~mesh.parameters.MeshParameters.population_size`, the update can be faster. '''
+        self.update_memory: Callable[[NDArray[np.number], NDArray[np.number]]]
+        ''' Function to update the memory matrix. When the :attr:`~mesh.parameters.MeshParameters.memory_size` is less or equal :attr:`~mesh.parameters.MeshParameters.population_size`, the update can be faster. '''
         self.update_progress_bar: Callable[[tqdm, int], int]
         ''' Function to update the progress bar. '''
         self.total_bar: int
@@ -161,10 +129,10 @@ class Mesh():
         else:
             self.update_memory = self.generic_update_memory
         # Choose the way to update the algorithm progress bar
-        if params.max_gen is None:
+        if params.max_gen == 0:
             self.total_bar = params.max_fit_eval
             self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
-        elif params.max_fit_eval is None:
+        elif params.max_fit_eval == 0:
             self.total_bar = params.max_gen
             self.update_progress_bar = self.update_progress_bar_by_generation
         else:
@@ -181,33 +149,33 @@ class Mesh():
         # Repeat the population fitness for all personal guide input
         self.population.personal_guide_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
 
-    def sequential_fitness_evaluation(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
+    def sequential_fitness_evaluation(self, X: NDArray[np.number]) -> NDArray[np.number]:
         ''' Evaluates the fitness given a particle position matrix sequentially.
         
         Args:
-            X (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
+            X (:type:`NDArray[np.number]`): A numpy matrix with the particle positions.
 
         Returns:
-            :type:`np.ndarray[np.number, 2]`: The fitness matrix associated with the particle positions.
+            :type:`NDArray[np.number]`: The fitness matrix associated with the particle positions.
         '''
 
         return np.array([self.fitness_function(x) for x in X])
 
-    def parallel_fitness_evaluation(self, X: np.ndarray[np.number, 2]) -> tuple[np.ndarray[np.number, 2], int]:
+    def parallel_fitness_evaluation(self, X: NDArray[np.number]) -> NDArray[np.number]:
         ''' Evaluates the fitness given a particle position matrix parallelly.
         
         Args:
-            X (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the particle positions.
+            X (:type:`NDArray[np.number]`): A numpy matrix with the particle positions.
 
         Returns:
-            :type:`np.ndarray[np.number, 2]`: The fitness matrix associated with the particle positions.
+            :type:`NDArray[np.number]`: The fitness matrix associated with the particle positions.
         '''
         
         # Create a pool of processes to execute the fitness function parallelly
         fitness_values = Parallel(n_jobs=self.num_proc)(delayed(self.fitness_function)(x) for x in X)
         return np.array(fitness_values)
     
-    def dominates(self, Fx: np.ndarray[np.number, ], Fy: np.ndarray[np.number, ], axis: int | np.integer = 0) -> np.ndarray[np.bool, ]:
+    def dominates(self, Fx: NDArray[np.number], Fy: NDArray[np.number], axis: int = 0) -> NDArray[np.bool]:
         r''' Checks if the domination condition for the numpy arrays ``Fx`` and ``Fy`` with fitness values are satisfied on the respective ``axis``.
         
         Note:
@@ -225,32 +193,32 @@ class Mesh():
                 F(x) \preceq F(y) &\iff \forall i \in \{1,\ \ldots,\ n\}\ (f_i(x) \leq f_i(y)).
         
         Args:
-            Fx (:type:`np.ndarray[np.number, n]`): A n-dimensional numpy array with fitness values.
-            Fy (:type:`np.ndarray[np.number, n]`): A n-dimensional numpy array with fitness values.
-            axis (:type:`int | np.integer`): The axis to compare the arrays. Default is 0.
+            Fx (:type:`NDArray[np.number]`): A n-dimensional numpy array with fitness values.
+            Fy (:type:`NDArray[np.number]`): A n-dimensional numpy array with fitness values.
+            axis (:type:`int`): The axis to compare the arrays. Default is 0.
         
         Returns:
-            :type:`np.ndarray[np.bool, n-1]`: A (n-1)-dimensional numpy array with the result of the comparison.
+            :type:`NDArray[np.bool]`: A n-dimensional numpy array with the result of the comparison.
         '''
 
         return np.all(Fx <= Fy, axis=axis) & np.any(Fx < Fy, axis=axis)
 
-    def get_non_domination_fronts(self, fitness_matrix: np.ndarray[np.number, 2]) -> tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]:
-        ''' Gets the fronts and the domination ranks of the particles given a fitness matrix.
+    def get_non_domination_fronts(self, fitness_matrix: NDArray[np.number]) -> list[NDArray[np.intp]]:
+        ''' Get the non-domination fronts of the particles given their fitness values. The fronts are calculated by the Fast Non-dominated Sorting algorithm from Pygmo.
         
         Note:
             The fronts are a list of numpy arrays. Each numpy array in the list represents a front, starting with the Pareto front. Each particle has its own index.
 
         Args:
-            fitness_matrix (:type:`np.ndarray[np.number, 2]`): A numpy matrix with the fitness values of the particles.
+            fitness_matrix (:type:`NDArray[np.number]`): A numpy matrix with the fitness values of the particles.
 
         Returns:
-            :type:`tuple[list[np.ndarray[np.integer]], np.ndarray[np.integer]]`: A tuple with the fronts and the domination ranks of the particles, respectively.
+            :type:`list[NDArray[np.intp]]`: A list of numpy arrays, each representing a non-dominated front.
         '''
 
         # If there is only one particle in the particle list, then it is the Pareto front by itself
         if(len(fitness_matrix) == 1):
-            return np.array([np.array([0])])
+            return [np.array([0])]
         # Do the Fast Non-dominated Sorting from Pygmo
         non_dominated_fronts, _, _, _ = fast_non_dominated_sorting(points=fitness_matrix)
         return non_dominated_fronts
@@ -373,7 +341,7 @@ class Mesh():
             The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with rank zero.
         
         Returns:
-            :type:`np.ndarray[np.integer]`: A numpy array with the indices of the current population that were selected.
+            :type:`NDArray[np.integer]`: A numpy array with the indices of the current population that were selected.
         '''
 
         population_size = self.params.population_size
@@ -431,7 +399,7 @@ class Mesh():
         self.population.personal_guide_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
         self.population.personal_guide_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
-    def fast_update_memory(self, _: any, __: any) -> None:
+    def fast_update_memory(self, _: Any, __: Any) -> None:
         ''' Updates the memory position and fitness faster using position and fitness numpy matrices from population.
 
         Note:
@@ -460,12 +428,12 @@ class Mesh():
             self.memory.position = unique_pop_positions[memory_pareto_idxs[idxs]]
             self.memory.fitness = selected_fitness[idxs]
 
-    def generic_update_memory(self, position_matrix: np.ndarray[np.float64, 2], fitness_matrix: np.ndarray[np.float64, 2]) -> None:
+    def generic_update_memory(self, position_matrix: NDArray[np.number], fitness_matrix: NDArray[np.number]) -> None:
         ''' Updates the memory position and fitness using a position and fitness numpy matrices.
         
         Args:
-            position_matrix (:type:`np.ndarray[np.float64, 2]`): A numpy matrix with the position of the particles.
-            fitness_matrix (:type:`np.ndarray[np.float64, 2]`): A numpy matrix with the fitness of the particles.
+            position_matrix (:type:`NDArray[np.number]`): A numpy matrix with the position of the particles.
+            fitness_matrix (:type:`NDArray[np.number]`): A numpy matrix with the fitness of the particles.
         '''
 
         # Get the unique positions from the position matrix and the memory
@@ -529,9 +497,8 @@ class Mesh():
             except StoppingAlgorithm as stop:
                 # Updated the memory
                 self.generic_update_memory(stop.position, stop.fitness)
-                # Log the memory
-                if self.log_memory is not None:
-                    self.logging()
+                # Log the memory if it is necessary
+                self.logging()
 
     def update_progress_bar_by_fitness_evaluation(self, pbar: tqdm, prev_bar_value: int) -> int:
         ''' Updates the progress bar by fitness evaluations. It is used when the stopping criterion is fitness evaluation or both generation and fitness evaluation.
@@ -573,14 +540,14 @@ class Mesh():
             self.generation_counter -= 1
             raise StoppingAlgorithm(np.empty((0, self.params.position_dim)), np.empty((0, self.params.objective_dim)))
     
-    def stopping_by_fitness_evaluation(self, X: np.ndarray[np.float64, 2]) -> tuple[np.ndarray[np.float64, 2], int]:
+    def stopping_by_fitness_evaluation(self, X: NDArray[np.number]) -> NDArray[np.number]:
         ''' Evaluates the position matrix ``X`` and counts the fitness evaluations. This method is used when the stopping criterion is by fitness evaluations.
         
         Args:
-            X (:type:`np.ndarray[np.float64, 2]`): A numpy matrix with the particle positions.
+            X (:type:`NDArray[np.number]`): A numpy matrix with the particle positions.
             
         Returns:
-            :type:`tuple[np.ndarray[np.float64, 2], int]`: A tuple with the fitness matrix and the minimum number of evaluations that doesn't stop the algorithm.
+            :type:`NDArray[np.number]`: The fitness matrix.
         
         Raises:
             :class:`~mesh.utils.auxiliar.StoppingAlgorithm`: If the number of fitness evaluations is greater than the maximum number of fitness evaluations.    
@@ -600,14 +567,14 @@ class Mesh():
             X_sliced = X[:min_evaluations]
             raise StoppingAlgorithm(X_sliced, self.evaluation_way(X_sliced))
 
-    def get_results(self) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]:
+    def get_results(self) -> tuple[NDArray[np.number], NDArray[np.number]]:
         ''' Returns a tuple with the memory position and fitness, respectively.
         
         Note:
             This method must be used at the end of the algorithm.
         
         Returns:
-            :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.float64, 2]]`: A tuple with the memory position and fitness, respectively.
+            :type:`tuple[NDArray[np.number], NDArray[np.number]]`: A tuple with the memory position and fitness, respectively.
         '''
 
         return self.memory.position, self.memory.fitness
@@ -616,29 +583,30 @@ class Mesh():
         ''' Logs memory position and fitness at the end of the algorithm in two .txt files if :attr:`log_memory` is a string. Then this method uses the string value :attr:`log_memory` at the beginning of both files as the name of the fitness and position logs.
         '''
 
-        # Log the fitness
-        file = open(self.log_memory+"-fit.txt","a+")
-        memory_fitness = ""
-        for fit in self.memory.fitness:
-            string = ""
-            for i in range(self.params.objective_dim):
-                string += str(fit[i]) + " "
-            string = string[:-1]
-            memory_fitness += string + ", "
-        memory_fitness = memory_fitness[:-2]
-        memory_fitness += "\n"
-        file.write(memory_fitness)
-        file.close()
-        # Log the position
-        file2 = open(self.log_memory + "-pos.txt", "a+")
-        memory_position = ""
-        for pos in self.memory.position:
-            string = ""
-            for i in range(self.params.position_dim):
-                string += str(pos[i])+" "
-            string = string[:-1]
-            memory_position += string + ", "
-        memory_position = memory_position[:-2]
-        memory_position += "\n"
-        file2.write(memory_position)
-        file2.close()
+        if self.log_memory is not None:
+            # Log the fitness
+            file = open(self.log_memory+"-fit.txt","a+")
+            memory_fitness = ""
+            for fit in self.memory.fitness:
+                string = ""
+                for i in range(self.params.objective_dim):
+                    string += str(fit[i]) + " "
+                string = string[:-1]
+                memory_fitness += string + ", "
+            memory_fitness = memory_fitness[:-2]
+            memory_fitness += "\n"
+            file.write(memory_fitness)
+            file.close()
+            # Log the position
+            file2 = open(self.log_memory + "-pos.txt", "a+")
+            memory_position = ""
+            for pos in self.memory.position:
+                string = ""
+                for i in range(self.params.position_dim):
+                    string += str(pos[i])+" "
+                string = string[:-1]
+                memory_position += string + ", "
+            memory_position = memory_position[:-2]
+            memory_position += "\n"
+            file2.write(memory_position)
+            file2.close()

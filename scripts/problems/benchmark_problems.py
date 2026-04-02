@@ -1,13 +1,14 @@
 from problems.DTLZ import dtlz1_pareto, dtlz2_pareto, dtlz3_pareto, dtlz4_pareto, dtlz5_pareto, dtlz6_pareto, dtlz7_pareto
 
-from pygmo import problem, dtlz, zdt, fast_non_dominated_sorting, select_best_N_mo
+from numpy.typing import NDArray
+from pygmo import problem, dtlz, zdt, fast_non_dominated_sorting, select_best_N_mo # type: ignore
 from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
 from optproblems import zdt as opt_zdt, wfg as opt_wfg
 from typing import Callable
 
 import numpy as np
 
-def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> tuple[Callable, np.ndarray[np.float64], np.ndarray[np.float64]]:
+def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> tuple[Callable, NDArray[np.number], NDArray[np.number]]:
   # Validation of inputs
   if name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'} and (n_obj != 2 or n_var < 2):
     raise ValueError(f'Problem {name} only supports 2 objectives.')
@@ -18,11 +19,11 @@ def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> 
       ValueError(f'Problem {name} requires at least 2 objectives.')
   if name in {'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
     if wfg_k is None:
-      raise ValueError(f'For WFG problems, the parameter "k" is required.')
+      raise ValueError('For WFG problems, the parameter "k" is required.')
     if (wfg_k % (n_obj - 1) != 0):
-      raise ValueError(f'For WFG problems, the parameter "k" must be a multiple of "n_obj" minus one.')
+      raise ValueError('For WFG problems, the parameter "k" must be a multiple of "n_obj" minus one.')
     if name in {'wfg2', 'wfg3'} and ((n_var - wfg_k) % 2) != 0:
-      raise ValueError(f'For WFG problems, the number of distance-related variables (n_var - wfg_k) must be divisible by two.')
+      raise ValueError('For WFG problems, the number of distance-related variables (n_var - wfg_k) must be divisible by two.')
 
   # Problem selection
   if name in {'zdt1', 'zdt2', 'zdt3', 'zdt6'}:
@@ -54,7 +55,7 @@ def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> 
 
 ######################################################## Pareto front #######################################################
 
-def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = None) -> np.ndarray[np.float64, ]:
+def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = None) -> NDArray[np.float64]:
   # Validation of inputs
   if name not in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6', 'dtlz1', 'dtlz2', 'dtlz3', 'dtlz4', 'dtlz5', 'dtlz6', 'dtlz7', 'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
     raise ValueError(f"Pareto front for {name} not found.")
@@ -69,11 +70,11 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
       ValueError(f'Problem {name} requires at least 2 objectives.')
   if name in {'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
     if wfg_k is None:
-      raise ValueError(f'For WFG problems, the parameter "k" is required.')
+      raise ValueError('For WFG problems, the parameter "k" is required.')
     if (wfg_k % (n_obj - 1) != 0):
-      raise ValueError(f'For WFG problems, the parameter "k" must be a multiple of "n_obj" minus one.')
+      raise ValueError('For WFG problems, the parameter "k" must be a multiple of "n_obj" minus one.')
     if name in {'wfg2', 'wfg3'} and ((n_var - wfg_k) % 2) != 0:
-      raise ValueError(f'For WFG problems, the number of distance-related variables (n_var - wfg_k) must be divisible by two.')
+      raise ValueError('For WFG problems, the number of distance-related variables (n_var - wfg_k) must be divisible by two.')
 
   # Pareto function selection
   if name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'}:
@@ -104,8 +105,7 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     optimal_solutions = prob_class.get_optimal_solutions(N)
     for individual in optimal_solutions:
       prob_class.evaluate(individual)
-    objective_values = np.vstack((objective_values,
-                                  np.array([individual.objective_values for individual in optimal_solutions])))
+    objective_values = np.vstack((objective_values, np.array([individual.objective_values for individual in optimal_solutions])))
   elif name in {'wfg2', 'wfg3'}:
     # Pymoo Pareto front generation
     pareto_dict = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()}
@@ -116,8 +116,7 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     optimal_solutions = prob_class.get_optimal_solutions(N)
     for individual in optimal_solutions:
       prob_class.evaluate(individual)
-    objective_values = np.vstack((objective_values,
-                                  np.array([individual.objective_values for individual in optimal_solutions])))
+    objective_values = np.vstack((objective_values, np.array([individual.objective_values for individual in optimal_solutions])))
 
   # Get the non dominated objective values
   best_idxs = select_best_N_mo(objective_values, N)

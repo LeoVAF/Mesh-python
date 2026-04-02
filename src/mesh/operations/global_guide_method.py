@@ -1,14 +1,15 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable
 
+from numpy.typing import NDArray
 from sklearn.neighbors import KDTree
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
 if TYPE_CHECKING:
     from mesh.core import Mesh
 
-def sigma_evaluation(self: Mesh, fitness_matrix: np.ndarray[np.number, 2]) -> np.ndarray[np.number, 2]:
+def sigma_evaluation(self: Mesh, fitness_matrix: NDArray[np.number]) -> NDArray[np.number]:
   r''' Calculates the sigma value for each particle in the population. The sigma value is the fitness difference of all the dimensions. The sigma value is a :math:`C^{n_{obj}}_2`-dimensional vector calculated as follows:
 
   .. math::
@@ -21,10 +22,10 @@ def sigma_evaluation(self: Mesh, fitness_matrix: np.ndarray[np.number, 2]) -> np
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    fitness_matrix (:type:`np.ndarray[np.number, 2]`): The fitness matrix of the population.
+    fitness_matrix (:type:`NDArray[np.number]`): The fitness matrix of the population.
 
   Returns:
-    :type:`np.ndarray[np.number, 2]`: The sigma value for each particle in the population.
+    :type:`NDArray[np.number]`: The sigma matrix with sigma value for each particle in the population.
   '''
 
   # Get the squared fitness matrix
@@ -39,7 +40,7 @@ def sigma_evaluation(self: Mesh, fitness_matrix: np.ndarray[np.number, 2]) -> np
   # Calculate the sigma values for each particle
   return differences / sum_squared_fitnesses
 
-def nearest_sigma_in_memory(self: Mesh, particle_idxs: np.ndarray[np.integer]) -> np.ndarray[np.integer, 2]:
+def nearest_sigma_in_memory(self: Mesh, particle_idxs: NDArray[np.intp]) -> NDArray[np.intp]:
   ''' Finds the index of the nearest particle on the memory by the sigma value for each index particle from population. The nearest particle will be different from itself (some particles in population can be in memory).
 
   Note:
@@ -47,10 +48,10 @@ def nearest_sigma_in_memory(self: Mesh, particle_idxs: np.ndarray[np.integer]) -
   
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    particle_idxs (:type:`np.ndarray[np.integer]`): The indices of the population particles to find the nearest particle.
+    particle_idxs (:type:`NDArray[np.intp]`): The indices of the population particles to find the nearest particle.
 
   Returns:
-    :type:`np.ndarray[np.integer, 2]`: The indices of the nearest particles in the memory. Each row has the index of the nearest particle for the respective particle in the input. If the nearest particle is itself, the index of the second particle is returned.
+    :type:`NDArray[np.intp]`: The indices of the nearest particles in the memory. Each row has the index of the nearest particle for the respective particle in the input. If the nearest particle is itself, the index of the second particle is returned.
   '''
 
   # Get the nearest neighbor distances and indices
@@ -61,16 +62,16 @@ def nearest_sigma_in_memory(self: Mesh, particle_idxs: np.ndarray[np.integer]) -
   # Return the nearest indices
   return indices[np.arange(len(particle_idxs)), first_valid_idxs]
 
-def nearest_sigma_in_fronts(self: Mesh, particle_idxs: np.ndarray[np.integer], search_idxs: np.ndarray[np.integer]) -> np.ndarray[np.integer, 2]:
+def nearest_sigma_in_fronts(self: Mesh, particle_idxs: NDArray[np.intp], search_idxs: NDArray[np.intp]) -> NDArray[np.intp]:
   ''' Finds the index of the nearest particle on the search front by the sigma value for each index particle from population. Each row has the index of the nearest particle for the respective particle in the input.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    particle_idxs (:type:`np.ndarray[np.integer]`): The indices of the population particles to find the nearest particle.
-    search_idxs (:type:`np.ndarray[np.integer]`): The indices of the particles to search for the nearest neighbors.
+    particle_idxs (:type:`NDArray[np.intp]`): The indices of the population particles to find the nearest particle.
+    search_idxs (:type:`NDArray[np.intp]`): The indices of the particles to search for the nearest neighbors.
 
   Returns:
-    :type:`np.ndarray[np.integer, 2]`: The indices of the nearest particles in the search indices. Each row has the index of the nearest particle for the respective particle in the input. If the nearest particle is itself, the index of the second particle is returned.
+    :type:`NDArray[np.intp]`: The indices of the nearest particles in the search indices. Each row has the index of the nearest particle for the respective particle in the input. If the nearest particle is itself, the index of the second particle is returned.
   '''
 
   population_sigma = self.population.sigma
@@ -132,50 +133,10 @@ def sigma_method_in_fronts(self: Mesh) -> None:
     search_front = current_front
     self.population.global_guide[current_front] = self.population.position[nearest_idxs]
 
-def random_in_memory(self: Mesh) -> None:
-  ''' Global guide search by random choice in memory under an Uniform Distribution. The global guide for each particle in the population will be a random particle in memory.
-  
-  Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-  '''
-  # Get the random indices for the particles from memory
-  random_indices = np.random.randint(0, len(self.memory.position), size=self.params.population_size)
-  # Choose the global guide
-  self.population.global_guide[:, :] = self.memory.position[random_indices]
-
-def random_in_fronts(self: Mesh) -> None:
-  ''' Global guide search by random choice in fronts under an Uniform Distribution. The global guide for each particle in the population will be a random particle in the previous front. Particles in the Pareto front will choose the global guide from memory.
-
-  Note:
-    The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
-  
-  Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-  '''
-
-  # Get the masks for the respective rank positions
-  rank_zero_mask = self.population.rank == 0
-  rank_non_zero_mask = ~rank_zero_mask
-  # Set the global guide from memory
-  num_rank_zero = np.sum(rank_zero_mask)
-  self.population.global_guide[rank_zero_mask] = self.memory.position[np.random.randint(0, len(self.memory.position), size=num_rank_zero)]
-  # Get the particles indices which have domination rank greater than zero
-  search_front_idxs = self.population.rank[rank_non_zero_mask] - 1
-  if(len(search_front_idxs)):
-    # Get the fronts and the front sizes
-    fronts = self.fronts
-    # Generate the random indices for domination ranks greater than zero
-    random_indices = np.random.randint(0, [len(fronts[r]) for r in search_front_idxs])
-    rank_non_zero_idxs = np.array([fronts[idx][random_indices[i]] for i, idx in enumerate(search_front_idxs)])
-    # Set the global guide from previous front
-    self.population.global_guide[rank_non_zero_mask] = self.population.position[rank_non_zero_idxs]
-
 # The options of global guide attribution operation
 global_guide_method_options = {
   0: sigma_method_in_memory,
   1: sigma_method_in_fronts,
-  2: random_in_memory,
-  3: random_in_fronts
 }
 ''' The options of global guide attribution operation. They are:
 
@@ -185,11 +146,11 @@ global_guide_method_options = {
   - :type:`3`: Chooses randomly under Uniform Distribution a particle from fronts. Each particle will select its global guide from the next front. Particles in Pareto front will select the global guide from memory.
 '''
 
-def get_global_guide_method(option: {0, 1, 2, 3}) -> Callable[[Mesh], None]:
+def get_global_guide_method(option: int) -> Callable[[Mesh], None]:
   ''' Sets the global guide method according to :attr:`~mesh.operations.global_guide_method.global_guide_method_options`.
   
   Args:
-    option (:type:`{0, 1, 2, 3}`): Defines the global guide method.
+    option (:type:`int`): Defines the global guide method.
 
   Returns:
     :type:`Callable[[Mesh], None]`: The respective function to select the global guide.

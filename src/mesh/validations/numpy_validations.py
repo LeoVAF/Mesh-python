@@ -1,5 +1,7 @@
 from mesh.validations.python_validations import assert_type, is_greater_in_type
 
+from numpy.typing import NDArray
+
 import numpy as np
 
 def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> None:
@@ -23,11 +25,11 @@ def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> No
   if not np.issubdtype(arr.dtype, subtype):
       raise TypeError(f'The input "{arr_name}" has dtype {arr.dtype}, but expected {subtype}.')
 
-def assert_no_nan_in_np_array(arr: np.ndarray[np.number, ], arr_name: str) -> None:
-  ''' Checks if the numpy array of numbers ``arr`` does not have NaN values.
+def assert_no_nan_in_np_array(arr: NDArray[np.number], arr_name: str) -> None:
+  ''' Checks if the n-dimensional numpy array of numbers ``arr`` does not have NaN values.
   
   Args:
-    arr (:type:`np.ndarray[np.number, n]`): The input to be checked.
+    arr (:type:`NDArray[np.number]`): The input to be checked.
     arr_name (:type:`str`): The name of the input.
 
   Raises:
@@ -44,11 +46,11 @@ def assert_no_nan_in_np_array(arr: np.ndarray[np.number, ], arr_name: str) -> No
   if np.any(np.isnan(arr)):
     raise ValueError(f'The input "{arr_name}" has NaN values.')
 
-def assert_np_array_for_operations(arr: np.ndarray[np.number, ], arr_name: str, shape: tuple) -> None:
+def assert_np_array_for_operations(arr: NDArray[np.number], arr_name: str, shape: tuple) -> None:
   ''' Checks if the ``vec`` is a numpy array with the expected subtype for operations.
   
   Args:
-    vec (:type:`np.ndarray[np.number, n]`): The input to be checked.
+    vec (:type:`NDArray[np.number]`): The input to be checked.
     vec_name (:type:`str`): The name of the input.
     size (:type:`tuple`): The expected shape of the numpy array.
 
@@ -71,13 +73,13 @@ def assert_np_array_for_operations(arr: np.ndarray[np.number, ], arr_name: str, 
     if arr.shape[i] != shape[i]:
       raise ValueError(f'The input "{arr_name}" has {arr.shape[i]} element(s) in the axis {i}, but expected {shape[i]} element(s).')
 
-def assert_np_vectors_for_boundary(lower: np.ndarray[np.number], lower_name: str, upper: np.ndarray[np.number], upper_name: str, size: int | np.integer) -> None:
+def assert_np_vectors_for_boundary(lower: NDArray[np.number], lower_name: str, upper: NDArray[np.number], upper_name: str, size: int) -> None:
   ''' Checks if the ``lower`` and ``upper`` are boundary numpy vectors.
   
   Args:
-    lower (:type:`np.ndarray[np.number]`): The lower boundary numpy vector.
+    lower (:type:`NDArray[np.number]`): The lower boundary numpy vector.
     lower_name (:type:`str`): The name of the lower boundary numpy vector.
-    upper (:type:`np.ndarray[np.number]`): The upper boundary numpyvector.
+    upper (:type:`NDArray[np.number]`): The upper boundary numpyvector.
     upper_name (:type:`str`): The name of the upper boundary numpyvector.
     size (:type:`int | np.integer`): The expected size of the boundary numpy vectors.
 
@@ -89,7 +91,7 @@ def assert_np_vectors_for_boundary(lower: np.ndarray[np.number], lower_name: str
   # Check the input types
   assert_type(lower_name, 'lower_name', str)
   assert_type(upper_name, 'upper_name', str)
-  is_greater_in_type(size, 'size', (int, np.integer), 0)
+  is_greater_in_type(size, 'size', int, 0)
   assert_no_nan_in_np_array(lower, lower_name)
   assert_no_nan_in_np_array(upper, upper_name)
 
@@ -105,13 +107,13 @@ def assert_np_vectors_for_boundary(lower: np.ndarray[np.number], lower_name: str
   if np.any(lower > upper):
 	  raise ValueError(f'The input "{lower_name}" must be less than "{upper_name}".')
 
-def assert_np_vector_index(idx_vec: np.ndarray, idx_vec_name: str, max_index: int | np.integer) -> None:
+def assert_np_vector_index(idx_vec: np.ndarray, idx_vec_name: str, max_index: int) -> None:
   ''' Checks if the ``idx_arr`` is an index numpy vector.
   
   Args:
     idx_vec (:type:`np.ndarray`): The numpy vector to be checked.
     idx_vec_name (:type:`str`): The name of the input.
-    max_index (:type:`int | np.integer`): The maximum index value allowed.
+    max_index (:type:`int`): The maximum index value allowed.
 
   Raises:
     TypeError: If the input numpy vector does not have the expected subtype.
@@ -121,10 +123,10 @@ def assert_np_vector_index(idx_vec: np.ndarray, idx_vec_name: str, max_index: in
   # Check the input types
   assert_type(idx_vec_name, 'idx_vec_name', str)
   assert_type(idx_vec, idx_vec_name, np.ndarray)
-  assert_type(max_index, "max_index", (int, np.integer))
+  assert_type(max_index, "max_index", int)
 
   # Check the vector subtype
-  if not np.issubdtype(idx_vec.dtype, int) and not np.issubdtype(idx_vec.dtype, np.integer):
+  if not np.issubdtype(idx_vec.dtype, int):
     raise TypeError(f'The input "{idx_vec_name}" has dtype {idx_vec.dtype}, but expected (<class \'int\'>, <class \'numpy.integer\'>).')
 
   # Check the vector values

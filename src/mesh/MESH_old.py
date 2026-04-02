@@ -35,7 +35,7 @@ import numpy as np
 import sys
 import copy
 from scipy.stats import truncnorm
-from mesh.Particle_old import *
+from mesh.Particle_old import Particle_old
 from tqdm import tqdm
 
 
@@ -173,7 +173,7 @@ class MESH_old:
         fronts = []
         fronts.append([])
 
-        if specific_population != None:
+        if specific_population is not None:
             for s in specific_population:
                 population.append(s)
         else:
@@ -667,7 +667,7 @@ class MESH_old:
                     j = j - 1
 
             ## Main loop
-            while self.stopping_criteria_reached == False:
+            while self.stopping_criteria_reached is False:
                 ## encontra os melhores globais de cada particula
                 if self.params.DE_mutation_type == 2 or self.params.DE_mutation_type == 3 or self.params.DE_mutation_type == 4:#Somente se for necessario na mutação do DE
                     self.global_best_attribution()

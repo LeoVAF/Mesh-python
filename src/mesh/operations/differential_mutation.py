@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from numpy.typing import NDArray
 from random import sample
 from scipy.stats import truncnorm
 from typing import TYPE_CHECKING, Callable
@@ -9,7 +10,7 @@ import numpy as np
 if TYPE_CHECKING:
     from mesh.core import Mesh
 
-def rand_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.intp]]]) -> tuple[NDArray[np.number], NDArray[np.intp]]:
   r''' Applies the DE/rand/1 strategy. The strategy is defined as follows:
   
   .. math::
@@ -25,10 +26,10 @@ def rand_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndar
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
+    pool_tuple (:type:`tuple[NDArray[np.number], list[NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
     
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
+    :type:`tuple[NDArray[np.number], NDArray[np.intp]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Get the particle position pool and the index list for the particles
@@ -51,7 +52,7 @@ def rand_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndar
   else:
     return np.array([]), np.array([])
 
-def rand_2(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def rand_2(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.intp]]]) -> tuple[NDArray[np.number], NDArray[np.intp]]:
   r''' Applies the DE/rand/2 strategy. The strategy is defined as follows:
 
   .. math::
@@ -67,10 +68,10 @@ def rand_2(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndar
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
+    pool_tuple (:type:`tuple[NDArray[np.number], list[NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
+    :type:`tuple[NDArray[np.number], NDArray[np.intp]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Get the particle position pool and the index list for the particles
@@ -93,7 +94,7 @@ def rand_2(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndar
   else:
     return np.array([]), np.array([])
 
-def best_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def best_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.intp]]]) -> tuple[NDArray[np.number], NDArray[np.intp]]:
   r''' Applies the DE/best/1. The strategy is defined as follows:
   
   .. math::
@@ -110,10 +111,10 @@ def best_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndar
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
+    pool_tuple (:type:`tuple[NDArray[np.number], list[NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
+    :type:`tuple[NDArray[np.number], NDArray[np.intp]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Update the global best
@@ -138,7 +139,7 @@ def best_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndar
   else:
     return np.array([]), np.array([])
 
-def current_to_best_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def current_to_best_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.intp]]]) -> tuple[NDArray[np.number], NDArray[np.intp]]:
   r''' Applies the DE/current-to-best/1. The strategy is defined as follows:
   
   .. math::
@@ -156,10 +157,10 @@ def current_to_best_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], l
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
+    pool_tuple (:type:`tuple[NDArray[np.number], list[NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
+    :type:`tuple[NDArray[np.number], NDArray[np.intp]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Update the global best
@@ -185,7 +186,7 @@ def current_to_best_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], l
   else:
     return np.array([]), np.array([])
 
-def current_to_rand_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]) -> tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]:
+def current_to_rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.intp]]]) -> tuple[NDArray[np.number], NDArray[np.intp]]:
   r''' Applies the DE/current-to-rand/1. The strategy is defined as follows:
 
   .. math::
@@ -203,10 +204,10 @@ def current_to_rand_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], l
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
-    pool_tuple (:type:`tuple[np.ndarray[np.float64, 2], list[np.ndarray[np.uint64, 2]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
+    pool_tuple (:type:`tuple[NDArray[np.number], list[NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
-    :type:`tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
+    :type:`tuple[NDArray[np.number], NDArray[np.intp]]`: The new particle position matrix and the indices of the particles that underwent Differential Mutation.
   '''
 
   # Get the particle position pool and the index list for the particles
@@ -231,7 +232,7 @@ def current_to_rand_1(self: Mesh, pool_tuple: tuple[np.ndarray[np.float64, 2], l
     return np.array([]), np.array([])
 
 # The options of Differential Mutation operation
-differential_mutation_options = {
+differential_mutation_options: dict[int, Callable[[Mesh, tuple[NDArray[np.number], list[NDArray[np.intp]]]], tuple[NDArray[np.number], NDArray[np.intp]]]] = {
   0: rand_1,
   1: rand_2,
   2: best_1,
@@ -247,14 +248,14 @@ differential_mutation_options = {
   - :type:`4`: Applies the DE/current-to-rand/1 strategy.
 '''
 
-def get_differential_mutation(option: {0, 1, 2, 3, 4}) -> Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]:
+def get_differential_mutation(option: int) -> Callable[[Mesh, tuple[NDArray[np.number], list[NDArray[np.intp]]]], tuple[NDArray[np.number], NDArray[np.intp]]]:
   ''' Sets the Differential Mutation strategy from Differential Evolution according to :attr:`~mesh.operations.differential_mutation.differential_mutation_options`.
   
   Args:
-    option (:type:`{0, 1, 2, 3, 4}`): Defines the Differential Mutation strategy.
+    option (:type:`int`): Differential Mutation strategy.
 
   Returns:
-    :type:`Callable[[Mesh, list[np.ndarray[np.float64, 2]]], tuple[np.ndarray[np.float64, 2], np.ndarray[np.integer]]]`: The Differential Mutation strategy function.
+    :type:`Callable[[Mesh, tuple[NDArray[np.number], list[NDArray[np.intp]]]], tuple[NDArray[np.number], NDArray[np.intp]]]`: The Differential Mutation strategy function.
   '''
 
   return differential_mutation_options[option]
