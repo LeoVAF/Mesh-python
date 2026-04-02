@@ -3,6 +3,7 @@ from mesh.validations.python_validations import assert_type
 
 from math import comb
 from numpy.typing import NDArray
+from scipy.stats import qmc
 
 import numpy as np
 
@@ -25,8 +26,6 @@ class Population:
         ''' Numpy matrix with the particle's velocities initialized randomly under Uniform Distribution. '''
         self.fitness: NDArray[np.number]
         ''' Numpy matrix with the particle's fitnesses initialized with ``np.inf`` values. '''
-        # self.rank: NDArray[np.integer]
-        # ''' Numpy array with the particle's rank. '''
         self.sigma: NDArray[np.number]
         ''' Numpy matrix for the sigma values. Initialized with ``np.inf`` values. Used only if the Sigma method is used. '''
         self.global_guide: NDArray[np.number]
@@ -37,7 +36,9 @@ class Population:
         ''' 3-dimensional numpy array with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` fitnesses. '''
 
         if params.initial_positions is None:
-            self.position = np.random.uniform(params.position_lower_bounds, params.position_upper_bounds, (params.population_size, params.position_dim))
+            sampler = qmc.LatinHypercube(d=params.position_dim, scramble=True)
+            sample = sampler.random(n=params.population_size)
+            self.position = qmc.scale(sample, params.position_lower_bounds, params.position_upper_bounds)
         else:
             self.position = params.initial_positions
         self.velocity = np.random.uniform(params.velocity_lower_bounds, params.velocity_upper_bounds, (params.population_size, params.position_dim))
@@ -46,14 +47,13 @@ class Population:
         if params.global_guide_method in {0, 1}:
             self.sigma = np.full((params.population_size, comb(params.objective_dim, 2)), np.nan)
         else:
-            self.sigma = np.empty((0, 0))
+            self.sigma = np.empty((0, comb(params.objective_dim, 2)))
         self.global_guide = np.full((params.population_size, params.position_dim), np.nan)
         self.personal_guide_pos = np.repeat(self.position[:, np.newaxis, :], params.max_personal_guides, axis=1)
         self.personal_guide_fit = np.full((params.population_size, params.max_personal_guides, params.objective_dim), np.inf)
 
 class Memory:
-    """
-    Represents the MESH memory.
+    """ Represents the MESH memory.
 
     Args:
         population (:class:`Population`): The attributes :attr:`~Population.position` and :attr:`~Population.fitness` are used to set the memory position and fitness.

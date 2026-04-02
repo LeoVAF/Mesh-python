@@ -8,11 +8,11 @@ import cProfile
 import pstats
 
 
-objective_dim = 3
-position_dim = 3
+objective_dim = 10
+position_dim = 30
 max_iterations = None
-max_fitness_eval = 5000
-population_size = 100
+max_fitness_eval = 50000
+population_size = 2048
 
 random_state = 42
 
@@ -46,19 +46,19 @@ optimization_type = [False]*objective_dim
 #     return objective_function
 # func = generate_objective_function(objective_dim)
 
-# func, position_min_value, position_max_value = get_problem('dtlz1', n_obj=objective_dim, n_var=position_dim)
+func, position_min_value, position_max_value = get_problem('dtlz1', n_obj=objective_dim, n_var=position_dim)
 
-select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
-position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
-position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
-load = np.genfromtxt('scripts/seasonal_data/load.txt')
-temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
-solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
-wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
-bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
-experiment_name = bat_name[select_bat]
-def func(args):
-    return microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
+# select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
+# position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
+# position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
+# load = np.genfromtxt('scripts/seasonal_data/load.txt')
+# temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
+# solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
+# wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
+# bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
+# experiment_name = bat_name[select_bat]
+# def func(args):
+#     return microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
 
 def run_new():
     params = MeshParameters(objective_dim,
