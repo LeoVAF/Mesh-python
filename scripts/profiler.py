@@ -1,5 +1,4 @@
 from mesh.core import Mesh, MeshParameters
-from mesh.MESH_old import MESH_old, MESH_Params_old
 
 from problems.benchmark_problems import get_problem
 from problems.microgrid_function import microgrid_function
@@ -73,25 +72,6 @@ def run_new():
 
     new_mesh = Mesh(params, func)
     new_mesh.run()
-
-def run_old():
-    params_old = MESH_Params_old(objective_dim,
-                                [False]*objective_dim,
-                                max_iterations,
-                                max_fitness_eval,
-                                position_dim,
-                                position_max_value, position_min_value,
-                                population_size,memory_size,
-                                0,
-                                global_best_attribution_type,
-                                dm_operation_type,
-                                dm_pool_type,
-                                crowding_distance_type,
-                                communication_probability,
-                                mutation_rate,
-                                personal_guide_array_size)
-    old_mesh = MESH_old(params_old, func)
-    old_mesh.run()
 
 cProfile.run('run_new()', sort='time', filename="profile.prof")
 stats = pstats.Stats('profile.prof')

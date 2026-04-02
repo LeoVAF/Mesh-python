@@ -1,6 +1,5 @@
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
-from mesh.MESH_old import MESH_old, MESH_Params_old
 
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.problem import Problem
@@ -73,8 +72,8 @@ def dump_results(file_name: str,
 def run_mesh(experiment: tuple, # Information to run the experiments 
 			 					# (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
 			problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-			fixed_parameters: tuple, # MESH fixed parameters
-			tunable_parameters: tuple # MESH tunable parameters
+			fixed_parameters: tuple,
+			tunable_parameters: tuple
 			) -> str:
 
 	# Get the experiment name and folder to store results
@@ -125,72 +124,11 @@ def run_mesh(experiment: tuple, # Information to run the experiments
 	dump_results(experiment_configuration, experiment_folder, results, combined_P, combined_F, population_size)
 	return f'{experiment_configuration} with tunable parameters ({communication_probability}, {mutation_rate}, {personal_guide_array_size}) was successfully executed!'
 
-def run_mesh_old(experiment: tuple, # Information to run the experiments
-								 										# (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
-							 	 problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-						 		 fixed_parameters: tuple, # MESH fixed parameters
-								 tunable_parameters: tuple # MESH tunable parameters
-							  ) -> str:
-
-	# Get the experiment name and folder to store results
-	experiment_configuration, experiment_folder, fine_tuning_folder, num_runs, max_fitness_eval, population_size, random_state = experiment
-
-  # Get the problem
-	fit_function, objective_dim, position_dim, lower_bound_array, upper_bound_array = problem
-
-	# Get the fixed parameters
-	memory_size, global_best_attribution_type, dm_pool_type, dm_operation_type = fixed_parameters
-
-	# Get tunable parameters (check if the parameters was tuned)
-	tuned_parameters_dict = get_tuned_parameters(experiment_configuration, fine_tuning_folder)
-	communication_probability = tuned_parameters_dict['communication_probability'] if ('communication_probability' in tuned_parameters_dict) else tunable_parameters[0]
-	mutation_rate = tuned_parameters_dict['mutation_rate'] if ('mutation_rate' in tuned_parameters_dict) else tunable_parameters[1]
-	personal_guide_array_size = tuned_parameters_dict['personal_guide_array_size'] if ('personal_guide_array_size' in tuned_parameters_dict) else tunable_parameters[2]
-
-	results = {}
-	combined_F = np.empty((0, objective_dim))
-	combined_P = np.empty((0, position_dim))
-	for i in range(num_runs):
-		params_old = MESH_Params_old(objectives_dim = objective_dim,
-																 optimizations_type = [False]*objective_dim,
-																 max_iterations = 0,
-																 max_fitness_eval = max_fitness_eval,
-																 position_dim = position_dim,
-																 position_max_value = upper_bound_array,
-																 position_min_value = lower_bound_array,
-																 population_size = population_size,
-																 memory_size = memory_size,
-																 memory_update_type = 0,
-																 global_best_attribution_type = global_best_attribution_type,
-																 DE_mutation_type = dm_operation_type,
-																 Xr_pool_type = dm_pool_type,
-																 crowd_distance_type = 0,
-																 communication_probability = communication_probability,
-																 mutation_rate = mutation_rate,
-																 personal_guide_array_size = personal_guide_array_size,
-																 random_state=random_state)
-		old_mesh = MESH_old(params_old, fit_function)
-		old_mesh.log_memory = False
-		Pos, Fit = old_mesh.run()
-
-		# Accumulate the results at each step
-		results[i+1] = {"P":Pos, "F":Fit,}
-		if combined_F is None:
-			combined_P = Pos
-			combined_F = Fit
-		else:
-			combined_P = np.vstack((combined_P, Pos))
-			combined_F = np.vstack((combined_F, Fit))
-
-	# Store the results
-	dump_results(experiment_configuration, experiment_folder, results, combined_P, combined_F, population_size)
-	return f'{experiment_configuration} with tunable parameters ({communication_probability}, {mutation_rate}, {personal_guide_array_size}) was successfully executed!'
-
 def run_nsga2(experiment: tuple, # Information to run the experiments
-																 # (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
+								 # (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
 			       problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-			       fixed_parameters: tuple, # MESH fixed parameters
-			       tunable_parameters: tuple # MESH tunable parameters
+			       fixed_parameters: tuple,
+			       tunable_parameters: tuple
 						) -> str:
 
 	# Get the experiment name and folder to store results

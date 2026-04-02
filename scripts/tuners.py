@@ -1,6 +1,5 @@
 from mesh.core import Mesh
 from mesh.parameters import MeshParameters
-from mesh.MESH_old import MESH_old, MESH_Params_old
 
 from pathlib import Path
 
@@ -36,7 +35,7 @@ def fine_tune_mesh(experiment: tuple, # Information to run the experiments
                                       # (experiment name, experiment folder, fine tuning folder, maximum fitness evaluations, population size, random seed)
                    tuning_configuration: tuple, # Fine tuning configuration (n_trials, n_steps, pruner)
                    problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-                   fixed_parameters: tuple, # MESH fixed parameters
+                   fixed_parameters: tuple,
                    indicator: Callable # Performance indicator
               ) -> str:
 	# Get the experiment name and folder to store results
@@ -102,84 +101,11 @@ def fine_tune_mesh(experiment: tuple, # Information to run the experiments
 	dump_results(experiment_configuration, fine_tuning_folder, study.best_params)
 	return f'{experiment_configuration} was successfully executed!'
 
-def fine_tune_mesh_old(experiment: tuple, # Information to run the experiments
-                                      # (experiment name, experiment folder, fine tuning folder, maximum fitness evaluations, population size, random seed)
-                   tuning_configuration: tuple, # Fine tuning configuration (n_trials, n_steps, pruner)
-                   problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-                   fixed_parameters: tuple, # MESH fixed parameters
-                   indicator: Callable # Performance indicator
-              ) -> str:
-	# Get the experiment name and folder to store results
-	experiment_configuration, fine_tuning_folder, max_fitness_eval, population_size, random_state = experiment
-
-	# Get the fine tune configuration
-	n_trials, n_steps, pruner = tuning_configuration
-
-  	# Get the problem
-	fit_function, objective_dim, position_dim, lower_bound_array, upper_bound_array = problem
-
-	# Get the fixed parameters
-	memory_size, global_best_attribution_type, dm_pool_type, dm_operation_type = fixed_parameters
-
-	def tuning(trial: optuna.Trial):
-		# Get tunable parameters (check if the parameters was tuned)
-		communication_probability = trial.suggest_float('communication_probability', 0, 1)
-		mutation_rate = trial.suggest_float('mutation_rate', 0, 1)
-		personal_guide_array_size = trial.suggest_int('personal_guide_array_size', 1, 3)
-
-		# Execute old MESH
-		loss_values = []
-		for step in range(n_steps):
-			params_old = MESH_Params_old(objectives_dim = objective_dim,
-																	 optimizations_type = [False]*objective_dim,
-																	 max_iterations = 0,
-																	 max_fitness_eval = max_fitness_eval,
-																	 position_dim = position_dim,
-																	 position_max_value = upper_bound_array,
-																	 position_min_value = lower_bound_array,
-																	 population_size = population_size,
-																	 memory_size = memory_size,
-																   memory_update_type = 0,
-																	 global_best_attribution_type = global_best_attribution_type,
-																	 DE_mutation_type = dm_operation_type,
-																	 Xr_pool_type = dm_pool_type,
-																	 crowd_distance_type = 0,
-																	 communication_probability = communication_probability,
-																	 mutation_rate = mutation_rate,
-																	 personal_guide_array_size = personal_guide_array_size,
-																	 random_state=random_state)
-			old_mesh = MESH_old(params_old, fit_function)
-			old_mesh.log_memory = False
-
-			# Get the result and calculate the loss value
-			Pos, Fit = old_mesh.run()
-			loss = indicator(Fit)
-			trial.report(loss, step)
-
-			# If the prune criterion is satisfied, so prune this trial
-			if trial.should_prune():
-				raise optuna.exceptions.TrialPruned()
-
-			# Accumulate the loss value at each step
-			loss_values.append(loss)
-		
-		# Calculate the value to optimize
-		fitness_value = tuning_fitness(loss_values)
-		return fitness_value
-
-	# Apply the fine tuning
-	study = optuna.create_study(pruner=pruner)
-	study.optimize(tuning, n_trials=n_trials)
-
-	# Store the best parameters
-	dump_results(experiment_configuration, fine_tuning_folder, study.best_params)
-	return f'{experiment_configuration} was successfully executed!'
-
 def fine_tune_nsga2(experiment: tuple, # Information to run the experiments
-                                      # (experiment name, experiment folder, fine tuning folder, maximum fitness evaluations, population size, random seed)
+                                       # (experiment name, experiment folder, fine tuning folder, maximum fitness evaluations, population size, random seed)
                    tuning_configuration: tuple, # Fine tuning configuration (n_trials, n_steps, pruner)
                    problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-                   fixed_parameters: tuple, # MESH fixed parameters
+                   fixed_parameters: tuple,
                    indicator: Callable # Performance indicator
               ) -> str:
 	# Get the experiment name and folder to store results
