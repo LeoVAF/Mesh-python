@@ -1,4 +1,4 @@
-from pygmo import fast_non_dominated_sorting, select_best_N_mo
+from pygmo import fast_non_dominated_sorting # type: ignore
 from pymoo.algorithms.moo.ctaea import CTAEA
 from pymoo.algorithms.moo.moead import MOEAD
 from pymoo.algorithms.moo.nsga2 import NSGA2
@@ -9,10 +9,9 @@ from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.optimize import minimize
 
 from joblib import Parallel, delayed
+from pygmo import problem, wfg # type: ignore
 
 import numpy as np
-
-from pygmo import problem, wfg
 
 ################################ Auxiliar Functions ################################
 def normalize(z, n_var):
@@ -82,8 +81,6 @@ for z in X:
   assert np.linalg.norm(F1 - F2) < 1e-10
 ##################################################################################
 
-import time
-
 def wfg_pareto_generation_by_algorithms(name, N, n_var, n_obj, wfg_k):
   ref_dirs = get_reference_directions("das-dennis", n_obj, n_partitions=12)
   nsga2 = NSGA2(pop_size=N, eliminate_duplicates=True)
@@ -98,12 +95,16 @@ def wfg_pareto_generation_by_algorithms(name, N, n_var, n_obj, wfg_k):
                       'wfg9': WFG9(n_var=n_var, n_obj=n_obj, k=wfg_k)}
   elif name in {'wfg2', 'wfg3'}:
     problem_class = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k), 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k)}
+  else:
+    raise ValueError("Invalid problem name. Choose from 'wfg1' to 'wfg9'.")
 
   alg_list = [nsga2, nsga3, ctaea, smsemoa, moead]
 
   algorithm_results_parallel = Parallel(n_jobs=len(alg_list))(delayed(minimize)(problem_class[name], algorithm=alg, termination=('n_gen', 50)) for alg in alg_list)
   algorithm_results = np.empty((0, n_obj))
   for res in algorithm_results_parallel:
-    algorithm_results = np.vstack((algorithm_results, res.F))
+    if res is None:
+      raise ValueError("One of the algorithms did not return a result.")
+    algorithm_results = np.vstack((algorithm_results, np.array(res.F)))
 
   return algorithm_results[fast_non_dominated_sorting(algorithm_results)[0][0]]

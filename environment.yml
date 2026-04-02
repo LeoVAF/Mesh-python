@@ -29,7 +29,6 @@ dependencies:
   - scipy=1.15
 
   # Project management
-  # - poetry=2.1
   - jsonschema=4.23
   - make=4.4
   - myst-nb=1.2

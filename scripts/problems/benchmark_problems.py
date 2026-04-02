@@ -8,7 +8,7 @@ from typing import Callable
 
 import numpy as np
 
-def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> tuple[Callable, NDArray[np.number], NDArray[np.number]]:
+def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> tuple[Callable, NDArray[np.floating], NDArray[np.floating]]:
   # Validation of inputs
   if name in {'zdt1', 'zdt2', 'zdt3', 'zdt4', 'zdt6'} and (n_obj != 2 or n_var < 2):
     raise ValueError(f'Problem {name} only supports 2 objectives.')
@@ -45,10 +45,10 @@ def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> 
             'wfg5': WFG5(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg6': WFG6(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate,
             'wfg7': WFG7(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg8': WFG8(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate,
             'wfg9': WFG9(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate}
-    return func[name], np.zeros((n_var)), np.arange(1, n_var+1) * 2
+    return func[name], np.zeros((n_var)), np.arange(1, n_var+1, dtype=np.float64) * 2
   elif name in {'wfg2', 'wfg3'}:
     func = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate}
-    return func[name], np.zeros((n_var)), np.arange(1, n_var+1) * 2
+    return func[name], np.zeros((n_var)), np.arange(1, n_var+1, dtype=np.float64) * 2
 
   else:
     raise ValueError(f"Problem {name} not found.")
@@ -92,10 +92,10 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
   
   elif name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
     # Pymoo Pareto front generation
-    pareto_classes = {'wfg1': WFG1(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg4': WFG4(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(),
-                      'wfg5': WFG5(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg6': WFG6(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(),
-                      'wfg7': WFG7(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg8': WFG8(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(),
-                      'wfg9': WFG9(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()}
+    pareto_classes = {'wfg1': np.array(WFG1(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()), 'wfg4': np.array(WFG4(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()),
+                      'wfg5': np.array(WFG5(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()), 'wfg6': np.array(WFG6(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()),
+                      'wfg7': np.array(WFG7(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()), 'wfg8': np.array(WFG8(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()),
+                      'wfg9': np.array(WFG9(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front())}
     objective_values = pareto_classes[name]
     # Optproblems Pareto front generation
     prob_classes = {'wfg1': opt_wfg.WFG1(n_obj, n_var, wfg_k), 'wfg4': opt_wfg.WFG4(n_obj, n_var, wfg_k), 'wfg5': opt_wfg.WFG5(n_obj, n_var, wfg_k),
@@ -108,7 +108,8 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     objective_values = np.vstack((objective_values, np.array([individual.objective_values for individual in optimal_solutions])))
   elif name in {'wfg2', 'wfg3'}:
     # Pymoo Pareto front generation
-    pareto_dict = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front(), 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()}
+    pareto_dict = {'wfg2': np.array(WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front()),
+                   'wfg3': np.array(WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k).pareto_front())}
     objective_values = pareto_dict[name]
     # Optproblems Pareto front generation
     prob_classes = {'wfg2': opt_wfg.WFG2(n_obj, n_var, wfg_k), 'wfg3': opt_wfg.WFG3(n_obj, n_var, wfg_k)}
@@ -117,6 +118,8 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     for individual in optimal_solutions:
       prob_class.evaluate(individual)
     objective_values = np.vstack((objective_values, np.array([individual.objective_values for individual in optimal_solutions])))
+  else:
+    raise ValueError(f"Problem {name} not found.")
 
   # Get the non dominated objective values
   best_idxs = select_best_N_mo(objective_values, N)

@@ -30,22 +30,22 @@ dm_operation_type = 0
 crowding_distance_type = 0
 optimization_type = [False]*objective_dim
 
-def generate_objective_function(objective_dim):
-    def objective_function(position):
-        position = np.array(position)
-        objectives = []
-        for i in range(objective_dim):
-            if i % 3 == 0:
-                obj = np.sum((position - (i + 1))**2)
-            elif i % 3 == 1:
-                obj = np.sum(np.sin(position * (i + 1))**2)
-            else:
-                obj = np.prod(1 + position / (i + 1))
-            obj /= (i + 1) * 10
-            objectives.append(obj)
-        return np.array(objectives)
-    return objective_function
-func = generate_objective_function(objective_dim)
+# def generate_objective_function(objective_dim):
+#     def objective_function(position):
+#         position = np.array(position)
+#         objectives = []
+#         for i in range(objective_dim):
+#             if i % 3 == 0:
+#                 obj = np.sum((position - (i + 1))**2)
+#             elif i % 3 == 1:
+#                 obj = np.sum(np.sin(position * (i + 1))**2)
+#             else:
+#                 obj = np.prod(1 + position / (i + 1))
+#             obj /= (i + 1) * 10
+#             objectives.append(obj)
+#         return np.array(objectives)
+#     return objective_function
+# func = generate_objective_function(objective_dim)
 
 # func, position_min_value, position_max_value = get_problem('dtlz1', n_obj=objective_dim, n_var=position_dim)
 
@@ -58,7 +58,8 @@ solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
 wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
 bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
 experiment_name = bat_name[select_bat]
-func = lambda args: microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
+def func(args):
+    return microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
 
 def run_new():
     params = MeshParameters(objective_dim,

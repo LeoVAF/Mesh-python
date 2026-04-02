@@ -6,16 +6,18 @@ from simulation.public_grid import PublicGrid
 from simulation.inverter import Inverter
 from simulation.converter import Converter
 
+from numpy.typing import NDArray
+
 import numpy as np
 
 def microgrid_function(pv_rated_power: int | float,
                        wt_rated_power: int | float,
                        bat_capacity: int | float,
                        select_bat: int,
-                       load: np.ndarray[np.number],
-                       temperature: np.ndarray[np.number],
-                       solar_data: np.ndarray[np.number],
-                       wind_data: np.ndarray[np.number]) -> np.ndarray[np.float64]:
+                       load: NDArray[np.floating],
+                       temperature: NDArray[np.floating],
+                       solar_data: NDArray[np.floating],
+                       wind_data: NDArray[np.floating]) -> NDArray[np.floating]:
   # Photovoltaic panel input
   pv_cost_per_kwp = 654
   pv_lifetime = 20
@@ -113,10 +115,10 @@ def simulation(pv_rated_power: int | float,
               wt_rated_power: int | float,
               bat_capacity: int | float,
               select_bat: int,
-              load: np.ndarray[np.number],
-              temperature: np.ndarray[np.number],
-              solar_data: np.ndarray[np.number],
-              wind_data: np.ndarray[np.number]) -> Microgrid:
+              load: NDArray[np.floating],
+              temperature: NDArray[np.floating],
+              solar_data: NDArray[np.floating],
+              wind_data: NDArray[np.floating]) -> Microgrid:
   # Photovoltaic panel input
   pv_cost_per_kwp = 654
   pv_lifetime = 20

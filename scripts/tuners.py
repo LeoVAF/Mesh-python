@@ -8,7 +8,7 @@ from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 from pymoo.operators.crossover.sbx import SBX
-from pymoo.operators.mutation.pm import PolynomialMutation
+from pymoo.operators.mutation.pm import PM
 
 from typing import Callable
 
@@ -149,7 +149,7 @@ def fine_tune_mesh_old(experiment: tuple, # Information to run the experiments
 																	 personal_guide_array_size = personal_guide_array_size,
 																	 random_state=random_state)
 			old_mesh = MESH_old(params_old, fit_function)
-			old_mesh.log_memory = None
+			old_mesh.log_memory = False
 
 			# Get the result and calculate the loss value
 			Pos, Fit = old_mesh.run()
@@ -201,13 +201,13 @@ def fine_tune_nsga2(experiment: tuple, # Information to run the experiments
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
 		recombination_probability = trial.suggest_float('recombination_probability', 0, 1)
-		eta_recombination = trial.suggest_float('eta_recombination', 0, 20)
+		eta_recombination = trial.suggest_int('eta_recombination', 0, 20)
 		mutation_probability = trial.suggest_float('mutation_probability', 0, 1)
-		eta_mutation = trial.suggest_float('eta_mutation', 0, 20)
+		eta_mutation = trial.suggest_int('eta_mutation', 0, 20)
 
 		# Instantiate NSGA2
 		crossover = SBX(prob=recombination_probability, prob_var=1.0, eta=eta_recombination)
-		mutation = PolynomialMutation(prob=mutation_probability, eta=eta_mutation)
+		mutation = PM(prob=mutation_probability, eta=eta_mutation)
 		nsga2 = NSGA2(pop_size=population_size,
 									crossover=crossover,
 									mutation=mutation,

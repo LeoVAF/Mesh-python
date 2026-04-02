@@ -5,13 +5,13 @@ from mesh.MESH_old import MESH_old, MESH_Params_old
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.problem import Problem
 from pymoo.operators.crossover.sbx import SBX
-from pymoo.operators.mutation.pm import PolynomialMutation
+from pymoo.operators.mutation.pm import PM
 from pymoo.optimize import minimize
 
+from numpy.typing import NDArray
 from pathlib import Path
 from pickle import dump
-from pygmo import fast_non_dominated_sorting, select_best_N_mo
-from tqdm import tqdm
+from pygmo import fast_non_dominated_sorting, select_best_N_mo # type: ignore
 
 import numpy as np
 import os
@@ -41,7 +41,12 @@ def get_tuned_parameters(file_name: str, file_folder: str) -> dict:
 					dictionary[key] = value
 	return dictionary
 
-def dump_results(file_name: str, file_folder: str, results: dict, combined_pos: np.ndarray[np.float64, 2], combined_fit: np.ndarray[np.float64, 2], num_solutions: int) -> None:
+def dump_results(file_name: str,
+				 file_folder: str,
+				 results: dict,
+				 combined_pos: NDArray[np.number],
+				 combined_fit: NDArray[np.number],
+				 num_solutions: int) -> None:
 	# Getting the unique solutions from all executions
 	unique_combined_pos, unique_idxs = np.unique(combined_pos, axis=0, return_index=True)
 	unique_combined_fit = combined_fit[unique_idxs]
@@ -65,12 +70,12 @@ def dump_results(file_name: str, file_folder: str, results: dict, combined_pos: 
 	with open(f'{file_path}/{file_name}.pkl', 'wb') as file:
 		dump(results, file)
 
-def run_mesh(experiment: tuple, # Information to run the experiments
-						 										# (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
-			       problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-			       fixed_parameters: tuple, # MESH fixed parameters
-			       tunable_parameters: tuple # MESH tunable parameters
-						) -> str:
+def run_mesh(experiment: tuple, # Information to run the experiments 
+			 					# (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
+			problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
+			fixed_parameters: tuple, # MESH fixed parameters
+			tunable_parameters: tuple # MESH tunable parameters
+			) -> str:
 
 	# Get the experiment name and folder to store results
 	experiment_configuration, experiment_folder, fine_tuning_folder, num_runs, max_fitness_eval, population_size, random_state = experiment
@@ -89,8 +94,8 @@ def run_mesh(experiment: tuple, # Information to run the experiments
 
 	# Execute MESH
 	results = {}
-	combined_F = None
-	combined_P = None
+	combined_F = np.empty((0, objective_dim))
+	combined_P = np.empty((0, position_dim))
 	for i in range(num_runs):
 		params = MeshParameters(objective_dim = objective_dim,
 								position_dim = position_dim,
@@ -113,12 +118,8 @@ def run_mesh(experiment: tuple, # Information to run the experiments
 		# Accumulate the results at each step
 		Pos, Fit = mesh.get_results()
 		results[i+1] = {"P":Pos, "F":Fit,}
-		if combined_F is None:
-			combined_P = Pos
-			combined_F = Fit
-		else:
-			combined_P = np.vstack((combined_P, Pos))
-			combined_F = np.vstack((combined_F, Fit))
+		combined_P = np.vstack((combined_P, Pos))
+		combined_F = np.vstack((combined_F, Fit))
 	
 	# Store the results
 	dump_results(experiment_configuration, experiment_folder, results, combined_P, combined_F, population_size)
@@ -147,8 +148,8 @@ def run_mesh_old(experiment: tuple, # Information to run the experiments
 	personal_guide_array_size = tuned_parameters_dict['personal_guide_array_size'] if ('personal_guide_array_size' in tuned_parameters_dict) else tunable_parameters[2]
 
 	results = {}
-	combined_F = None
-	combined_P = None
+	combined_F = np.empty((0, objective_dim))
+	combined_P = np.empty((0, position_dim))
 	for i in range(num_runs):
 		params_old = MESH_Params_old(objectives_dim = objective_dim,
 																 optimizations_type = [False]*objective_dim,
@@ -169,7 +170,7 @@ def run_mesh_old(experiment: tuple, # Information to run the experiments
 																 personal_guide_array_size = personal_guide_array_size,
 																 random_state=random_state)
 		old_mesh = MESH_old(params_old, fit_function)
-		old_mesh.log_memory = None
+		old_mesh.log_memory = False
 		Pos, Fit = old_mesh.run()
 
 		# Accumulate the results at each step
@@ -214,7 +215,7 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
 
 	# Instantiate NSGA2
 	crossover = SBX(prob=recombination_probability, prob_var=1.0, eta=eta_recombination)
-	mutation = PolynomialMutation(prob=mutation_probability, eta=eta_mutation)
+	mutation = PM(prob=mutation_probability, eta=eta_mutation)
 	nsga2 = NSGA2(pop_size=population_size,
 				crossover=crossover,
 				mutation=mutation,
@@ -222,8 +223,8 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
 
 	# Execute NSGA2
 	results = {}
-	combined_F = None
-	combined_P = None
+	combined_F = np.empty((0, objective_dim))
+	combined_P = np.empty((0, position_dim))
 	for i in range(num_runs):
 		res = minimize(nsga2_fit_function,
                 	 nsga2,
@@ -232,14 +233,10 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
                 	 verbose=False)
 
 		# Accumulate the results at each step
-		Pos, Fit = res.X, res.F
+		Pos, Fit = np.array(res.X), np.array(res.F)
 		results[i+1] = {"P":Pos, "F":Fit,}
-		if combined_F is None:
-			combined_P = Pos
-			combined_F = Fit
-		else:
-			combined_P = np.vstack((combined_P, Pos))
-			combined_F = np.vstack((combined_F, Fit))
+		combined_P = np.vstack((combined_P, Pos))
+		combined_F = np.vstack((combined_F, Fit))
 	
 	# Store the results
 	dump_results(experiment_configuration, experiment_folder, results, combined_P, combined_F, population_size)
