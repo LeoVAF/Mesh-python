@@ -1,4 +1,4 @@
-from mesh.core import Mesh
+from mesh import Mesh
 from mesh.operations import differential_mutation as dm
 from mesh.parameters import MeshParameters
 

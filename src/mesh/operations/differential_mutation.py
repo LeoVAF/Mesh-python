@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 if TYPE_CHECKING:
-    from mesh.core import Mesh
+    from mesh import Mesh
 
 def rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.intp]]]) -> tuple[NDArray[np.number], NDArray[np.intp]]:
   r''' Applies the DE/rand/1 strategy. The strategy is defined as follows:

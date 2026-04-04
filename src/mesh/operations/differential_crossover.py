@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 if TYPE_CHECKING:
-    from mesh.core import Mesh
+    from mesh import Mesh
 
 def binomial_crossover(self: Mesh, X1: NDArray[np.number], X2: NDArray[np.number]) -> NDArray[np.number]:
   r''' Apply the Binomial Crossover in ``X1`` in-place from information in ``X2`` according to:

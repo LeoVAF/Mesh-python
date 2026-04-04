@@ -1,4 +1,4 @@
-from mesh.parameters import MeshParameters
+from mesh import MeshParameters
 from mesh.particles import Memory, Population
 
 import numpy as np

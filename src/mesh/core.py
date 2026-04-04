@@ -1,11 +1,11 @@
-from mesh.operations.differential_crossover import get_differential_crossover
-from mesh.operations.differential_mutation import get_differential_mutation
-from mesh.operations.differential_mutation_pool import get_differential_mutation_pool
-from mesh.operations.global_guide_method import get_global_guide_method
-from mesh.parameters import MeshParameters
-from mesh.particles import Population, Memory
-from mesh.utils.auxiliar import PreAllocated, StoppingAlgorithm
-from mesh.validations.python_validations import assert_type, is_greater_in_type, is_function
+from .operations.differential_crossover import get_differential_crossover
+from .operations.differential_mutation import get_differential_mutation
+from .operations.differential_mutation_pool import get_differential_mutation_pool
+from .operations.global_guide_method import get_global_guide_method
+from .parameters import MeshParameters
+from .particles import Population, Memory
+from .auxiliar import PreAllocated, StoppingAlgorithm
+from .validations.python_validations import assert_type, is_greater_in_type, is_function
 
 from joblib import Parallel, delayed
 from numpy.typing import NDArray

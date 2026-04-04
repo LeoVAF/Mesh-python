@@ -1,6 +1,6 @@
-from mesh.core import Mesh
+from mesh import Mesh
 from mesh.parameters import MeshParameters
-from mesh.utils.auxiliar import StoppingAlgorithm
+from mesh.auxiliar import StoppingAlgorithm
 
 from unittest.mock import patch
 

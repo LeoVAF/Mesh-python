@@ -1,5 +1,5 @@
-from mesh.parameters import MeshParameters
-from mesh.utils import auxiliar as aux
+from mesh import MeshParameters
+from mesh import auxiliar as aux
 
 import numpy as np
 import pytest

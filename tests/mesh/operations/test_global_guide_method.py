@@ -1,4 +1,4 @@
-from mesh.core import Mesh
+from mesh import Mesh
 from mesh.operations import global_guide_method as gba
 from mesh.parameters import MeshParameters
 

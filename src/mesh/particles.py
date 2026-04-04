@@ -1,5 +1,5 @@
-from mesh.parameters import MeshParameters
-from mesh.validations.python_validations import assert_type
+from .parameters import MeshParameters
+from .validations.python_validations import assert_type
 
 from math import comb
 from numpy.typing import NDArray

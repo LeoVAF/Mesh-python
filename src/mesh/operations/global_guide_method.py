@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 if TYPE_CHECKING:
-    from mesh.core import Mesh
+    from mesh import Mesh
 
 def sigma_evaluation(self: Mesh, fitness_matrix: NDArray[np.number]) -> NDArray[np.number]:
   r''' Calculates the sigma value for each particle in the population. The sigma value is the fitness difference of all the dimensions. The sigma value is a :math:`C^{n_{obj}}_2`-dimensional vector calculated as follows:

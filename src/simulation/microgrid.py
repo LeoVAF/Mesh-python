@@ -1,9 +1,9 @@
-from simulation.photovoltaic_panel import PhotovoltaicPanel
-from simulation.wind_turbine import WindTurbine
-from simulation.battery import Battery
-from simulation.public_grid import PublicGrid
-from simulation.inverter import Inverter
-from simulation.converter import Converter
+from .photovoltaic_panel import PhotovoltaicPanel
+from .wind_turbine import WindTurbine
+from .battery import Battery
+from .public_grid import PublicGrid
+from .inverter import Inverter
+from .converter import Converter
 
 import numpy as np
 import numpy.typing as npt

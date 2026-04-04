@@ -1,5 +1,4 @@
-from mesh.core import Mesh
-from mesh.parameters import MeshParameters
+from mesh import Mesh, MeshParameters
 
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.problem import Problem
@@ -11,6 +10,7 @@ from numpy.typing import NDArray
 from pathlib import Path
 from pickle import dump
 from pygmo import fast_non_dominated_sorting, select_best_N_mo # type: ignore
+from typing import Any
 
 import numpy as np
 import os
@@ -49,7 +49,6 @@ def dump_results(file_name: str,
 	# Getting the unique solutions from all executions
 	unique_combined_pos, unique_idxs = np.unique(combined_pos, axis=0, return_index=True)
 	unique_combined_fit = combined_fit[unique_idxs]
-
 	# Sorting the matrix Fit
 	# Return: (non dominated front, domination list, domination counter, non domination ranks)
 	if len(unique_combined_fit) == 1:
@@ -57,7 +56,6 @@ def dump_results(file_name: str,
 	else:
 			ndf, _, _, _ = fast_non_dominated_sorting(points=unique_combined_fit)
 	n = min(len(ndf[0]), num_solutions)
-	
 	# Get the best indexes based on number of final solutions
 	pareto_front = unique_combined_fit[ndf[0]]
 	best_idx = select_best_N_mo(pareto_front, n)
@@ -69,27 +67,35 @@ def dump_results(file_name: str,
 	with open(f'{file_path}/{file_name}.pkl', 'wb') as file:
 		dump(results, file)
 
-def run_mesh(experiment: tuple, # Information to run the experiments 
-			 					# (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
-			problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-			fixed_parameters: tuple,
-			tunable_parameters: tuple
-			) -> str:
-
-	# Get the experiment name and folder to store results
-	experiment_configuration, experiment_folder, fine_tuning_folder, num_runs, max_fitness_eval, population_size, random_state = experiment
-
-  # Get the problem
-	fit_function, objective_dim, position_dim, lower_bound_array, upper_bound_array = problem
+def run_mesh(experiment: dict[str, Any],
+			 problem: dict[str, Any],
+			 parameters: dict[str, Any]) -> str:
+	print(f"Running {experiment['name']}...")
+	# Get the experiment configuration
+	experiment_name = experiment['name']
+	results_folder = experiment['results_folder']
+	fine_tuning_folder = experiment['fine_tuning_folder']
+	num_runs = experiment['num_runs']
+	max_fitness_eval = experiment['max_fitness_eval']
+	population_size = experiment['population_size']
+	random_state = experiment['random_state']
+    # Get the problem configuration
+	fitness = problem['fitness']
+	objective_dim = problem['objective_dim']
+	position_dim = problem['position_dim']
+	lower_bound_array = problem['lower_bound_array']
+	upper_bound_array = problem['upper_bound_array']
 
 	# Get the fixed parameters
-	memory_size, global_best_attribution_type, dm_pool_type, dm_operation_type = fixed_parameters
-
-	# Get tunable parameters (check if the parameters was tuned)
-	tuned_parameters_dict = get_tuned_parameters(experiment_configuration, fine_tuning_folder)
-	communication_probability = tuned_parameters_dict['communication_probability'] if ('communication_probability' in tuned_parameters_dict) else tunable_parameters[0]
-	mutation_rate = tuned_parameters_dict['mutation_rate'] if ('mutation_rate' in tuned_parameters_dict) else tunable_parameters[1]
-	personal_guide_array_size = tuned_parameters_dict['personal_guide_array_size'] if ('personal_guide_array_size' in tuned_parameters_dict) else tunable_parameters[2]
+	memory_size = parameters['memory_size']
+	global_best_attribution_type = parameters['global_best_attribution_type']
+	dm_pool_type = parameters['differential_mutation_pool_type']
+	dm_operation_type = parameters['differential_mutation_type']
+	# Get tunable parameters (check if the parameters were tuned)
+	tuned_parameters = get_tuned_parameters(experiment_name, fine_tuning_folder)
+	communication_probability = tuned_parameters['communication_probability'] if ('communication_probability' in tuned_parameters) else parameters['communication_probability']
+	mutation_rate = tuned_parameters['mutation_rate'] if ('mutation_rate' in tuned_parameters) else parameters['mutation_rate']
+	personal_guide_array_size = tuned_parameters['personal_guide_array_size'] if ('personal_guide_array_size' in tuned_parameters) else parameters['personal_guide_array_size']
 
 	# Execute MESH
 	results = {}
@@ -111,7 +117,7 @@ def run_mesh(experiment: tuple, # Information to run the experiments
 								max_fit_eval = max_fitness_eval,
 								max_personal_guides = personal_guide_array_size,
 								random_state = random_state)
-		mesh = Mesh(params = params, fitness_function = fit_function)
+		mesh = Mesh(params = params, fitness_function = fitness)
 		mesh.run()
 
 		# Accumulate the results at each step
@@ -121,35 +127,41 @@ def run_mesh(experiment: tuple, # Information to run the experiments
 		combined_F = np.vstack((combined_F, Fit))
 	
 	# Store the results
-	dump_results(experiment_configuration, experiment_folder, results, combined_P, combined_F, population_size)
-	return f'{experiment_configuration} with tunable parameters ({communication_probability}, {mutation_rate}, {personal_guide_array_size}) was successfully executed!'
+	dump_results(experiment_name, results_folder, results, combined_P, combined_F, population_size)
+	return f'{experiment_name} with tunable parameters ({communication_probability}, {mutation_rate}, {personal_guide_array_size}) was successfully executed!'
 
-def run_nsga2(experiment: tuple, # Information to run the experiments
-								 # (experiment name, experiment folder, fine tuning folder, number of runs, maximum fitness evaluations, population size, random seed)
-			       problem: tuple, # Problem setup (fitness function, number of objectives, number of decision variables, lower bound array, upper bound array)
-			       fixed_parameters: tuple,
-			       tunable_parameters: tuple
-						) -> str:
+def run_nsga2(experiment: dict[str, Any],
+			  problem: dict[str, Any],
+			  parameters: dict[str, Any]) -> str:
 
-	# Get the experiment name and folder to store results
-	experiment_configuration, experiment_folder, fine_tuning_folder, num_runs, max_fitness_eval, population_size, random_state = experiment
-
-  # Get the problem
-	fit_function, objective_dim, position_dim, lower_bound_array, upper_bound_array = problem
+	# Get the experiment configuration
+	experiment_name = experiment['name']
+	results_folder = experiment['results_folder']
+	fine_tuning_folder = experiment['fine_tuning_folder']
+	num_runs = experiment['num_runs']
+	max_fitness_eval = experiment['max_fitness_eval']
+	population_size = experiment['population_size']
+	random_state = experiment['random_state']
+    # Get the problem configuration
+	fitness = problem['fitness']
+	objective_dim = problem['objective_dim']
+	position_dim = problem['position_dim']
+	lower_bound_array = problem['lower_bound_array']
+	upper_bound_array = problem['upper_bound_array']
 	class MyProblem(Problem):
 		def __init__(self, n_var, n_obj, xl, xu):
 			super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu)
 		def _evaluate(self, X, out, *args, **kwargs):
-			out["F"] = np.array([fit_function(x) for x in X])
+			out["F"] = np.array([fitness(x) for x in X])
 
 	nsga2_fit_function = MyProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
 
-	# Get tunable parameters (check if the parameters was tuned)
-	tuned_parameters_dict = get_tuned_parameters(experiment_configuration, fine_tuning_folder)
-	recombination_probability = tuned_parameters_dict['recombination_probability'] if ('recombination_probability' in tuned_parameters_dict) else tunable_parameters[0]
-	eta_recombination = tuned_parameters_dict['eta_recombination'] if ('eta_recombination' in tuned_parameters_dict) else tunable_parameters[1]
-	mutation_probability = tuned_parameters_dict['mutation_probability'] if ('mutation_probability' in tuned_parameters_dict) else tunable_parameters[2]
-	eta_mutation = tuned_parameters_dict['eta_mutation'] if ('eta_mutation' in tuned_parameters_dict) else tunable_parameters[3]
+	# Get tunable parameters (check if the parameters were tuned)
+	tuned_parameters_dict = get_tuned_parameters(experiment_name, fine_tuning_folder)
+	recombination_probability = tuned_parameters_dict['recombination_probability'] if ('recombination_probability' in tuned_parameters_dict) else parameters['recombination_probability']
+	eta_recombination = tuned_parameters_dict['eta_recombination'] if ('eta_recombination' in tuned_parameters_dict) else parameters['eta_recombination']
+	mutation_probability = tuned_parameters_dict['mutation_probability'] if ('mutation_probability' in tuned_parameters_dict) else parameters['mutation_probability']
+	eta_mutation = tuned_parameters_dict['eta_mutation'] if ('eta_mutation' in tuned_parameters_dict) else parameters['eta_mutation']
 
 	# Instantiate NSGA2
 	crossover = SBX(prob=recombination_probability, prob_var=1.0, eta=eta_recombination)
@@ -177,5 +189,5 @@ def run_nsga2(experiment: tuple, # Information to run the experiments
 		combined_F = np.vstack((combined_F, Fit))
 	
 	# Store the results
-	dump_results(experiment_configuration, experiment_folder, results, combined_P, combined_F, population_size)
-	return f'{experiment_configuration} with tunable parameters ({recombination_probability}, {eta_recombination}, {mutation_probability}, {eta_mutation}) was successfully executed!'
+	dump_results(experiment_name, results_folder, results, combined_P, combined_F, population_size)
+	return f'{experiment_name} with tunable parameters ({recombination_probability}, {eta_recombination}, {mutation_probability}, {eta_mutation}) was successfully executed!'

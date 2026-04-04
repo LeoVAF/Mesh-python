@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 if TYPE_CHECKING:
-    from mesh.core import Mesh
+    from mesh import Mesh
 
 def pool_from_memory(self: Mesh) -> tuple[NDArray[np.number], list[NDArray[np.intp]]]:
   ''' Makes a tuple containing memory positions where positions will be sampled and a list of indices for the allowed positions for each particles according to Differential Mutation strategies.

@@ -1,4 +1,4 @@
-from mesh.core import Mesh
+from mesh import Mesh
 from mesh.operations import differential_mutation_pool as dmp
 from mesh.parameters import MeshParameters
 

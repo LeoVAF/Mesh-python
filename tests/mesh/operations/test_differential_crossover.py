@@ -1,4 +1,4 @@
-from mesh.core import Mesh
+from mesh import Mesh
 from mesh.operations import differential_crossover as dc
 from mesh.parameters import MeshParameters
 

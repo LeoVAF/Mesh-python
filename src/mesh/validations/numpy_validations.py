@@ -1,4 +1,4 @@
-from mesh.validations.python_validations import assert_type, is_greater_in_type
+from .python_validations import assert_type, is_greater_in_type
 
 from numpy.typing import NDArray
 
