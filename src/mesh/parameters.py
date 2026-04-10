@@ -1,8 +1,8 @@
-from mesh.operations.differential_mutation_pool import differential_mutation_pool_options
-from mesh.operations.differential_mutation import differential_mutation_options
-from mesh.operations.global_guide_method import global_guide_method_options
-from mesh.validations.numpy_validations import assert_np_array_for_operations, assert_np_vectors_for_boundary
-from mesh.validations.python_validations import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
+from .operations.differential_mutation_pool import differential_mutation_pool_options
+from .operations.differential_mutation import differential_mutation_options
+from .operations.global_guide_method import global_guide_method_options
+from .validations.numpy_validations import assert_np_array_for_operations, assert_np_vectors_for_boundary
+from .validations.python_validations import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
 
 from numpy.typing import NDArray
 from typing import Optional
