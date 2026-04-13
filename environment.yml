@@ -15,14 +15,14 @@ dependencies:
   - pandas=2.2
   - pip=25.1
   - pip:
-      - optproblems
-      - diversipy
       - autorank
+      - diversipy
+      - optproblems
+      - pymoo==0.6.1.6
       - scikit-posthocs
       - -e .
   - plotly=5.24
   - pygmo=2.19
-  - pymoo=0.6
   - pytest=8.2
   - pytest-cov=6.0
   - pytest-mock=3.14
