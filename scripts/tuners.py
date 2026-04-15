@@ -64,10 +64,10 @@ def fine_tune_cmopso(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		max_velocity_rate = trial.suggest_float('max_velocity_rate', 0, 1)
+		max_velocity_rate = trial.suggest_float('max_velocity_rate', 1e-6, 0.999)
 		elite_size = trial.suggest_int('max_elite_size', 1, population_size)
 		initial_velocity = trial.suggest_categorical('initial_velocity', ['random', 'zero'])
-		mutate_rate = trial.suggest_float('mutate_rate', 0, 1) # Probability
+		mutate_rate = trial.suggest_float('mutate_rate', 1e-6, 0.999) # Probability
 		# Instantiate CMOPSO
 		cmopso = CMOPSO(pop_size=population_size,
 						max_velocity_rate=max_velocity_rate,
@@ -137,10 +137,10 @@ def fine_tune_maco(experiment: dict[str, Any],
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
 		ker = trial.suggest_int('ker', 1, population_size)
-		q = trial.suggest_float('q', 0, 1)
+		q = trial.suggest_float('q', 1e-6, 1)
 		threshold = trial.suggest_int('threshold', 1, max_fitness_eval // population_size)
 		n_gen_mark = trial.suggest_int('n_gen_mark', 1, max_fitness_eval // population_size)
-		focus = trial.suggest_float('focus', 0, 3)
+		focus = trial.suggest_float('focus', 1e-6, 3)
 		# Execute MACO
 		loss_values = []
 		for step in range(n_steps):
@@ -276,9 +276,9 @@ def fine_tune_mopso_cd(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		w = trial.suggest_float('w', 0, 1)
-		c1 = trial.suggest_float('c1', 0, 3)
-		c2 = trial.suggest_float('c2', 0, 3)
+		w = trial.suggest_float('w', 1e-6, 1)
+		c1 = trial.suggest_float('c1', 1e-6, 3)
+		c2 = trial.suggest_float('c2', 1e-6, 3)
 		max_velocity_rate = trial.suggest_float('max_velocity_rate', 0, 1)
 		archive_size = trial.suggest_int('archive_size', population_size, 3*population_size)
 		# Instantiate MOPSO-CD
@@ -350,10 +350,10 @@ def fine_tune_nsga2(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		recombination_probability = trial.suggest_float('recombination_probability', 0, 1)
-		eta_recombination = trial.suggest_int('eta_recombination', 0, 99)
-		mutation_probability = trial.suggest_float('mutation_probability', 0, 1)
-		eta_mutation = trial.suggest_int('eta_mutation', 0, 99)
+		recombination_probability = trial.suggest_float('recombination_probability', 1e-6, 0.999)
+		eta_recombination = trial.suggest_int('eta_recombination', 1, 99)
+		mutation_probability = trial.suggest_float('mutation_probability', 1e-6, 0.999)
+		eta_mutation = trial.suggest_int('eta_mutation', 1, 99)
 		# Execute NSGA-II
 		loss_values = []
 		for step in range(n_steps):
@@ -417,11 +417,11 @@ def fine_tune_nspso(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		omega = trial.suggest_float('omega', 0, 1)
-		c1 = trial.suggest_float('c1', 0, 3)
-		c2 = trial.suggest_float('c2', 0, 3)
-		chi = trial.suggest_float('chi', 0, 3)
-		velocity_coefficient = trial.suggest_float('velocity_coefficient', 0, 1)
+		omega = trial.suggest_float('omega', 1e-6, 0.999)
+		c1 = trial.suggest_float('c1', 1e-6, 3)
+		c2 = trial.suggest_float('c2', 1e-6, 3)
+		chi = trial.suggest_float('chi', 1e-6, 3)
+		velocity_coefficient = trial.suggest_float('velocity_coefficient', 1e-6, 0.999)
 		leader_selection_range = trial.suggest_int('leader_selection_range', 1, 100)
 		diversity_mechanism = trial.suggest_categorical('diversity_mechanism', ['crowding distance', 'niche count', 'max min'])
 		# Execute NSPSO
@@ -489,10 +489,10 @@ def fine_tune_spea2(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		recombination_probability = trial.suggest_float('recombination_probability', 0, 1)
-		eta_recombination = trial.suggest_int('eta_recombination', 0, 99)
-		mutation_probability = trial.suggest_float('mutation_probability', 0, 1)
-		eta_mutation = trial.suggest_int('eta_mutation', 0, 99)
+		recombination_probability = trial.suggest_float('recombination_probability', 1e-6, 0.999)
+		eta_recombination = trial.suggest_int('eta_recombination', 1, 99)
+		mutation_probability = trial.suggest_float('mutation_probability', 1e-6, 0.999)
+		eta_mutation = trial.suggest_int('eta_mutation', 1, 99)
 		# Instantiate SPEA-II
 		crossover = SBX(prob=recombination_probability, prob_var=1.0, eta=eta_recombination)
 		mutation = PM(prob=mutation_probability, eta=eta_mutation)
