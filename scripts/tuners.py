@@ -64,29 +64,28 @@ def fine_tune_cmopso(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		max_velocity_rate = trial.suggest_float('max_velocity_rate', 1e-6, 0.999)
+		max_velocity_rate = trial.suggest_float('max_velocity_rate', 0.0, 1.0)
 		elite_size = trial.suggest_int('max_elite_size', 1, population_size)
 		initial_velocity = trial.suggest_categorical('initial_velocity', ['random', 'zero'])
-		mutate_rate = trial.suggest_float('mutate_rate', 1e-6, 0.999) # Probability
-		# Instantiate CMOPSO
-		cmopso = CMOPSO(pop_size=population_size,
-						max_velocity_rate=max_velocity_rate,
-						elite_size=elite_size,
-						initial_velocity=initial_velocity,
-						mutate_rate=mutate_rate,
-						sampling=LHS(), # type: ignore
-						eliminate_duplicates=True,
-						seed=random_state)
+		mutate_rate = trial.suggest_float('mutate_rate', 0.0, 1.0) # Probability
 		# Execute CMOPSO
 		loss_values = []
 		for step in range(n_steps):
+			cmopso = CMOPSO(pop_size=population_size,
+							max_velocity_rate=max_velocity_rate,
+							elite_size=elite_size,
+							initial_velocity=initial_velocity,
+							mutate_rate=mutate_rate,
+							sampling=LHS(), # type: ignore
+							eliminate_duplicates=True,
+							seed=random_state)
 			res = minimize(pymoo_fitness,
 						   cmopso,
 						   ('n_eval', max_fitness_eval),
 						   seed=random_state,
 						   verbose=False)
 			# Get the result and calculate the loss value
-			Fit = res.F
+			Fit = np.array(res.F)
 			loss = performance_indicator(Fit)
 			trial.report(loss, step)
 			# If the prune criterion is satisfied, so prune this trial
@@ -137,10 +136,10 @@ def fine_tune_maco(experiment: dict[str, Any],
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
 		ker = trial.suggest_int('ker', 1, population_size)
-		q = trial.suggest_float('q', 1e-6, 1)
+		q = trial.suggest_float('q', 0.0, 1)
 		threshold = trial.suggest_int('threshold', 1, max_fitness_eval // population_size)
 		n_gen_mark = trial.suggest_int('n_gen_mark', 1, max_fitness_eval // population_size)
-		focus = trial.suggest_float('focus', 1e-6, 3)
+		focus = trial.suggest_float('focus', 0.0, 3)
 		# Execute MACO
 		loss_values = []
 		for step in range(n_steps):
@@ -276,24 +275,23 @@ def fine_tune_mopso_cd(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		w = trial.suggest_float('w', 1e-6, 1)
-		c1 = trial.suggest_float('c1', 1e-6, 3)
-		c2 = trial.suggest_float('c2', 1e-6, 3)
-		max_velocity_rate = trial.suggest_float('max_velocity_rate', 0, 1)
+		w = trial.suggest_float('w', 0.0, 1.0)
+		c1 = trial.suggest_float('c1', 0.0, 3.0)
+		c2 = trial.suggest_float('c2', 0.0, 3.0)
+		max_velocity_rate = trial.suggest_float('max_velocity_rate', 0.0, 1.0)
 		archive_size = trial.suggest_int('archive_size', population_size, 3*population_size)
-		# Instantiate MOPSO-CD
-		mopso_cd = MOPSO_CD(pop_size=population_size,
-							w=w,
-							c1=c1,
-							c2=c2,
-							max_velocity_rate=max_velocity_rate,
-							archive_size=archive_size,
-							sampling=LHS(), # type: ignore
-							eliminate_duplicates=True,
-					  		seed=random_state)
 		# Execute MOPSO-CD
 		loss_values = []
 		for step in range(n_steps):
+			mopso_cd = MOPSO_CD(pop_size=population_size,
+								w=w,
+								c1=c1,
+								c2=c2,
+								max_velocity_rate=max_velocity_rate,
+								archive_size=archive_size,
+								sampling=LHS(), # type: ignore
+								eliminate_duplicates=True,
+								seed=random_state)
 			res = minimize(pymoo_fitness,
 						   mopso_cd,
 						   ('n_eval', max_fitness_eval),
@@ -350,9 +348,9 @@ def fine_tune_nsga2(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		recombination_probability = trial.suggest_float('recombination_probability', 1e-6, 0.999)
+		recombination_probability = trial.suggest_float('recombination_probability', 0.0, 1.0)
 		eta_recombination = trial.suggest_int('eta_recombination', 1, 99)
-		mutation_probability = trial.suggest_float('mutation_probability', 1e-6, 0.999)
+		mutation_probability = trial.suggest_float('mutation_probability', 0.0, 1.0)
 		eta_mutation = trial.suggest_int('eta_mutation', 1, 99)
 		# Execute NSGA-II
 		loss_values = []
@@ -417,11 +415,11 @@ def fine_tune_nspso(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		omega = trial.suggest_float('omega', 1e-6, 0.999)
-		c1 = trial.suggest_float('c1', 1e-6, 3)
-		c2 = trial.suggest_float('c2', 1e-6, 3)
-		chi = trial.suggest_float('chi', 1e-6, 3)
-		velocity_coefficient = trial.suggest_float('velocity_coefficient', 1e-6, 0.999)
+		omega = trial.suggest_float('omega', 0.0, 1.0)
+		c1 = trial.suggest_float('c1', 0.0, 3)
+		c2 = trial.suggest_float('c2', 0.0, 3)
+		chi = trial.suggest_float('chi', 0.0, 3)
+		velocity_coefficient = trial.suggest_float('velocity_coefficient', 0.0, 1.0)
 		leader_selection_range = trial.suggest_int('leader_selection_range', 1, 100)
 		diversity_mechanism = trial.suggest_categorical('diversity_mechanism', ['crowding distance', 'niche count', 'max min'])
 		# Execute NSPSO
@@ -489,22 +487,21 @@ def fine_tune_spea2(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		recombination_probability = trial.suggest_float('recombination_probability', 1e-6, 0.999)
+		recombination_probability = trial.suggest_float('recombination_probability', 0.0, 1.0)
 		eta_recombination = trial.suggest_int('eta_recombination', 1, 99)
-		mutation_probability = trial.suggest_float('mutation_probability', 1e-6, 0.999)
+		mutation_probability = trial.suggest_float('mutation_probability', 0.0, 1.0)
 		eta_mutation = trial.suggest_int('eta_mutation', 1, 99)
-		# Instantiate SPEA-II
 		crossover = SBX(prob=recombination_probability, prob_var=1.0, eta=eta_recombination)
 		mutation = PM(prob=mutation_probability, eta=eta_mutation)
-		spea2 = SPEA2(pop_size=population_size,
-					  sampling=LHS(), # type: ignore
-					  crossover=crossover,
-					  mutation=mutation,
-					  eliminate_duplicates=True,
-					  seed=random_state)
 		# Execute SPEA-II
 		loss_values = []
 		for step in range(n_steps):
+			spea2 = SPEA2(pop_size=population_size,
+						  sampling=LHS(), # type: ignore
+						  crossover=crossover,
+						  mutation=mutation,
+						  eliminate_duplicates=True,
+						  seed=random_state)
 			res = minimize(pymoo_fitness,
 						   spea2,
 						   ('n_eval', max_fitness_eval),

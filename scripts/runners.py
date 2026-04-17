@@ -106,20 +106,20 @@ def run_cmopso(experiment: dict[str, Any],
 	elite_size = tuned_parameters_dict['elite_size'] if ('elite_size' in tuned_parameters_dict) else parameters['elite_size']
 	initial_velocity = tuned_parameters_dict['initial_velocity'] if ('initial_velocity' in tuned_parameters_dict) else parameters['initial_velocity']
 	mutate_rate = tuned_parameters_dict['mutate_rate'] if ('mutate_rate' in tuned_parameters_dict) else parameters['mutate_rate']
-	# Instantiate CMOPSO
-	cmopso = CMOPSO(pop_size=population_size,
-					max_velocity_rate=max_velocity_rate,
-					elite_size=elite_size,
-					initial_velocity=initial_velocity,
-					mutate_rate=mutate_rate,
-					sampling=LHS(), # type: ignore
-					eliminate_duplicates=True,
-					seed=random_state)
+
 	# Execute CMOPSO
 	results = {}
 	combined_F = np.empty((0, objective_dim))
 	combined_P = np.empty((0, position_dim))
 	for i in range(num_runs):
+		cmopso = CMOPSO(pop_size=population_size,
+						max_velocity_rate=max_velocity_rate,
+						elite_size=elite_size,
+						initial_velocity=initial_velocity,
+						mutate_rate=mutate_rate,
+						sampling=LHS(), # type: ignore
+						eliminate_duplicates=True,
+						seed=random_state)
 		res = minimize(pymoo_fitness,
                 	   cmopso,
                 	   ('n_eval', max_fitness_eval),
@@ -281,6 +281,7 @@ def run_mopso_cd(experiment: dict[str, Any],
 			out["F"] = np.array([fitness(x) for x in X])
 
 	pymoo_fitness = MyProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
+
 	# Get tunable parameters (check if the parameters were tuned)
 	tuned_parameters_dict = get_tuned_parameters(experiment_name, fine_tuning_folder)
 	w = tuned_parameters_dict['w'] if ('w' in tuned_parameters_dict) else parameters['w']
@@ -288,21 +289,21 @@ def run_mopso_cd(experiment: dict[str, Any],
 	c2 = tuned_parameters_dict['c2'] if ('c2' in tuned_parameters_dict) else parameters['c2']
 	max_velocity_rate = tuned_parameters_dict['max_velocity_rate'] if ('max_velocity_rate' in tuned_parameters_dict) else parameters['max_velocity_rate']
 	archive_size = tuned_parameters_dict['archive_size'] if ('archive_size' in tuned_parameters_dict) else parameters['archive_size']
-	# Instantiate MOPSO-CD
-	mopso_cd = MOPSO_CD(pop_size=population_size,
-						w=w,
-						c1=c1,
-						c2=c2,
-						max_velocity_rate=max_velocity_rate,
-						archive_size=archive_size,
-						sampling=LHS(), # type: ignore
-						eliminate_duplicates=True,
-						seed=random_state)
+
 	# Execute MOPSO-CD
 	results = {}
 	combined_F = np.empty((0, objective_dim))
 	combined_P = np.empty((0, position_dim))
 	for i in range(num_runs):
+		mopso_cd = MOPSO_CD(pop_size=population_size,
+							w=w,
+							c1=c1,
+							c2=c2,
+							max_velocity_rate=max_velocity_rate,
+							archive_size=archive_size,
+							sampling=LHS(), # type: ignore
+							eliminate_duplicates=True,
+							seed=random_state)
 		res = minimize(pymoo_fitness,
                 	   mopso_cd,
                 	   ('n_eval', max_fitness_eval),
@@ -455,12 +456,12 @@ def run_spea2(experiment: dict[str, Any],
 	position_dim = problem['position_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
-	class MyProblem(Problem):
+	class PymooProblem(Problem):
 		def __init__(self, n_var, n_obj, xl, xu):
 			super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu)
 		def _evaluate(self, X, out, *args, **kwargs):
 			out["F"] = np.array([fitness(x) for x in X])
-	pymoo_fitness = MyProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
+	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
 
 	# Get tunable parameters (check if the parameters were tuned)
 	tuned_parameters_dict = get_tuned_parameters(experiment_name, fine_tuning_folder)
@@ -468,20 +469,20 @@ def run_spea2(experiment: dict[str, Any],
 	eta_recombination = tuned_parameters_dict['eta_recombination'] if ('eta_recombination' in tuned_parameters_dict) else parameters['eta_recombination']
 	mutation_probability = tuned_parameters_dict['mutation_probability'] if ('mutation_probability' in tuned_parameters_dict) else parameters['mutation_probability']
 	eta_mutation = tuned_parameters_dict['eta_mutation'] if ('eta_mutation' in tuned_parameters_dict) else parameters['eta_mutation']
-	# Instantiate SPEA-II
 	crossover = SBX(prob=recombination_probability, prob_var=1.0, eta=eta_recombination)
 	mutation = PM(prob=mutation_probability, eta=eta_mutation)
-	spea2 = SPEA2(pop_size=population_size,
-				  sampling=LHS(), # type: ignore
-				  crossover=crossover,
-				  mutation=mutation,
-				  eliminate_duplicates=True,
-				  seed=random_state)
+	
 	# Execute SPEA-II
 	results = {}
 	combined_F = np.empty((0, objective_dim))
 	combined_P = np.empty((0, position_dim))
 	for i in range(num_runs):
+		spea2 = SPEA2(pop_size=population_size,
+					  sampling=LHS(), # type: ignore
+					  crossover=crossover,
+					  mutation=mutation,
+					  eliminate_duplicates=True,
+					  seed=random_state)
 		res = minimize(pymoo_fitness,
                 	   spea2,
                 	   ('n_eval', max_fitness_eval),
