@@ -3,7 +3,6 @@ from mesh.operations import differential_mutation as dm
 from mesh.parameters import MeshParameters
 
 from random import sample
-from scipy.stats import truncnorm
 from unittest.mock import patch
 
 import numpy as np
@@ -36,10 +35,10 @@ def test_rand_1():
   valid_idxs = [i for i in range(len(pool_idxs)) if len(pool_idxs[i]) >= valid_size]
   
   # Mock the random functions to return predetermined values
-  operation_weight = truncnorm.rvs(0, 2, size=(len(valid_idxs), 1))
+  operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Create a Mesh instance with a toy function
     test_params = MeshParameters(
       objective_dim=objective_dim,
@@ -69,7 +68,7 @@ def test_rand_1():
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
       x2 = pool[r_idxs[2]]
-      xst = np.clip(x0 + operation_weight[i] * (x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(x0 + 2 * operation_weight[i] * (x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -88,10 +87,10 @@ def test_rand_2():
   valid_idxs = [i for i in range(len(pool_idxs)) if len(pool_idxs[i]) >= valid_size]
   
   # Mock the random functions to return predetermined values
-  operation_weight = truncnorm.rvs(0, 2, size=(len(valid_idxs), 1))
+  operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Create a Mesh instance with a toy function
     test_params = MeshParameters(
       objective_dim=objective_dim,
@@ -123,7 +122,7 @@ def test_rand_2():
       x2 = pool[r_idxs[2]]
       x3 = pool[r_idxs[3]]
       x4 = pool[r_idxs[4]]
-      xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(x0 + 2 * operation_weight[i] * (x1 - x2 + x3 - x4), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -142,10 +141,10 @@ def test_best_1():
   valid_idxs = [i for i in range(len(pool_idxs)) if len(pool_idxs[i]) >= valid_size]
   
   # Mock the random functions to return predetermined values
-  operation_weight = truncnorm.rvs(0, 2, size=(len(valid_idxs), 1))
+  operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Create a Mesh instance with a toy function
     test_params = MeshParameters(
       objective_dim=objective_dim,
@@ -175,7 +174,7 @@ def test_best_1():
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
       xgb = mesh.population.global_guide[idxs[i]]
-      xst = np.clip(xgb + operation_weight[i] * (x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(xgb + 2 * operation_weight[i] * (x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -194,10 +193,10 @@ def test_current_to_best_1():
   valid_idxs = [i for i in range(len(pool_idxs)) if len(pool_idxs[i]) >= valid_size]
   
   # Mock the random functions to return predetermined values
-  operation_weight = truncnorm.rvs(0, 2, size=(len(valid_idxs), 1))
+  operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Create a Mesh instance with a toy function
     test_params = MeshParameters(
       objective_dim=objective_dim,
@@ -228,7 +227,7 @@ def test_current_to_best_1():
       x1 = pool[r_idxs[1]]
       x = mesh.population.position[idxs[i]]
       xgb = mesh.population.global_guide[idxs[i]]
-      xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(x + 2 * operation_weight[i] * (xgb - x + x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -247,10 +246,10 @@ def test_current_to_rand_1():
   valid_idxs = [i for i in range(len(pool_idxs)) if len(pool_idxs[i]) >= valid_size]
   
   # Mock the random functions to return predetermined values
-  operation_weight = truncnorm.rvs(0, 2, size=(len(valid_idxs), 1))
+  operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("scipy.stats.truncnorm.rvs", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Create a Mesh instance with a toy function
     test_params = MeshParameters(
       objective_dim=objective_dim,
@@ -281,7 +280,7 @@ def test_current_to_rand_1():
       x1 = pool[r_idxs[1]]
       x2 = pool[r_idxs[2]]
       x = mesh.population.position[idxs[i]]
-      xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(x + 2 * operation_weight[i] * (x0 - x + x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from numpy.typing import NDArray
-from scipy.stats import truncnorm
 from typing import TYPE_CHECKING, Callable
 
 import numpy as np
@@ -35,7 +34,7 @@ def binomial_crossover(self: Mesh, X1: NDArray[np.number], X2: NDArray[np.number
   # Get the size of the X1 to apply the crossover
   size = X1.shape[0]
   # Get the crossover rate
-  crossover_rate = truncnorm.rvs(0, 1, size=(size, 1))
+  crossover_rate = np.random.beta(3.0, 1.0, size=(size, 1))
   # Make the crossover index for each particle
   crossover_index = np.random.randint(0, self.params.position_dim, size=size)
   # Calculate the crossover chance to apply the Binomial Crossover

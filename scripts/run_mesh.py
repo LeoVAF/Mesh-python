@@ -15,11 +15,11 @@ def main():
     num_runs = 1 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
-    objective_dim = 3 # Number of objectives
+    objective_dim = 2 # Number of objectives
     position_dim = 15 # Design space dimension
     
     # Benchmark problems
-    experiment_name = 'dtlz2'
+    experiment_name = 'zdt4'
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
     
     ############### Microgrid function ###############
@@ -41,11 +41,11 @@ def main():
     ################ Microgrid function ###############
 
     max_iterations = None # Maximum number of iterations
-    max_fitness_eval = 10000 # Maximum fitness evaluations
+    max_fitness_eval = 15000 # Maximum fitness evaluations
     population_size = 100 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability = 0.2 # Communication probability
-    mutation_rate = 0.8 # Mutation rate
+    communication_probability = 0.8 # Communication probability
+    mutation_rate = 0.5 # Mutation rate
     personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
@@ -53,7 +53,7 @@ def main():
     dm_pool_type = 0 # 0 -> Sampling from memory (S1) | 1 -> Sampling from population (S2) | 2 -> Sampling from memory and population (S3)
     dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
-    config = f"MESH_G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}_{experiment_name}"
+    config = f"MESH_{experiment_name}_{objective_dim}_{position_dim}"
     print(f"Running MESH G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
     result = {}
     combined_F = np.empty((0, objective_dim))
@@ -93,7 +93,7 @@ def main():
     ndf_idxs = ndf[0]
     pareto_front = unique_combined_F[best_idxs][ndf_idxs]
     result['combined'] = (unique_combined_P[best_idxs][ndf_idxs], pareto_front)
-    with open(f'./scripts/results/{config}_{objective_dim}_{position_dim}.pkl', 'wb') as file:
+    with open(f'./scripts/results/{config}.pkl', 'wb') as file:
         dump(result, file)
 
 if __name__ == '__main__':

@@ -2,7 +2,6 @@ from mesh import Mesh
 from mesh.operations import differential_crossover as dc
 from mesh.parameters import MeshParameters
 
-from scipy.stats import truncnorm
 from unittest.mock import patch
 
 import numpy as np
@@ -51,10 +50,10 @@ def test_binomial_crossover():
   X2 = np.random.rand(test_size, position_dim)
 
   # Mock the random functions to return predetermined values
-  crossover_rates = truncnorm.rvs(0, 1, size=(test_size, 1))
+  crossover_rates =  np.random.beta(3.0, 1.0, size=(test_size, 1))
   crossover_idxs = np.random.randint(0, mesh.params.position_dim, size=test_size)
   crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, mesh.params.position_dim))
-  with patch("scipy.stats.truncnorm.rvs", return_value=crossover_rates),\
+  with patch("numpy.random.beta", return_value=crossover_rates),\
        patch("numpy.random.randint", return_value=crossover_idxs),\
        patch("numpy.random.uniform", return_value=crossover_chances):
 
