@@ -135,11 +135,9 @@ def fine_tune_maco(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
-		ker = trial.suggest_int('ker', 1, population_size)
-		q = trial.suggest_float('q', 0.0, 1)
-		threshold = trial.suggest_int('threshold', 1, max_fitness_eval // population_size)
-		n_gen_mark = trial.suggest_int('n_gen_mark', 1, max_fitness_eval // population_size)
-		focus = trial.suggest_float('focus', 0.0, 3)
+		ker = trial.suggest_int('ker', 2, population_size)
+		q = trial.suggest_float('q', 0.0, 1.0)
+		focus = trial.suggest_float('focus', 0.0, 3.0)
 		# Execute MACO
 		loss_values = []
 		for step in range(n_steps):
@@ -148,8 +146,6 @@ def fine_tune_maco(experiment: dict[str, Any],
 			maco = pg.algorithm(pg.maco(gen=max_fitness_eval // population_size, # type: ignore
 										ker=ker,
 										q=q,
-										threshold=threshold,
-										n_gen_mark=n_gen_mark,
 										focus=focus,
 										seed=random_state))
 			evolved_population = maco.evolve(initial_population)

@@ -15,11 +15,11 @@ class MeshParameters:
     Args:
         objective_dim (:type:`int`): Number of problem objectives. Must be a positive integer (> 0).
 
-        position_dim (:type:`int`): Number of problem variables. Must be a positive integer (> 0).
+        decision_dim (:type:`int`): Number of problem variables. Must be a positive integer (> 0).
 
-        position_lower_bounds (:type:`numpy.ndarray[np.floating]`): A array with each lower bounds of the problem. Must be a numpy array of numbers (without NaN values) and size equals to ``position_dim``. Each element must be less than the respective element from ``position_upper_bounds``.
+        decision_lower_bounds (:type:`numpy.ndarray[np.floating]`): A array with each lower bounds of the decision variables. Must be a numpy array of numbers (without NaN values) and size equals to ``decision_dim``. Each element must be less than the respective element from ``decision_upper_bounds``.
 
-        position_upper_bounds (:type:`numpy.ndarray[np.floating]`): A array with each upper bounds of the problem. Must be a numpy array of numbers (without NaN values) and size equals to ``position_dim``. Each element must be greater than the respective element from ``position_lower_bounds``.
+        decision_upper_bounds (:type:`numpy.ndarray[np.floating]`): A array with each upper bounds of the decision variables. Must be a numpy array of numbers (without NaN values) and size equals to ``decision_dim``. Each element must be greater than the respective element from ``decision_lower_bounds``.
             
         population_size (:type:`int`): Population size. Must be a positive integer (> 0).
         
@@ -41,7 +41,7 @@ class MeshParameters:
         
         max_personal_guides (:type:`int`): Maximum number of personal guides. Must be a positive integer (> 0).
 
-        initial_positions (:type:`typing.Optional[NDArray[np.number]]`): The initial particle positions matrix. If it is None, the initial positions are initialized randomly under the uniform distribution.
+        initial_poinitial_pointsitions (:type:`typing.Optional[NDArray[np.number]]`): The initial particle points. If it is None, the initial points are sampled.
 
         random_state (:type:`typing.Optional[int]`): Numpy random seed to generate random numbers. Default is None. Must be an integer (> 0) or ``None``.
 
@@ -52,9 +52,9 @@ class MeshParameters:
 
     def __init__(self,
                  objective_dim: int,
-                 position_dim: int,
-                 position_lower_bounds: NDArray[np.floating],
-                 position_upper_bounds: NDArray[np.floating],
+                 decision_dim: int,
+                 decision_lower_bounds: NDArray[np.floating],
+                 decision_upper_bounds: NDArray[np.floating],
                  population_size: int,
                  memory_size: Optional[int] = None,
                  global_guide_method: int = 0,
@@ -65,17 +65,19 @@ class MeshParameters:
                  max_gen: Optional[int] = None,
                  max_fit_eval: Optional[int] = None,
                  max_personal_guides: int = 1,
-                 initial_positions: Optional[NDArray[np.number]] = None,
+                 initial_points: Optional[NDArray[np.number]] = None,
                  random_state: Optional[int] = None):
         
         self.objective_dim: int
         ''' Number of problem objectives. '''
-        self.position_dim: int
+        self.decision_dim: int
         ''' Number of problem variables. '''
+        self.position_dim: int
+        ''' Number of decision variables plus hiperparameters to auto-optimize. '''
         self.position_lower_bounds: NDArray[np.floating]
-        ''' Numpy array with the lower bounds of the problem for each variable. '''
+        ''' Numpy array with the lower bounds of the problem for each variable and hiperparameters. '''
         self.position_upper_bounds: NDArray[np.floating]
-        ''' Numpy array with the upper bounds of the problem for each variable. '''
+        ''' Numpy array with the upper bounds of the problem for each variable and hiperparameters. '''
         self.velocity_upper_bounds: NDArray[np.floating]
         ''' Numpy array with the upper bounds of the velocity calculated by:
 
@@ -108,8 +110,8 @@ class MeshParameters:
         ''' Maximum number of fitness evaluations. It won't be used if it's ``None``. '''
         self.max_personal_guides: int
         ''' Maximum number of personal guides. '''
-        self.initial_positions: Optional[NDArray[np.number]]
-        ''' The initial positions of the particles. '''
+        self.initial_points: Optional[NDArray[np.number]]
+        ''' The initial points of the particles. '''
         self.random_state: int | None
         ''' Seed to generate random numbers. '''
 
@@ -117,12 +119,14 @@ class MeshParameters:
         is_greater_in_type(objective_dim, 'objective_dim', int, 1)
         self.objective_dim = objective_dim
         # Set the position dimension
-        is_greater_in_type(position_dim, 'position_dim', int, 0)
-        self.position_dim = position_dim
+        is_greater_in_type(decision_dim, 'decision_dim', int, 0)
+        self.decision_dim = decision_dim
+        # Set the problem position dimension plus hiperparameter dimension
+        self.position_dim = decision_dim + 5
         # Set the maximum and the minimum boundaries for positions
-        assert_np_vectors_for_boundary(position_lower_bounds, 'position_lower_bounds', position_upper_bounds, 'position_upper_bounds', position_dim)
-        self.position_lower_bounds = position_lower_bounds
-        self.position_upper_bounds = position_upper_bounds
+        assert_np_vectors_for_boundary(decision_lower_bounds, 'decision_lower_bounds', decision_upper_bounds, 'decision_upper_bounds', decision_dim)
+        self.position_lower_bounds = np.hstack((decision_lower_bounds, np.array([0., 0., 0., 0., 0.])))
+        self.position_upper_bounds = np.hstack((decision_upper_bounds, np.array([2., 2., 2., 2., 1.])))
         # Set the maximum and minimum boundaries for velocities
         self.velocity_lower_bounds =  self.position_lower_bounds - self.position_upper_bounds
         self.velocity_upper_bounds = -self.velocity_lower_bounds
@@ -162,14 +166,14 @@ class MeshParameters:
         # Set the number of personal guides
         is_greater_in_type(max_personal_guides, 'max_personal_guides', int, 0)
         self.max_personal_guides = max_personal_guides
-        # Set the initial positions of the particles
-        if initial_positions is not None:
-            assert_np_array_for_operations(initial_positions, 'initial_positions', (population_size, position_dim))
-            if np.any(initial_positions > position_upper_bounds) or np.any(initial_positions < position_lower_bounds):
-                ValueError('The parameter "initial_positions" is the bounds of the bounding arrays.')
-            self.initial_positions = initial_positions.copy()
+        # Set the initial points of the particles
+        if initial_points is not None:
+            assert_np_array_for_operations(initial_points, 'initial_points', (population_size, decision_dim))
+            if np.any(initial_points > decision_upper_bounds) or np.any(initial_points < decision_lower_bounds):
+                ValueError('The parameter "initial_points" is the bounds of the bounding arrays.')
+            self.initial_points = initial_points.copy()
         else:
-            self.initial_positions = None
+            self.initial_points = None
         # Set the random state
         assert_type(random_state, 'random_state', int, is_optional=True)
         self.random_state = random_state

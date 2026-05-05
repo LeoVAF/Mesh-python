@@ -60,8 +60,6 @@ class Mesh():
         ''' Generation counter. Used to stop the algorithm if its value is greater than 0. '''
         self.fitness_eval_counter: int
         ''' Fitness evaluation counter. Used to stop the algorithm if its value is greater than 0. '''
-        self.weights: NDArray[np.number]
-        ''' Weight matrix for the algorithm operations moving the population. '''
         self.pre_allocated: PreAllocated
         ''' Pre-allocated data for the algorithm. '''
         self.log_memory: Optional[str]
@@ -99,8 +97,6 @@ class Mesh():
         self.generation_counter = 1
         # Start the fitness evaluation counter
         self.fitness_eval_counter = 0
-        # Create a random matrix (3 x population_size) with weights for the algorithm operations
-        self.weights = np.random.uniform(0.0, 1.0, (3, params.population_size))
         # Store some pre-calculated data
         self.pre_allocated = PreAllocated(params)
         # Variable for logging memory
@@ -159,7 +155,8 @@ class Mesh():
             :type:`NDArray[np.number]`: The fitness matrix associated with the particle positions.
         '''
 
-        return np.array([self.fitness_function(x) for x in X])
+        decision_varibles = X[:, :self.params.decision_dim]
+        return np.array([self.fitness_function(x) for x in decision_varibles])
 
     def parallel_fitness_evaluation(self, X: NDArray[np.number]) -> NDArray[np.number]:
         ''' Evaluates the fitness given a particle position matrix parallelly.
@@ -171,8 +168,9 @@ class Mesh():
             :type:`NDArray[np.number]`: The fitness matrix associated with the particle positions.
         '''
         
+        decision_varibles = X[:, :self.params.decision_dim]
         # Create a pool of processes to execute the fitness function parallelly
-        fitness_values = Parallel(n_jobs=self.num_proc)(delayed(self.fitness_function)(x) for x in X)
+        fitness_values = Parallel(n_jobs=self.num_proc)(delayed(self.fitness_function)(x) for x in decision_varibles)
         return np.array(fitness_values)
     
     def dominates(self, Fx: NDArray[np.number], Fy: NDArray[np.number], axis: int = 0) -> NDArray[np.bool]:
@@ -255,12 +253,7 @@ class Mesh():
             self.update_memory(update_memory_pos, update_memory_fit)
 
     def mutation(self) -> None:
-        r''' Calculates the mutation of the weights by the following equation:
-
-        .. math::
-            \tilde{w} = w + \tau_{mut} \cdot r,
-        
-        where :math:`\tau_{mut}` is the :attr:`~mesh.parameters.MeshParameters.mutation_rate` and :math:`r \sim \mathcal{N}(0, 1)` is a number sampled from the Standard Gaussian Distribution. The mutation of the global guides are done by the following equation:
+        r''' Calculates the mutation of the global guides are done by the following equation:
 
         .. math::
                 
@@ -269,10 +262,6 @@ class Mesh():
         where :math:`\vec{r} \sim \mathcal{N}(0, 1)^m` is a vector sampled from the Standard Gaussian Distribution.
         '''
         
-        # Mutate the weights using a number sampled from the Standard Gaussian Distribution
-        self.weights += np.random.normal(0, 1, (3, self.params.population_size)) * self.params.mutation_rate
-        # Clip the weights to the allowed values
-        np.clip(self.weights, 0, 1, out=self.weights)
         # Mutate the global guides with a vector sampled from the Standard Gaussian Distribution
         np.clip(self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) * self.params.mutation_rate,
                 self.params.position_lower_bounds,
@@ -321,11 +310,11 @@ class Mesh():
         Xgb_mut = self.pre_allocated.global_guide_mutated
         # Get the positions
         X = self.population.position
-        # Get the weights
-        W = self.weights
+        # Get the equation weights
+        W = X[:, params.decision_dim:params.decision_dim+3]
         # Calculate the new velocity
         C = np.random.rand(population_size, params.position_dim) <= params.communication_probability
-        self.population.velocity[:] = W[0][:, np.newaxis] * self.population.velocity + W[1][:, np.newaxis] * (Xpb - X) + W[2][:, np.newaxis] * C * (Xgb_mut - X)
+        self.population.velocity[:] = W[:, 0][:, np.newaxis] * self.population.velocity + W[:, 1][:, np.newaxis] * (Xpb - X) + W[:, 2][:, np.newaxis] * C * (Xgb_mut - X)
         # Calculate the clipped velocity
         np.clip(self.population.velocity, params.velocity_lower_bounds, params.velocity_upper_bounds, out=self.population.velocity)
         # Calculate the clipped position
@@ -577,7 +566,7 @@ class Mesh():
             :type:`tuple[NDArray[np.number], NDArray[np.number]]`: A tuple with the memory position and fitness, respectively.
         '''
 
-        return self.memory.position, self.memory.fitness
+        return self.memory.position[:, :self.params.decision_dim], self.memory.fitness
 
     def logging(self) -> None:
         ''' Logs memory position and fitness at the end of the algorithm in two .txt files if :attr:`log_memory` is a string. Then this method uses the string value :attr:`log_memory` at the beginning of both files as the name of the fitness and position logs.
@@ -600,9 +589,9 @@ class Mesh():
             # Log the position
             file2 = open(self.log_memory + "-pos.txt", "a+")
             memory_position = ""
-            for pos in self.memory.position:
+            for pos in self.memory.position[self.params.decision_dim]:
                 string = ""
-                for i in range(self.params.position_dim):
+                for i in range(self.params.decision_dim):
                     string += str(pos[i])+" "
                 string = string[:-1]
                 memory_position += string + ", "

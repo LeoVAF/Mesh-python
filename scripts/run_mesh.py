@@ -16,11 +16,11 @@ def main():
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     objective_dim = 2 # Number of objectives
-    position_dim = 15 # Design space dimension
+    decision_dim = 20 # Design space dimension
     
     # Benchmark problems
     experiment_name = 'zdt4'
-    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=position_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
+    func, position_min_value, position_max_value = get_problem(experiment_name, n_var=decision_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
     
     ############### Microgrid function ###############
     # select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
@@ -41,10 +41,10 @@ def main():
     ################ Microgrid function ###############
 
     max_iterations = None # Maximum number of iterations
-    max_fitness_eval = 15000 # Maximum fitness evaluations
-    population_size = 100 # Population size
+    max_fitness_eval = 25600 # Maximum fitness evaluations
+    population_size = 128 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability = 0.8 # Communication probability
+    communication_probability = 0.5 # Communication probability
     mutation_rate = 0.5 # Mutation rate
     personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
@@ -53,14 +53,14 @@ def main():
     dm_pool_type = 0 # 0 -> Sampling from memory (S1) | 1 -> Sampling from population (S2) | 2 -> Sampling from memory and population (S3)
     dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
-    config = f"MESH_{experiment_name}_{objective_dim}_{position_dim}"
+    config = f"MESH_{experiment_name}_{objective_dim}_{decision_dim}"
     print(f"Running MESH G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
     result = {}
     combined_F = np.empty((0, objective_dim))
-    combined_P = np.empty((0, position_dim))
+    combined_P = np.empty((0, decision_dim))
     for i in tqdm(range(num_runs)):
         params = MeshParameters(objective_dim,
-                                position_dim, position_min_value, position_max_value,
+                                decision_dim, position_min_value, position_max_value,
                                 population_size, memory_size=memory_size,
                                 global_guide_method=global_guide_method,
                                 dm_pool_type=dm_pool_type,

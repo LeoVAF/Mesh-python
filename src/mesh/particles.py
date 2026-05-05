@@ -35,15 +35,16 @@ class Population:
         self.personal_guide_fit: NDArray[np.number]
         ''' 3-dimensional numpy array with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` fitnesses. '''
 
-        if params.initial_positions is None:
-            sampler = qmc.LatinHypercube(d=params.position_dim, scramble=True)
+        if params.initial_points is None:
+            sampler = qmc.LatinHypercube(d=params.decision_dim, scramble=True)
             sample = sampler.random(n=params.population_size)
-            self.position = qmc.scale(sample, params.position_lower_bounds, params.position_upper_bounds)
+            self.position = qmc.scale(sample, params.position_lower_bounds[:params.decision_dim], params.position_upper_bounds[:params.decision_dim])
         else:
-            self.position = params.initial_positions
+            self.position = params.initial_points
+        hiperparameter_dim = params.position_dim - params.decision_dim
+        self.position = np.hstack((self.position, np.random.rand(params.population_size, hiperparameter_dim)))
         self.velocity = np.random.uniform(params.velocity_lower_bounds, params.velocity_upper_bounds, (params.population_size, params.position_dim))
         self.fitness = np.full((params.population_size, params.objective_dim), np.inf)
-        # self.rank= np.empty(params.population_size, dtype=int)
         if params.global_guide_method in {0, 1}:
             self.sigma = np.full((params.population_size, comb(params.objective_dim, 2)), np.nan)
         else:
