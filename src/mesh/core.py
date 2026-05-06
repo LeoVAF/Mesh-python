@@ -48,7 +48,7 @@ class Mesh():
         ''' Function to make the Differential Mutation pool where the solutions are samppled. '''
         self.differential_mutation: Callable[[tuple[NDArray[np.number], list[NDArray[np.intp]]]], tuple[NDArray[np.number], NDArray[np.intp]]]
         ''' Function to do the Differential Mutation operation. '''
-        self.differential_crossover: Callable[[NDArray[np.number], NDArray[np.number]], NDArray[np.number]]
+        self.differential_crossover: Callable[[NDArray[np.number], NDArray[np.number], NDArray[np.number]], NDArray[np.number]]
         ''' Function to do the Differential Crossover operation. '''
         self.population: Population = Population(params)
         ''' Population of particles. '''
@@ -233,7 +233,11 @@ class Mesh():
         if len(Xst):
             population_size = self.params.population_size
             # Apply the differential crossover
-            Xst_rec = self.differential_crossover(self.population.position[pop_idxs], Xst)
+            Xst_rec = self.differential_crossover(
+                self.population.position[pop_idxs],
+                Xst,
+                self.population.position[pop_idxs, self.params.decision_dim+1:self.params.decision_dim+2]
+            )
             # Update the current particle if the new particle from the strategy is better
             Fst_rec = self.evaluate(Xst_rec)
             # Concatenate the arrays with the population position and fitness with the strategy arrays
@@ -247,7 +251,7 @@ class Mesh():
             # Put the best strategy particles in the current population
             np.logical_not(mask, out=mask)
             worst_pop_idxs = np.setdiff1d(np.arange(population_size), best_N_idxs[mask], assume_unique=True)
-            self.population.position[worst_pop_idxs] = Xst_rec[best_st_indices]
+            self.population.position[worst_pop_idxs, :self.params.decision_dim+2] = Xst_rec[best_st_indices, :self.params.decision_dim+2]
             self.population.fitness[worst_pop_idxs] = Fst_rec[best_st_indices]
             # Update the memory with the new particles from the strategy
             self.update_memory(update_memory_pos, update_memory_fit)
@@ -259,14 +263,16 @@ class Mesh():
                 
             \tilde{x}_{gb} = x_{gb} + \tau_{mut} \cdot \vec{r},
             
-        where :math:`\vec{r} \sim \mathcal{N}(0, 1)^m` is a vector sampled from the Standard Gaussian Distribution.
+        where :math:`\vec{r}` is calculated as a decision variable.
         '''
         
         # Mutate the global guides with a vector sampled from the Standard Gaussian Distribution
-        np.clip(self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) * self.params.mutation_rate,
-                self.params.position_lower_bounds,
-                self.params.position_upper_bounds,
-                out=self.pre_allocated.global_guide_mutated)
+        np.clip(
+            self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) * self.population.position[:, self.params.decision_dim+6:],
+            self.params.position_lower_bounds,
+            self.params.position_upper_bounds,
+            out=self.pre_allocated.global_guide_mutated
+        )
 
     def move_population(self) -> None:
         r''' Applies the equation of motion to the particles. The MESH equation of motion is given by:
@@ -285,7 +291,7 @@ class Mesh():
         - :math:`w_I` is the inertia weight;
         - :math:`w_A` is the assimilation weight;
         - :math:`w_C` is the cooperation weight;
-        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`r_i \sim \mathcal{U}(0,\ 1)` a number sampled under a Uniform Distribution between 0 and 1 for each line of :math:`C` and :math:`\tau_{com}` the :attr:`~mesh.parameters.MeshParameters.communication_probability`, :math:`C` is calculated by:
+        - :math:`C` is a binary diagonal matrix, called communication matrix. Given :math:`r_i \sim \mathcal{U}(0,\ 1)` a number sampled under a Uniform Distribution between 0 and 1 for each line of :math:`C` and :math:`\tau_{com}` calculated as a decision variable, :math:`C` is calculated by:
 
         .. math::
 
@@ -311,10 +317,10 @@ class Mesh():
         # Get the positions
         X = self.population.position
         # Get the equation weights
-        W = X[:, params.decision_dim:params.decision_dim+3]
+        W = X[:, params.decision_dim+2:params.decision_dim+6]
         # Calculate the new velocity
-        C = np.random.rand(population_size, params.position_dim) <= params.communication_probability
-        self.population.velocity[:] = W[:, 0][:, np.newaxis] * self.population.velocity + W[:, 1][:, np.newaxis] * (Xpb - X) + W[:, 2][:, np.newaxis] * C * (Xgb_mut - X)
+        C = np.random.rand(population_size, params.position_dim) <= W[:, 0][:, np.newaxis]
+        self.population.velocity[:] = W[:, 1][:, np.newaxis] * self.population.velocity + W[:, 2][:, np.newaxis] * (Xpb - X) + W[:, 3][:, np.newaxis] * C * (Xgb_mut - X)
         # Calculate the clipped velocity
         np.clip(self.population.velocity, params.velocity_lower_bounds, params.velocity_upper_bounds, out=self.population.velocity)
         # Calculate the clipped position
@@ -348,10 +354,14 @@ class Mesh():
         current_idxs = best_N_idxs[mask] - population_size
         # Put the best previous particles in the current population
         worst_current_idxs = np.setdiff1d(np.arange(population_size), current_idxs, assume_unique=True)
-        self.population.position[worst_current_idxs] = pre_allocated.position_copy[prev_idxs]
-        self.population.velocity[worst_current_idxs] = pre_allocated.velocity_copy[prev_idxs]
+        decision_dim = self.params.decision_dim
+        self.population.position[worst_current_idxs, :decision_dim] = pre_allocated.position_copy[prev_idxs, :decision_dim]
+        self.population.position[worst_current_idxs, decision_dim+2:] = pre_allocated.position_copy[prev_idxs, decision_dim+2:]
+        self.population.velocity[worst_current_idxs, :decision_dim] = pre_allocated.velocity_copy[prev_idxs, :decision_dim]
+        self.population.velocity[worst_current_idxs, decision_dim+2:] = pre_allocated.velocity_copy[prev_idxs, decision_dim+2:]
         self.population.fitness[worst_current_idxs] = pre_allocated.fitness_copy[prev_idxs]
-        self.population.personal_guide_pos[worst_current_idxs] = self.population.personal_guide_pos[prev_idxs]
+        self.population.personal_guide_pos[worst_current_idxs, :decision_dim] = self.population.personal_guide_pos[prev_idxs, :decision_dim]
+        self.population.personal_guide_pos[worst_current_idxs, decision_dim+2:] = self.population.personal_guide_pos[prev_idxs, decision_dim+2:]
         self.population.personal_guide_fit[worst_current_idxs] = self.population.personal_guide_fit[prev_idxs]
 
     def update_personal_guides(self) -> None:

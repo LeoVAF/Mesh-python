@@ -2,7 +2,7 @@ from .operations.differential_mutation_pool import differential_mutation_pool_op
 from .operations.differential_mutation import differential_mutation_options
 from .operations.global_guide_method import global_guide_method_options
 from .validations.numpy_validations import assert_np_array_for_operations, assert_np_vectors_for_boundary
-from .validations.python_validations import assert_type, is_greater_in_type, is_between_inclusive, is_in_options
+from .validations.python_validations import assert_type, is_greater_in_type, is_in_options
 
 from numpy.typing import NDArray
 from typing import Optional
@@ -30,10 +30,6 @@ class MeshParameters:
         dm_pool_type (:type:`int`): Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
     
         dm_operation_type (:type:`int`): Differential mutation operation type. See :attr:`~mesh.operations.differential_mutation.differential_mutation_options`.
-    
-        communication_probability (:type:`int | float`): Communication/cooperation probability. Must be a number between 0 and 1, inclusive.
-        
-        mutation_rate (:type:`int | float`): Mutation rate. Must be a positive number (> 0).
         
         max_gen (:type:`typing.Optional[int]`): Maximum number of generations. Must be a positive integer (> 0) or ``None``.
         
@@ -60,8 +56,6 @@ class MeshParameters:
                  global_guide_method: int = 0,
                  dm_pool_type: int = 0,
                  dm_operation_type: int = 0,
-                 communication_probability: int | float = 0.7,
-                 mutation_rate: int | float = 0.9,
                  max_gen: Optional[int] = None,
                  max_fit_eval: Optional[int] = None,
                  max_personal_guides: int = 1,
@@ -122,11 +116,12 @@ class MeshParameters:
         is_greater_in_type(decision_dim, 'decision_dim', int, 0)
         self.decision_dim = decision_dim
         # Set the problem position dimension plus hiperparameter dimension
-        self.position_dim = decision_dim + 5
+        self.position_dim = decision_dim + 7
         # Set the maximum and the minimum boundaries for positions
         assert_np_vectors_for_boundary(decision_lower_bounds, 'decision_lower_bounds', decision_upper_bounds, 'decision_upper_bounds', decision_dim)
-        self.position_lower_bounds = np.hstack((decision_lower_bounds, np.array([0., 0., 0., 0., 0.])))
-        self.position_upper_bounds = np.hstack((decision_upper_bounds, np.array([2., 2., 2., 2., 1.])))
+        # Decision varibles plus (DE scaling factor, crossover probability, communication probability, three weights and mutation rate)
+        self.position_lower_bounds = np.hstack((decision_lower_bounds, np.array([0., 0., 0., 0., 0., 0., 0.])))
+        self.position_upper_bounds = np.hstack((decision_upper_bounds, np.array([1., 1., 1., 1., 1., 1., 1.])))
         # Set the maximum and minimum boundaries for velocities
         self.velocity_lower_bounds =  self.position_lower_bounds - self.position_upper_bounds
         self.velocity_upper_bounds = -self.velocity_lower_bounds
@@ -148,12 +143,6 @@ class MeshParameters:
         # Set the differential mutation pool type
         is_in_options(dm_pool_type, 'dm_pool_type', differential_mutation_pool_options.keys())
         self.dm_pool_type = dm_pool_type
-        # Set the communication probability
-        is_between_inclusive(communication_probability, 'communication_probability', 0, 1)
-        self.communication_probability = communication_probability
-        # Set the mutation rate
-        is_greater_in_type(mutation_rate, 'mutation_rate', (int, float), 0)
-        self.mutation_rate = mutation_rate
         # Check if at least one of the stopping criteria is not None
         if max_gen is None and max_fit_eval is None:
             raise ValueError('At least one of the parameters "max_gen" and "max_fit_eval" must be not None.')

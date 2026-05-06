@@ -42,6 +42,7 @@ class Population:
         else:
             self.position = params.initial_points
         hiperparameter_dim = params.position_dim - params.decision_dim
+        # Position = decision varibles plus (DE scaling factor, crossover probability, communication probability, three weights and mutation rate)
         self.position = np.hstack((self.position, np.random.rand(params.population_size, hiperparameter_dim)))
         self.velocity = np.random.uniform(params.velocity_lower_bounds, params.velocity_upper_bounds, (params.population_size, params.position_dim))
         self.fitness = np.full((params.population_size, params.objective_dim), np.inf)

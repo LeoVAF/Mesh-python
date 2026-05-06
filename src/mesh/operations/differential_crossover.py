@@ -8,7 +8,10 @@ import numpy as np
 if TYPE_CHECKING:
     from mesh import Mesh
 
-def binomial_crossover(self: Mesh, X1: NDArray[np.number], X2: NDArray[np.number]) -> NDArray[np.number]:
+def binomial_crossover(self: Mesh,
+                       X1: NDArray[np.number],
+                       X2: NDArray[np.number],
+                       crossover_probability: NDArray[np.number]) -> NDArray[np.number]:
   r''' Apply the Binomial Crossover in ``X1`` in-place from information in ``X2`` according to:
 
   .. math::
@@ -20,12 +23,14 @@ def binomial_crossover(self: Mesh, X1: NDArray[np.number], X2: NDArray[np.number
   where :math:`p_{cross}` is the crossover probability and :math:`j_{rand}` \in \{1,\ \ldots,\ m\} is a random index sampled under a Uniform Distribution.
   
   Note:
-    The crossover probability is calculated by a Truncated Normal Distribution between 0 and 1 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    The crossover probability is calculated as a decision variable.
   
   Args:
+    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
     X1 (:type:`NDArray[np.number]`): The numpy matrix to apply the crossover.
     X2 (:type:`NDArray[np.number]`): The second numpy matrix that will share information in the crossover.
-    params (:class:`~mesh.parameters.MeshParameters`): The parameters :attr:`~mesh.parameters.MeshParameters.position_dim` and :attr:`~mesh.parameters.MeshParameters.mutation_rate` are used to apply the crossover.
+    crossover_probability (:type:`NDArray[np.number]`): The crossover probability for each point.
+    
     
   Returns:
     :type:`NDArray[np.number]`: ``X1`` after applying the Binomial Crossover.
@@ -33,21 +38,19 @@ def binomial_crossover(self: Mesh, X1: NDArray[np.number], X2: NDArray[np.number
 
   # Get the size of the X1 to apply the crossover
   size = X1.shape[0]
-  # Get the crossover rate
-  crossover_rate = np.random.beta(3.0, 1.0, size=(size, 1))
   # Make the crossover index for each particle
   crossover_index = np.random.randint(0, self.params.position_dim, size=size)
   # Calculate the crossover chance to apply the Binomial Crossover
   crossover_chance = np.random.uniform(0.0, 1.0, size=(size, self.params.position_dim))
   # Get the crossover mask
-  crossover_mask = crossover_chance <= crossover_rate
+  crossover_mask = crossover_chance <= crossover_probability
   crossover_mask[np.arange(size), crossover_index] = True
   # Apply the crossover
   X1[crossover_mask] = X2[crossover_mask]
   return X1
 
 # The options of Differential Crossover operation
-differential_crossover_options: dict[str, Callable[[Mesh, NDArray[np.number], NDArray[np.number]], NDArray[np.number]]] = {
+differential_crossover_options: dict[str, Callable[[Mesh, NDArray[np.number], NDArray[np.number], NDArray[np.number]], NDArray[np.number]]] = {
   'binomial': binomial_crossover
 }
 ''' The options of Differential Mutation operation. They are:
@@ -55,14 +58,14 @@ differential_crossover_options: dict[str, Callable[[Mesh, NDArray[np.number], ND
   - :type:`binomial`: Applies the Binomial Crossover from Differential Evolution.
 '''
 
-def get_differential_crossover(option: str) -> Callable[[Mesh, NDArray[np.number], NDArray[np.number]], NDArray[np.number]]:
+def get_differential_crossover(option: str) -> Callable[[Mesh, NDArray[np.number], NDArray[np.number], NDArray[np.number]], NDArray[np.number]]:
   ''' Sets the Differential Crossover from Differential Evolution according to :attr:`~mesh.operations.differential_crossover.differential_crossover_options`. 
   
   Args:
     option (:type:`str`): Differential Crossover option.
 
   Returns:
-    :type:`Callable[[`~mesh.core.Mesh`, NDArray[np.number], NDArray[np.number]], NDArray[np.number]]`: The Differential Crossover function.
+    :type:`Callable[[`~mesh.core.Mesh`, NDArray[np.number], NDArray[np.number], NDArray[np.number]], NDArray[np.number]]`: The Differential Crossover function.
   '''
 
   return differential_crossover_options[option]

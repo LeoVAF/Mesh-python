@@ -12,7 +12,7 @@ import numpy as np
 def main():
     Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
 
-    num_runs = 1 # Number of runs
+    num_runs = 30 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     objective_dim = 2 # Number of objectives
@@ -44,14 +44,12 @@ def main():
     max_fitness_eval = 25600 # Maximum fitness evaluations
     population_size = 128 # Population size
     memory_size = population_size # Maximum number of particles in memory
-    communication_probability = 0.5 # Communication probability
-    mutation_rate = 0.5 # Mutation rate
-    personal_guide_array_size = 1 # Number of personal guides
+    personal_guide_array_size = 2 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
     global_guide_method = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
-    dm_pool_type = 0 # 0 -> Sampling from memory (S1) | 1 -> Sampling from population (S2) | 2 -> Sampling from memory and population (S3)
-    dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
+    dm_pool_type = 1 # 0 -> Sampling from memory (S1) | 1 -> Sampling from population (S2) | 2 -> Sampling from memory and population (S3)
+    dm_operation_type = 3 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
     config = f"MESH_{experiment_name}_{objective_dim}_{decision_dim}"
     print(f"Running MESH G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
@@ -65,7 +63,6 @@ def main():
                                 global_guide_method=global_guide_method,
                                 dm_pool_type=dm_pool_type,
                                 dm_operation_type=dm_operation_type,
-                                communication_probability=communication_probability, mutation_rate=mutation_rate,
                                 max_gen=max_iterations, max_fit_eval=max_fitness_eval,
                                 max_personal_guides=personal_guide_array_size,
                                 random_state=random_state)
