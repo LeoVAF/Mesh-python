@@ -120,8 +120,8 @@ class MeshParameters:
         # Set the maximum and the minimum boundaries for positions
         assert_np_vectors_for_boundary(decision_lower_bounds, 'decision_lower_bounds', decision_upper_bounds, 'decision_upper_bounds', decision_dim)
         # Decision varibles plus (DE scaling factor, crossover probability, communication probability, three weights and mutation rate)
-        self.position_lower_bounds = np.hstack((decision_lower_bounds, np.array([-1., 0., 0., -1., -1., -1., -1.])))
-        self.position_upper_bounds = np.hstack((decision_upper_bounds, np.array([1., 1., 1., 1., 1., 1., 1.])))
+        self.position_lower_bounds = np.hstack((decision_lower_bounds, np.array([0., 0., 0., 0., 0., 0., 0.])))
+        self.position_upper_bounds = np.hstack((decision_upper_bounds, np.array([2., 1., 1., 2., 2., 2., 2.])))
         # Set the maximum and minimum boundaries for velocities
         self.velocity_lower_bounds =  self.position_lower_bounds - self.position_upper_bounds
         self.velocity_upper_bounds = -self.velocity_lower_bounds
