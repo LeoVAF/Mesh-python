@@ -251,7 +251,7 @@ class Mesh():
             # Put the best strategy particles in the current population
             np.logical_not(mask, out=mask)
             worst_pop_idxs = np.setdiff1d(np.arange(population_size), best_N_idxs[mask], assume_unique=True)
-            self.population.position[worst_pop_idxs, :self.params.decision_dim+2] = Xst_rec[best_st_indices, :self.params.decision_dim+2]
+            self.population.position[worst_pop_idxs] = Xst_rec[best_st_indices]
             self.population.fitness[worst_pop_idxs] = Fst_rec[best_st_indices]
             # Update the memory with the new particles from the strategy
             self.update_memory(update_memory_pos, update_memory_fit)
@@ -268,7 +268,8 @@ class Mesh():
         
         # Mutate the global guides with a vector sampled from the Standard Gaussian Distribution
         np.clip(
-            self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) * self.population.position[:, self.params.decision_dim+6:],
+            self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) *
+                self.population.position[:, self.params.decision_dim+6:self.params.decision_dim+7],
             self.params.position_lower_bounds,
             self.params.position_upper_bounds,
             out=self.pre_allocated.global_guide_mutated
@@ -354,14 +355,10 @@ class Mesh():
         current_idxs = best_N_idxs[mask] - population_size
         # Put the best previous particles in the current population
         worst_current_idxs = np.setdiff1d(np.arange(population_size), current_idxs, assume_unique=True)
-        decision_dim = self.params.decision_dim
-        self.population.position[worst_current_idxs, :decision_dim] = pre_allocated.position_copy[prev_idxs, :decision_dim]
-        self.population.position[worst_current_idxs, decision_dim+2:] = pre_allocated.position_copy[prev_idxs, decision_dim+2:]
-        self.population.velocity[worst_current_idxs, :decision_dim] = pre_allocated.velocity_copy[prev_idxs, :decision_dim]
-        self.population.velocity[worst_current_idxs, decision_dim+2:] = pre_allocated.velocity_copy[prev_idxs, decision_dim+2:]
+        self.population.position[worst_current_idxs] = pre_allocated.position_copy[prev_idxs]
+        self.population.velocity[worst_current_idxs] = pre_allocated.velocity_copy[prev_idxs]
         self.population.fitness[worst_current_idxs] = pre_allocated.fitness_copy[prev_idxs]
-        self.population.personal_guide_pos[worst_current_idxs, :decision_dim] = self.population.personal_guide_pos[prev_idxs, :decision_dim]
-        self.population.personal_guide_pos[worst_current_idxs, decision_dim+2:] = self.population.personal_guide_pos[prev_idxs, decision_dim+2:]
+        self.population.personal_guide_pos[worst_current_idxs] = self.population.personal_guide_pos[prev_idxs]
         self.population.personal_guide_fit[worst_current_idxs] = self.population.personal_guide_fit[prev_idxs]
 
     def update_personal_guides(self) -> None:
