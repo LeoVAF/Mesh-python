@@ -9,10 +9,10 @@ import numpy as np
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
-position_dim = 5
+decision_dim = 5
 population_size = 20
-lower_bound = np.array([0] * position_dim)
-upper_bound = np.array([1] * position_dim)
+lower_bound = np.array([0] * decision_dim)
+upper_bound = np.array([1] * decision_dim)
 mutation_rate = 0.5
 communication_probability = 0.8
 max_gen = None
@@ -26,8 +26,24 @@ def toy_function(x):
 equal_tolerance_for_array = 1e-15
 
 def test_rand_1():
+  # Create a Mesh instance with a toy function
+  test_params = MeshParameters(
+    objective_dim=objective_dim,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
+    population_size=population_size,
+    memory_size=population_size,
+    dm_operation_type=0,
+    max_gen=max_gen,
+    max_fit_eval=max_fit_eval,
+    max_personal_guides=max_personal_guides,
+    random_state=random_state
+  )
+  mesh = Mesh(test_params, toy_function)
+  
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, position_dim)
+  pool = np.random.rand(population_size, mesh.params.position_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -35,30 +51,13 @@ def test_rand_1():
   valid_idxs = [i for i in range(len(pool_idxs)) if len(pool_idxs[i]) >= valid_size]
   
   # Mock the random functions to return predetermined values
-  operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
-    # Create a Mesh instance with a toy function
-    test_params = MeshParameters(
-      objective_dim=objective_dim,
-      position_dim=position_dim,
-      position_lower_bounds=lower_bound,
-      position_upper_bounds=upper_bound,
-      population_size=population_size,
-      memory_size=population_size,
-      dm_operation_type=0,
-      mutation_rate=mutation_rate,
-      communication_probability=communication_probability,
-      max_gen=max_gen,
-      max_fit_eval=max_fit_eval,
-      max_personal_guides=max_personal_guides,
-      random_state=random_state
-    )
-    mesh = Mesh(test_params, toy_function)
-    
+  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
     mesh.initialize()
+
+    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
 
     # Call the operation function
     Xst, _ = dm.rand_1(mesh, (pool, pool_idxs))
@@ -68,7 +67,7 @@ def test_rand_1():
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
       x2 = pool[r_idxs[2]]
-      xst = np.clip(x0 + 2 * operation_weight[i] * (x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(x0 + operation_weight[i] * (x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -78,8 +77,24 @@ def test_rand_1():
     assert np.array_equal(Xst, np.array([])) and np.array_equal(idxs, np.array([]))
 
 def test_rand_2():
+  # Create a Mesh instance with a toy function
+  test_params = MeshParameters(
+    objective_dim=objective_dim,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
+    population_size=population_size,
+    memory_size=population_size,
+    dm_operation_type=1,
+    max_gen=max_gen,
+    max_fit_eval=max_fit_eval,
+    max_personal_guides=max_personal_guides,
+    random_state=random_state
+  )
+  mesh = Mesh(test_params, toy_function)
+  
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, position_dim)
+  pool = np.random.rand(population_size, mesh.params.position_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -87,30 +102,13 @@ def test_rand_2():
   valid_idxs = [i for i in range(len(pool_idxs)) if len(pool_idxs[i]) >= valid_size]
   
   # Mock the random functions to return predetermined values
-  operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
-    # Create a Mesh instance with a toy function
-    test_params = MeshParameters(
-      objective_dim=objective_dim,
-      position_dim=position_dim,
-      position_lower_bounds=lower_bound,
-      position_upper_bounds=upper_bound,
-      population_size=population_size,
-      memory_size=population_size,
-      dm_operation_type=1,
-      mutation_rate=mutation_rate,
-      communication_probability=communication_probability,
-      max_gen=max_gen,
-      max_fit_eval=max_fit_eval,
-      max_personal_guides=max_personal_guides,
-      random_state=random_state
-    )
-    mesh = Mesh(test_params, toy_function)
-
+  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
     mesh.initialize()
+
+    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
 
     # Call the operation function
     Xst, _ = dm.rand_2(mesh, (pool, pool_idxs))
@@ -122,7 +120,7 @@ def test_rand_2():
       x2 = pool[r_idxs[2]]
       x3 = pool[r_idxs[3]]
       x4 = pool[r_idxs[4]]
-      xst = np.clip(x0 + 2 * operation_weight[i] * (x1 - x2 + x3 - x4), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -132,8 +130,24 @@ def test_rand_2():
     assert np.array_equal(Xst, np.array([])) and np.array_equal(idxs, np.array([]))
 
 def test_best_1():
+  # Create a Mesh instance with a toy function
+  test_params = MeshParameters(
+    objective_dim=objective_dim,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
+    population_size=population_size,
+    memory_size=population_size,
+    dm_operation_type=2,
+    max_gen=max_gen,
+    max_fit_eval=max_fit_eval,
+    max_personal_guides=max_personal_guides,
+    random_state=random_state
+  )
+  mesh = Mesh(test_params, toy_function)
+  
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, position_dim)
+  pool = np.random.rand(population_size, mesh.params.position_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -144,27 +158,11 @@ def test_best_1():
   operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
-    # Create a Mesh instance with a toy function
-    test_params = MeshParameters(
-      objective_dim=objective_dim,
-      position_dim=position_dim,
-      position_lower_bounds=lower_bound,
-      position_upper_bounds=upper_bound,
-      population_size=population_size,
-      memory_size=population_size,
-      dm_operation_type=2,
-      mutation_rate=mutation_rate,
-      communication_probability=communication_probability,
-      max_gen=max_gen,
-      max_fit_eval=max_fit_eval,
-      max_personal_guides=max_personal_guides,
-      random_state=random_state
-    )
-    mesh = Mesh(test_params, toy_function)
-
+  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
     mesh.initialize()
+
+    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
 
     # Call the operation function
     Xst, idxs = dm.best_1(mesh, (pool, pool_idxs))
@@ -174,7 +172,7 @@ def test_best_1():
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
       xgb = mesh.population.global_guide[idxs[i]]
-      xst = np.clip(xgb + 2 * operation_weight[i] * (x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(xgb + operation_weight[i] * (x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -184,8 +182,24 @@ def test_best_1():
     assert np.array_equal(Xst, np.array([])) and np.array_equal(idxs, np.array([]))
 
 def test_current_to_best_1():
+  # Create a Mesh instance with a toy function
+  test_params = MeshParameters(
+    objective_dim=objective_dim,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
+    population_size=population_size,
+    memory_size=population_size,
+    dm_operation_type=3,
+    max_gen=max_gen,
+    max_fit_eval=max_fit_eval,
+    max_personal_guides=max_personal_guides,
+    random_state=random_state
+  )
+  mesh = Mesh(test_params, toy_function)
+  
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, position_dim)
+  pool = np.random.rand(population_size, mesh.params.position_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -196,27 +210,11 @@ def test_current_to_best_1():
   operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
-    # Create a Mesh instance with a toy function
-    test_params = MeshParameters(
-      objective_dim=objective_dim,
-      position_dim=position_dim,
-      position_lower_bounds=lower_bound,
-      position_upper_bounds=upper_bound,
-      population_size=population_size,
-      memory_size=population_size,
-      dm_operation_type=3,
-      mutation_rate=mutation_rate,
-      communication_probability=communication_probability,
-      max_gen=max_gen,
-      max_fit_eval=max_fit_eval,
-      max_personal_guides=max_personal_guides,
-      random_state=random_state
-    )
-    mesh = Mesh(test_params, toy_function)
-
+  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
     mesh.initialize()
+
+    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
 
     # Call the operation function
     Xst, idxs = dm.current_to_best_1(mesh, (pool, pool_idxs))
@@ -227,7 +225,7 @@ def test_current_to_best_1():
       x1 = pool[r_idxs[1]]
       x = mesh.population.position[idxs[i]]
       xgb = mesh.population.global_guide[idxs[i]]
-      xst = np.clip(x + 2 * operation_weight[i] * (xgb - x + x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -237,8 +235,24 @@ def test_current_to_best_1():
     assert np.array_equal(Xst, np.array([])) and np.array_equal(idxs, np.array([]))
 
 def test_current_to_rand_1():
+  # Create a Mesh instance with a toy function
+  test_params = MeshParameters(
+    objective_dim=objective_dim,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
+    population_size=population_size,
+    memory_size=population_size,
+    dm_operation_type=4,
+    max_gen=max_gen,
+    max_fit_eval=max_fit_eval,
+    max_personal_guides=max_personal_guides,
+    random_state=random_state
+  )
+  mesh = Mesh(test_params, toy_function)
+  
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, position_dim)
+  pool = np.random.rand(population_size, mesh.params.position_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -249,27 +263,11 @@ def test_current_to_rand_1():
   operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("numpy.random.beta", return_value=operation_weight), patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
-    # Create a Mesh instance with a toy function
-    test_params = MeshParameters(
-      objective_dim=objective_dim,
-      position_dim=position_dim,
-      position_lower_bounds=lower_bound,
-      position_upper_bounds=upper_bound,
-      population_size=population_size,
-      memory_size=population_size,
-      dm_operation_type=4,
-      mutation_rate=mutation_rate,
-      communication_probability=communication_probability,
-      max_gen=max_gen,
-      max_fit_eval=max_fit_eval,
-      max_personal_guides=max_personal_guides,
-      random_state=random_state
-    )
-    mesh = Mesh(test_params, toy_function)
-
+  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
     mesh.initialize()
+
+    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
 
     # Call the operation function
     Xst, idxs = dm.current_to_rand_1(mesh, (pool, pool_idxs))
@@ -280,7 +278,7 @@ def test_current_to_rand_1():
       x1 = pool[r_idxs[1]]
       x2 = pool[r_idxs[2]]
       x = mesh.population.position[idxs[i]]
-      xst = np.clip(x + 2 * operation_weight[i] * (x0 - x + x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds) # type: ignore
+      xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 

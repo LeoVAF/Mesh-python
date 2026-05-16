@@ -232,7 +232,6 @@ class Mesh():
         Xst, applied_st_pop_idxs = self.differential_mutation(self.differential_mutation_pool())
         if len(Xst):
             population_size = self.params.population_size
-            decision_dim = self.params.decision_dim
             population_positions = self.population.position
             # Apply the differential crossover
             Xst_rec = self.differential_crossover(
@@ -250,18 +249,13 @@ class Mesh():
             # Get the indices of the best particles in the strategy array
             mask_best = best_N_idxs >= population_size
             best_st_indices = best_N_idxs[mask_best] - population_size
-            mask_st_worst = np.ones(len(Xst_rec), dtype=bool)
-            mask_st_worst[best_st_indices] = False
-            worst_st_idxs = np.flatnonzero(mask_st_worst)
-            # Put the best decision variables from strategy particles in the current population
+            # Put the best particles from strategy array in the current population
             np.logical_not(mask_best, out=mask_best)
             mask_pop_worst = np.ones(population_size, dtype=bool)
             mask_pop_worst[best_N_idxs[mask_best]] = False
             worst_pop_idxs = np.flatnonzero(mask_pop_worst)
-            population_positions[worst_pop_idxs, :decision_dim] = Xst_rec[best_st_indices, :decision_dim]
+            population_positions[worst_pop_idxs] = Xst_rec[best_st_indices]
             self.population.fitness[worst_pop_idxs] = Fst_rec[best_st_indices]
-            # Update the hyperparameters (those that did not show improvement)
-            population_positions[applied_st_pop_idxs[worst_st_idxs], decision_dim:] = Xst_rec[worst_st_idxs, decision_dim:]
             # Update the memory with the new particles from the strategy
             self.update_memory(update_memory_pos, update_memory_fit)
 
@@ -278,14 +272,14 @@ class Mesh():
         # Mutate the global guides with a vector sampled from the Standard Gaussian Distribution
         np.clip(
             self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) *
-                self.population.position[:, self.params.decision_dim+6:self.params.decision_dim+7],
+                self.population.position[:, self.params.decision_dim+2:self.params.decision_dim+3],
             self.params.position_lower_bounds,
             self.params.position_upper_bounds,
             out=self.pre_allocated.global_guide_mutated
         )
 
     def move_population(self) -> None:
-        r''' Applies the equation of motion to the particles. The MESH equation of motion is given by:
+        r''' Applies the equation of motion to the copy particles. The MESH equation of motion is given by:
         
         .. math::
 
@@ -324,20 +318,22 @@ class Mesh():
         Xpb = self.population.personal_guide_pos[np.arange(population_size), pb_indices, :]
         # Get the global guide positions
         Xgb_mut = self.pre_allocated.global_guide_mutated
-        # Get the positions
-        X = self.population.position
-        # Get the equation weights
-        W = X[:, params.decision_dim+2:params.decision_dim+6]
+        # Get the positions, velocities and fitness of the population
+        X_copy = self.pre_allocated.position_copy
+        V_copy = self.pre_allocated.velocity_copy
+        F_copy = self.pre_allocated.fitness_copy
+        # Get the equation of motion parameters
+        W = X_copy[:, params.decision_dim+4:]
+        C = np.random.rand(population_size, params.position_dim) <= X_copy[:, params.decision_dim+3:params.decision_dim+4]
         # Calculate the new velocity
-        C = np.random.rand(population_size, params.position_dim) <= W[:, 0][:, np.newaxis]
-        self.population.velocity[:] = W[:, 1][:, np.newaxis] * self.population.velocity + W[:, 2][:, np.newaxis] * (Xpb - X) + W[:, 3][:, np.newaxis] * C * (Xgb_mut - X)
+        V_copy[:] = W[:, 0:1] * V_copy + W[:, 1:2] * (Xpb - X_copy) + W[:, 2:3] * C * (Xgb_mut - X_copy)
         # Calculate the clipped velocity
-        np.clip(self.population.velocity, params.velocity_lower_bounds, params.velocity_upper_bounds, out=self.population.velocity)
+        np.clip(V_copy, params.velocity_lower_bounds, params.velocity_upper_bounds, out=V_copy)
         # Calculate the clipped position
-        self.population.position += self.population.velocity
-        np.clip(self.population.position, params.position_lower_bounds, params.position_upper_bounds, out=self.population.position)
+        X_copy += V_copy
+        np.clip(X_copy, params.position_lower_bounds, params.position_upper_bounds, out=X_copy)
         # Evaluate the positions with the fitness function
-        self.population.fitness[:] = self.evaluate(self.population.position)
+        F_copy[:] = self.evaluate(X_copy)
     
     def elitism(self) -> None:
         ''' Selects the best particles from the previous (before applying the equation of motion) and current populations (after applying the equation of motion). The top :attr:`~mesh.parameters.MeshParameters.population_size` particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
@@ -350,31 +346,27 @@ class Mesh():
         '''
 
         population_size = self.params.population_size
-        decision_dim = self.params.decision_dim
         pre_allocated = self.pre_allocated
         # Get the fitness matrix with the previous and the current population
-        pre_allocated.fitness_elitism[:population_size] = pre_allocated.fitness_copy
-        pre_allocated.fitness_elitism[population_size:] = self.population.fitness
+        pre_allocated.fitness_elitism[:population_size] = self.population.fitness
+        pre_allocated.fitness_elitism[population_size:] = pre_allocated.fitness_copy
         # Find the best N indices
         best_N_idxs = select_best_N_mo(pre_allocated.fitness_elitism, population_size)
-        # Get the previous population indices
-        mask_best_idxs = best_N_idxs < population_size
-        best_prev_idxs = best_N_idxs[mask_best_idxs]
-        # Get the current population indices
+        # Get the copy population indices
+        mask_best_idxs = best_N_idxs >= population_size
+        best_copy_idxs = best_N_idxs[mask_best_idxs] - population_size
+        # Get the population indices that will be replaced by the best copy particles
         np.logical_not(mask_best_idxs, out=mask_best_idxs)
-        best_current_idxs = best_N_idxs[mask_best_idxs] - population_size
-        mask_worst_current_pop = np.ones(population_size, dtype=bool)
-        mask_worst_current_pop[best_current_idxs] = False
-        worst_current_idxs = np.flatnonzero(mask_worst_current_pop)
-        # Put the best previous decision variables in the current population
-        self.population.position[worst_current_idxs, :decision_dim] = pre_allocated.position_copy[best_prev_idxs, :decision_dim]
-        self.population.velocity[worst_current_idxs, :decision_dim] = pre_allocated.velocity_copy[best_prev_idxs, :decision_dim]
-        self.population.fitness[worst_current_idxs] = pre_allocated.fitness_copy[best_prev_idxs]
-        self.population.personal_guide_pos[worst_current_idxs] = self.population.personal_guide_pos[best_prev_idxs]
-        self.population.personal_guide_fit[worst_current_idxs] = self.population.personal_guide_fit[best_prev_idxs]
-        # Update the hyperparameters (those that did not show improvement)
-        self.population.position[best_current_idxs, decision_dim:] = pre_allocated.position_copy[best_current_idxs, decision_dim:]
-        self.population.velocity[best_current_idxs, decision_dim:] = pre_allocated.velocity_copy[best_current_idxs, decision_dim:]
+        best_pop_idxs = best_N_idxs[mask_best_idxs]
+        mask_worst_pop = np.ones(population_size, dtype=bool)
+        mask_worst_pop[best_pop_idxs] = False
+        worst_pop_idxs = np.flatnonzero(mask_worst_pop)
+        # Put the best copy decision variables in the population
+        self.population.position[worst_pop_idxs] = pre_allocated.position_copy[best_copy_idxs]
+        self.population.velocity[worst_pop_idxs] = pre_allocated.velocity_copy[best_copy_idxs]
+        self.population.fitness[worst_pop_idxs] = pre_allocated.fitness_copy[best_copy_idxs]
+        self.population.personal_guide_pos[worst_pop_idxs] = self.population.personal_guide_pos[best_copy_idxs]
+        self.population.personal_guide_fit[worst_pop_idxs] = self.population.personal_guide_fit[best_copy_idxs]
 
     def update_personal_guides(self) -> None:
         ''' Updates the personal guides of the population particles.

@@ -90,7 +90,7 @@ def run_cmopso(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	class MyProblem(Problem):
@@ -98,7 +98,7 @@ def run_cmopso(experiment: dict[str, Any],
 			super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu)
 		def _evaluate(self, X, out, *args, **kwargs):
 			out["F"] = np.array([fitness(x) for x in X])
-	pymoo_fitness = MyProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
+	pymoo_fitness = MyProblem(n_obj=objective_dim, n_var=decision_dim, xl=lower_bound_array, xu=upper_bound_array)
 
 	# Get tunable parameters (check if the parameters were tuned)
 	tuned_parameters_dict = get_tuned_parameters(experiment_name, fine_tuning_folder)
@@ -110,7 +110,7 @@ def run_cmopso(experiment: dict[str, Any],
 	# Execute CMOPSO
 	results = {}
 	combined_F = np.empty((0, objective_dim))
-	combined_P = np.empty((0, position_dim))
+	combined_P = np.empty((0, decision_dim))
 	for i in range(num_runs):
 		cmopso = CMOPSO(pop_size=population_size,
 						max_velocity_rate=max_velocity_rate,
@@ -149,7 +149,7 @@ def run_maco(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness_function = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	class PygmoProblem:
@@ -172,7 +172,7 @@ def run_maco(experiment: dict[str, Any],
 	# Execute NSPSO
 	results = {}
 	combined_F = np.empty((0, objective_dim))
-	combined_P = np.empty((0, position_dim))
+	combined_P = np.empty((0, decision_dim))
 	for i in range(num_runs):
 		random_state = experiment['random_state'] if experiment['random_state'] is not None else np.random.randint(0, 2147483647)
 		initial_population = pg.population(pygmo_problem, size=population_size, seed=random_state) # type: ignore
@@ -208,7 +208,7 @@ def run_mesh(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 
@@ -226,19 +226,17 @@ def run_mesh(experiment: dict[str, Any],
 	# Execute MESH
 	results = {}
 	combined_F = np.empty((0, objective_dim))
-	combined_P = np.empty((0, position_dim))
+	combined_P = np.empty((0, decision_dim))
 	for i in range(num_runs):
 		params = MeshParameters(objective_dim = objective_dim,
-								position_dim = position_dim,
-								position_lower_bounds = lower_bound_array,
-								position_upper_bounds = upper_bound_array, 
+								decision_dim = decision_dim,
+								decision_lower_bounds = lower_bound_array,
+								decision_upper_bounds = upper_bound_array, 
 								population_size = population_size,
 								memory_size = memory_size,
 								global_guide_method = global_best_attribution_type,
 								dm_pool_type = dm_pool_type,
 								dm_operation_type = dm_operation_type,
-								communication_probability = communication_probability,
-								mutation_rate = mutation_rate,
 								max_gen = None,
 								max_fit_eval = max_fitness_eval,
 								max_personal_guides = personal_guide_array_size,
@@ -271,7 +269,7 @@ def run_mopso_cd(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	class MyProblem(Problem):
@@ -280,7 +278,7 @@ def run_mopso_cd(experiment: dict[str, Any],
 		def _evaluate(self, X, out, *args, **kwargs):
 			out["F"] = np.array([fitness(x) for x in X])
 
-	pymoo_fitness = MyProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
+	pymoo_fitness = MyProblem(n_obj=objective_dim, n_var=decision_dim, xl=lower_bound_array, xu=upper_bound_array)
 
 	# Get tunable parameters (check if the parameters were tuned)
 	tuned_parameters_dict = get_tuned_parameters(experiment_name, fine_tuning_folder)
@@ -293,7 +291,7 @@ def run_mopso_cd(experiment: dict[str, Any],
 	# Execute MOPSO-CD
 	results = {}
 	combined_F = np.empty((0, objective_dim))
-	combined_P = np.empty((0, position_dim))
+	combined_P = np.empty((0, decision_dim))
 	for i in range(num_runs):
 		mopso_cd = MOPSO_CD(pop_size=population_size,
 							w=w,
@@ -333,7 +331,7 @@ def run_nsga2(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness_function = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	class PygmoProblem:
@@ -355,7 +353,7 @@ def run_nsga2(experiment: dict[str, Any],
 	# Execute NSPSO
 	results = {}
 	combined_F = np.empty((0, objective_dim))
-	combined_P = np.empty((0, position_dim))
+	combined_P = np.empty((0, decision_dim))
 	for i in range(num_runs):
 		random_state = experiment['random_state'] if experiment['random_state'] is not None else np.random.randint(0, 2147483647)
 		initial_population = pg.population(pygmo_problem, size=population_size, seed=random_state) # type: ignore
@@ -390,7 +388,7 @@ def run_nspso(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness_function = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	class PygmoProblem:
@@ -415,7 +413,7 @@ def run_nspso(experiment: dict[str, Any],
 	# Execute NSPSO
 	results = {}
 	combined_F = np.empty((0, objective_dim))
-	combined_P = np.empty((0, position_dim))
+	combined_P = np.empty((0, decision_dim))
 	for i in range(num_runs):
 		random_state = experiment['random_state'] if experiment['random_state'] is not None else np.random.randint(0, 2147483647)
 		initial_population = pg.population(pygmo_problem, size=population_size, seed=random_state) # type: ignore
@@ -453,7 +451,7 @@ def run_spea2(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	class PymooProblem(Problem):
@@ -461,7 +459,7 @@ def run_spea2(experiment: dict[str, Any],
 			super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu)
 		def _evaluate(self, X, out, *args, **kwargs):
 			out["F"] = np.array([fitness(x) for x in X])
-	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
+	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=decision_dim, xl=lower_bound_array, xu=upper_bound_array)
 
 	# Get tunable parameters (check if the parameters were tuned)
 	tuned_parameters_dict = get_tuned_parameters(experiment_name, fine_tuning_folder)
@@ -475,7 +473,7 @@ def run_spea2(experiment: dict[str, Any],
 	# Execute SPEA-II
 	results = {}
 	combined_F = np.empty((0, objective_dim))
-	combined_P = np.empty((0, position_dim))
+	combined_P = np.empty((0, decision_dim))
 	for i in range(num_runs):
 		spea2 = SPEA2(pop_size=population_size,
 					  sampling=LHS(), # type: ignore

@@ -5,10 +5,10 @@ import numpy as np
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
-position_dim = 5
+decision_dim = 5
 population_size = 20
-lower_bound = np.array([0] * position_dim)
-upper_bound = np.array([1] * position_dim)
+lower_bound = np.array([0] * decision_dim)
+upper_bound = np.array([1] * decision_dim)
 mutation_rate = 0.5
 communication_probability = 0.8
 max_gen = None
@@ -18,20 +18,18 @@ random_state = None
 
 def test_Population():
   # Create a Population instance with initial positions
-  initial_positions = np.random.rand(population_size, position_dim)
+  initial_points = np.random.rand(population_size, decision_dim)
   test_params = MeshParameters(
     objective_dim=objective_dim,
-    position_dim=position_dim,
-    position_lower_bounds=lower_bound,
-    position_upper_bounds=upper_bound,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
-    mutation_rate=mutation_rate,
-    communication_probability=communication_probability,
     max_gen=max_gen,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
-    initial_positions=initial_positions,
+    initial_points=initial_points,
     random_state=random_state
   )
   mesh_population = Population(test_params)
@@ -46,7 +44,7 @@ def test_Population():
   assert hasattr(mesh_population, 'personal_guide_fit')
 
   # Check if the initial positions was initialized correctly
-  assert np.all(initial_positions == mesh_population.position)
+  assert np.all(initial_points == mesh_population.position[:, :decision_dim])
 
   # Check if the positions and velocities were initialized correctly
   for p in mesh_population.position:
@@ -60,13 +58,11 @@ def test_Memory():
   # Create a Memory instance
   test_params = MeshParameters(
     objective_dim=objective_dim,
-    position_dim=position_dim,
-    position_lower_bounds=lower_bound,
-    position_upper_bounds=upper_bound,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
-    mutation_rate=mutation_rate,
-    communication_probability=communication_probability,
     max_gen=max_gen,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,

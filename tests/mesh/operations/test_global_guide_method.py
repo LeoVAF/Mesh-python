@@ -6,10 +6,10 @@ import numpy as np
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = np.random.randint(2, 101) # Randomly choose objective dimension
-position_dim = np.random.randint(2, 101) # Randomly choose position dimension
+decision_dim = np.random.randint(2, 101) # Randomly choose position dimension
 population_size = np.random.randint(4, 101) # Randomly choose population size
-lower_bound = np.array([0] * position_dim)
-upper_bound = np.array([3] * position_dim)
+lower_bound = np.array([0] * decision_dim)
+upper_bound = np.array([3] * decision_dim)
 mutation_rate = 0.5
 communication_probability = 0.8
 max_gen = None
@@ -29,13 +29,11 @@ def test_sigma_evaluation():
   # Create a Mesh instance with a toy function
   test_params = MeshParameters(
     objective_dim=objective_dim,
-    position_dim=position_dim,
-    position_lower_bounds=lower_bound,
-    position_upper_bounds=upper_bound,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
-    mutation_rate=mutation_rate,
-    communication_probability=communication_probability,
     max_gen=None,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
@@ -74,21 +72,19 @@ def test_sigma_evaluation():
 def test_sigma_method_in_memory():
   # Create a Mesh instance with a toy function
   steps = np.linspace(0, 1, population_size)
-  initial_positions = np.hstack((np.array([[steps[i]] for i in range(population_size)]), np.random.rand(population_size, position_dim-1)))
+  initial_points = np.hstack((np.array([[steps[i]] for i in range(population_size)]), np.random.rand(population_size, decision_dim-1)))
   test_params = MeshParameters(
     objective_dim=objective_dim,
-    position_dim=position_dim,
-    position_lower_bounds=lower_bound,
-    position_upper_bounds=upper_bound,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     global_guide_method=0,
-    mutation_rate=mutation_rate,
-    communication_probability=communication_probability,
     max_gen=None,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
-    initial_positions=initial_positions,
+    initial_points=initial_points,
     random_state=random_state
   )
   mesh = Mesh(test_params, toy_function)
@@ -114,14 +110,12 @@ def test_sigma_method_in_memory():
   # Testing when memory has only one particle
   test_params = MeshParameters(
     objective_dim=objective_dim,
-    position_dim=position_dim,
-    position_lower_bounds=lower_bound,
-    position_upper_bounds=upper_bound,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=1,
     global_guide_method=0,
-    mutation_rate=mutation_rate,
-    communication_probability=communication_probability,
     max_gen=None,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
@@ -139,23 +133,21 @@ def test_sigma_method_in_fronts():
   # Create a Mesh instance with a rank function
   steps = np.linspace(0, 1, population_size)
   ranks = [0, 4]
-  initial_positions = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[2]]),
+  initial_points = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[2]]),
                                  np.array([[steps[i]] for i in range(population_size)]),
-                                 np.random.rand(population_size, position_dim-2)))
+                                 np.random.rand(population_size, decision_dim-2)))
   test_params = MeshParameters(
     objective_dim=objective_dim,
-    position_dim=position_dim,
-    position_lower_bounds=lower_bound,
-    position_upper_bounds=upper_bound,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=population_size,
     global_guide_method=1,
-    mutation_rate=mutation_rate,
-    communication_probability=communication_probability,
     max_gen=None,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
-    initial_positions=initial_positions,
+    initial_points=initial_points,
     random_state=random_state
   )
   mesh = Mesh(test_params, rank_function)
@@ -196,18 +188,16 @@ def test_sigma_method_in_fronts():
   # Create a Mesh instance with a rank function (one particle in memory)
   test_params = MeshParameters(
     objective_dim=objective_dim,
-    position_dim=position_dim,
-    position_lower_bounds=lower_bound,
-    position_upper_bounds=upper_bound,
+    decision_dim=decision_dim,
+    decision_lower_bounds=lower_bound,
+    decision_upper_bounds=upper_bound,
     population_size=population_size,
     memory_size=1,
     global_guide_method=1,
-    mutation_rate=mutation_rate,
-    communication_probability=communication_probability,
     max_gen=None,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
-    initial_positions=initial_positions,
+    initial_points=initial_points,
     random_state=random_state
   )
   mesh = Mesh(test_params, rank_function)

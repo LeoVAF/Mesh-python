@@ -48,7 +48,7 @@ def fine_tune_cmopso(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	# Get the fine tuning configuration
@@ -60,7 +60,7 @@ def fine_tune_cmopso(experiment: dict[str, Any],
 			super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu)
 		def _evaluate(self, X, out, *args, **kwargs):
 			out["F"] = np.array([fitness(x) for x in X])
-	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
+	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=decision_dim, xl=lower_bound_array, xu=upper_bound_array)
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
@@ -117,7 +117,7 @@ def fine_tune_maco(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness_function = problem['fitness']
 	objective_dim = problem['objective_dim']
-	#position_dim = problem['position_dim']
+	#decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	# Get the fine tuning configuration
@@ -183,7 +183,7 @@ def fine_tune_mesh(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	# Get the fine tuning configuration
@@ -198,23 +198,19 @@ def fine_tune_mesh(experiment: dict[str, Any],
 		global_best_attribution_type = trial.suggest_categorical('global_best_attribution_type', [0, 1])
 		dm_pool_type = trial.suggest_categorical('differential_mutation_pool_type', [0, 1, 2])
 		dm_operation_type = trial.suggest_categorical('differential_mutation_type', [0, 1, 2, 3, 4])
-		communication_probability = trial.suggest_float('communication_probability', 0, 1)
-		mutation_rate = trial.suggest_float('mutation_rate', 0, 1)
 		personal_guide_array_size = trial.suggest_int('personal_guide_array_size', 1, 3)
 		# Execute MESH
 		loss_values = []
 		for step in range(n_steps):
 			params = MeshParameters(objective_dim = objective_dim,
-									position_dim = position_dim,
-									position_lower_bounds = lower_bound_array,
-									position_upper_bounds = upper_bound_array, 
+									decision_dim = decision_dim,
+									decision_lower_bounds = lower_bound_array,
+									decision_upper_bounds = upper_bound_array, 
 									population_size = population_size,
 									memory_size = memory_size,
 									global_guide_method = global_best_attribution_type,
 									dm_pool_type = dm_pool_type,
 									dm_operation_type = dm_operation_type,
-									communication_probability = communication_probability,
-									mutation_rate = mutation_rate,
 									max_gen = None,
 									max_fit_eval = max_fitness_eval,
 									max_personal_guides = personal_guide_array_size,
@@ -255,7 +251,7 @@ def fine_tune_mopso_cd(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	# Get the fine tuning configuration
@@ -267,7 +263,7 @@ def fine_tune_mopso_cd(experiment: dict[str, Any],
 			super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu)
 		def _evaluate(self, X, out, *args, **kwargs):
 			out["F"] = np.array([fitness(x) for x in X])
-	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
+	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=decision_dim, xl=lower_bound_array, xu=upper_bound_array)
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)
@@ -326,7 +322,7 @@ def fine_tune_nsga2(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness_function = problem['fitness']
 	objective_dim = problem['objective_dim']
-	#position_dim = problem['position_dim']
+	#decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	# Get the fine tuning configuration
@@ -393,7 +389,7 @@ def fine_tune_nspso(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness_function = problem['fitness']
 	objective_dim = problem['objective_dim']
-	#position_dim = problem['position_dim']
+	#decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	# Get the fine tuning configuration
@@ -467,7 +463,7 @@ def fine_tune_spea2(experiment: dict[str, Any],
     # Get the problem configuration
 	fitness = problem['fitness']
 	objective_dim = problem['objective_dim']
-	position_dim = problem['position_dim']
+	decision_dim = problem['decision_dim']
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 	# Get the fine tuning configuration
@@ -479,7 +475,7 @@ def fine_tune_spea2(experiment: dict[str, Any],
 			super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu)
 		def _evaluate(self, X, out, *args, **kwargs):
 			out["F"] = np.array([fitness(x) for x in X])
-	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=position_dim, xl=lower_bound_array, xu=upper_bound_array)
+	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=decision_dim, xl=lower_bound_array, xu=upper_bound_array)
 
 	def tuning(trial: optuna.Trial):
 		# Get tunable parameters (check if the parameters was tuned)

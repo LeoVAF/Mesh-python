@@ -94,10 +94,6 @@ class MeshParameters:
         ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options` '''
         self.dm_operation_type: int
         ''' Differential mutation operation. See :attr:`~mesh.operations.differential_mutation.differential_mutation_options`. '''
-        self.communication_probability: int | float
-        ''' Communication/cooperation probability. It must be a number between 0 and 1. '''
-        self.mutation_rate: int | float
-        ''' Mutation rate. '''
         self.max_gen: int
         ''' Maximum number of generations. It won't be used if it's ``None``. '''
         self.max_fit_eval: int
@@ -119,11 +115,11 @@ class MeshParameters:
         self.position_dim = decision_dim + 7
         # Set the maximum and the minimum boundaries for positions
         assert_np_vectors_for_boundary(decision_lower_bounds, 'decision_lower_bounds', decision_upper_bounds, 'decision_upper_bounds', decision_dim)
-        # Decision varibles plus (DE scaling factor, crossover probability, communication probability, three weights and mutation rate)
-        self.position_lower_bounds = np.hstack((decision_lower_bounds, np.array([0., 0., 0., 0., 0., 0., 0.])))
-        self.position_upper_bounds = np.hstack((decision_upper_bounds, np.array([2., 1., 1., 2., 2., 2., 2.])))
+        # Decision varibles plus (DE scaling factor, crossover probability, mutation rate, communication probability and three weights)
+        self.position_lower_bounds = np.hstack((decision_lower_bounds, np.zeros(7)))
+        self.position_upper_bounds = np.hstack((decision_upper_bounds, np.ones(7)))
         # Set the maximum and minimum boundaries for velocities
-        self.velocity_lower_bounds =  self.position_lower_bounds - self.position_upper_bounds
+        self.velocity_lower_bounds =  (self.position_lower_bounds - self.position_upper_bounds)
         self.velocity_upper_bounds = -self.velocity_lower_bounds
         # Set the population size
         is_greater_in_type(population_size, 'population_size', int, 0)
