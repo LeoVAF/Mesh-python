@@ -219,8 +219,6 @@ def run_mesh(experiment: dict[str, Any],
 	global_best_attribution_type = tuned_parameters['global_best_attribution_type'] if ('global_best_attribution_type' in tuned_parameters) else parameters['global_best_attribution_type']
 	dm_pool_type = tuned_parameters['differential_mutation_pool_type'] if ('differential_mutation_pool_type' in tuned_parameters) else parameters['differential_mutation_pool_type']
 	dm_operation_type = tuned_parameters['differential_mutation_type'] if ('differential_mutation_type' in tuned_parameters) else parameters['differential_mutation_type']
-	communication_probability = tuned_parameters['communication_probability'] if ('communication_probability' in tuned_parameters) else parameters['communication_probability']
-	mutation_rate = tuned_parameters['mutation_rate'] if ('mutation_rate' in tuned_parameters) else parameters['mutation_rate']
 	personal_guide_array_size = tuned_parameters['personal_guide_array_size'] if ('personal_guide_array_size' in tuned_parameters) else parameters['personal_guide_array_size']
 
 	# Execute MESH
@@ -252,7 +250,7 @@ def run_mesh(experiment: dict[str, Any],
 	
 	# Store the results
 	dump_results(experiment_name, results_folder, results, combined_P, combined_F, population_size)
-	return f'{experiment_name} with tunable parameters ({communication_probability}, {mutation_rate}, {personal_guide_array_size}) was successfully executed!'
+	return f'{experiment_name} with tunable parameters ({global_best_attribution_type}, {dm_pool_type}, {dm_operation_type}, {personal_guide_array_size}) was successfully executed!'
 
 
 def run_mopso_cd(experiment: dict[str, Any],
