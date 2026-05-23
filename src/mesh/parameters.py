@@ -23,8 +23,6 @@ class MeshParameters:
             
         population_size (:type:`int`): Population size. Must be a positive integer (> 0).
         
-        memory_size (:type:`typing.Optional[int]`): Number of particles in memory. Default is None. Must be a positive integer (> 0) or ``None``. If it is ``None``, the memory size will be equals to :attr:`population_size`.
-        
         global_guide_method (:type:`int`): Method to select the global guide of the particles. See :attr:`~mesh.operations.global_guide_method.global_guide_method_options`.
         
         dm_pool_type (:type:`int`): Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
@@ -52,7 +50,6 @@ class MeshParameters:
                  decision_lower_bounds: NDArray[np.floating],
                  decision_upper_bounds: NDArray[np.floating],
                  population_size: int,
-                 memory_size: Optional[int] = None,
                  global_guide_method: int = 0,
                  dm_pool_type: int = 0,
                  dm_operation_type: int = 0,
@@ -86,8 +83,6 @@ class MeshParameters:
         '''
         self.population_size: int
         ''' Number of particles. '''
-        self.memory_size: int
-        ''' Maximum size of MESH memory. '''
         self.global_guide_method: int
         ''' Global best selection method. See :attr:`~mesh.operations.global_guide_method.global_guide_method_options` '''
         self.dm_pool_type: int
@@ -124,12 +119,6 @@ class MeshParameters:
         # Set the population size
         is_greater_in_type(population_size, 'population_size', int, 0)
         self.population_size = population_size
-        # Set the memory size
-        is_greater_in_type(memory_size, 'memory_size', int, 0, is_optional=True)
-        if memory_size is None:
-            self.memory_size = population_size
-        else:
-            self.memory_size = memory_size
         # Set the global attribution type
         is_in_options(global_guide_method, 'global_guide_method', global_guide_method_options.keys())
         self.global_guide_method = global_guide_method

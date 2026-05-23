@@ -32,7 +32,6 @@ def test_binomial_crossover():
     decision_lower_bounds=lower_bound,
     decision_upper_bounds=upper_bound,
     population_size=population_size,
-    memory_size=population_size,
     max_gen=max_gen,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,

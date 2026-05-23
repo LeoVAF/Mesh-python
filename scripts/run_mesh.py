@@ -43,7 +43,6 @@ def main():
     max_iterations = None # Maximum number of iterations
     max_fitness_eval = 128 * 200 # Maximum fitness evaluations
     population_size = 128 # Population size
-    memory_size = population_size # Maximum number of particles in memory
     personal_guide_array_size = 1 # Number of personal guides
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
@@ -59,7 +58,7 @@ def main():
     for i in tqdm(range(num_runs)):
         params = MeshParameters(objective_dim,
                                 decision_dim, position_min_value, position_max_value,
-                                population_size, memory_size=memory_size,
+                                population_size,
                                 global_guide_method=global_guide_method,
                                 dm_pool_type=dm_pool_type,
                                 dm_operation_type=dm_operation_type,

@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance # type: ignore
 from tqdm import tqdm
 from types import MethodType
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 import numpy as np
 import random
@@ -72,8 +72,6 @@ class Mesh():
         ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is not None, so the fitness evaluations will be counted. '''
         self.count_generation: Callable[[], None]
         ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is not None. '''
-        self.update_memory: Callable[[NDArray[np.number], NDArray[np.number]]]
-        ''' Function to update the memory matrix. When the :attr:`~mesh.parameters.MeshParameters.memory_size` is less or equal :attr:`~mesh.parameters.MeshParameters.population_size`, the update can be faster. '''
         self.update_progress_bar: Callable[[tqdm, int], int]
         ''' Function to update the progress bar. '''
         self.total_bar: int
@@ -119,11 +117,6 @@ class Mesh():
             self.evaluate = self.stopping_by_fitness_evaluation
         else:
             self.evaluate = self.evaluation_way
-        # Choose the memory update function according to memory size
-        if params.memory_size <= params.population_size:
-            self.update_memory = self.fast_update_memory
-        else:
-            self.update_memory = self.generic_update_memory
         # Choose the way to update the algorithm progress bar
         if params.max_gen == 0:
             self.total_bar = params.max_fit_eval
@@ -141,7 +134,7 @@ class Mesh():
         # Evaluate the initial population
         self.population.fitness[:] = self.evaluate(self.population.position)
         # Update memory
-        self.update_memory(self.population.position, self.population.fitness)
+        self.update_memory()
         # Repeat the population fitness for all personal guide input
         self.population.personal_guide_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
 
@@ -241,11 +234,10 @@ class Mesh():
             )
             # Update the current particle if the new particle from the strategy is better
             Fst_rec = self.evaluate(Xst_rec)
-            # Concatenate the arrays with the population position and fitness with the strategy arrays
-            update_memory_pos = np.concatenate((population_positions, Xst_rec), axis=0)
-            update_memory_fit = np.concatenate((self.population.fitness, Fst_rec), axis=0)
+            # Concatenate the population fitness array with the strategy fitness array
+            fitness_elitism = np.concatenate((self.population.fitness, Fst_rec), axis=0)
             # Find the best N indices
-            best_N_idxs = select_best_N_mo(update_memory_fit, population_size)
+            best_N_idxs = select_best_N_mo(fitness_elitism, population_size)
             # Get the indices of the best particles in the strategy array
             mask_best = best_N_idxs >= population_size
             best_st_indices = best_N_idxs[mask_best] - population_size
@@ -256,8 +248,6 @@ class Mesh():
             worst_pop_idxs = np.flatnonzero(mask_pop_worst)
             population_positions[worst_pop_idxs] = Xst_rec[best_st_indices]
             self.population.fitness[worst_pop_idxs] = Fst_rec[best_st_indices]
-            # Update the memory with the new particles from the strategy
-            self.update_memory(update_memory_pos, update_memory_fit)
 
     def mutation(self) -> None:
         r''' Calculates the mutation of the global guides are done by the following equation:
@@ -402,12 +392,8 @@ class Mesh():
         self.population.personal_guide_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
         self.population.personal_guide_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
-    def fast_update_memory(self, _: Any, __: Any) -> None:
-        ''' Updates the memory position and fitness faster using position and fitness numpy matrices from population.
-
-        Note:
-            Function arguments are for compatibility with the method :meth:`generic_update_memory`.
-        '''
+    def update_memory(self) -> None:
+        ''' Updates the memory position and fitness faster using position and fitness numpy matrices from population. '''
         
         # Get the unique positions from the population positions and the memory
         unique_pop_positions, unique_idxs = np.unique(self.population.position, axis=0, return_index=True)
@@ -415,7 +401,7 @@ class Mesh():
         # Get the pareto front indices from population
         memory_pareto_idxs = self.get_non_domination_fronts(unique_pop_fitnesses)[0]
         # If the new memory Pareto front has size less or equal than the memory size, then set the new memory
-        memory_size = self.params.memory_size
+        memory_size = self.params.population_size
         if(len(memory_pareto_idxs) <= memory_size):
             self.memory.position = unique_pop_positions[memory_pareto_idxs]
             self.memory.fitness = unique_pop_fitnesses[memory_pareto_idxs]
@@ -446,7 +432,7 @@ class Mesh():
         # Get the Pareto front indices from the memory candidates
         memory_pareto_idxs = self.get_non_domination_fronts(unique_fitnesses)[0]
         # If the new memory Pareto front has size less or equal than the memory size, then set the new memory
-        memory_size = self.params.memory_size
+        memory_size = self.params.population_size
         if(len(memory_pareto_idxs) <= memory_size):
             self.memory.position = unique_positions[memory_pareto_idxs]
             self.memory.fitness = unique_fitnesses[memory_pareto_idxs]
@@ -478,12 +464,14 @@ class Mesh():
                     self.count_generation()
                     # Calculate Xst for each particle
                     self.differential_evolution()
-                    # Update global guides
-                    self.global_guide_method()
-                    # Mutate the weights and the global guides
+                    # Update the memory
+                    self.update_memory()
+                    # Mutate the global guides
                     self.mutation()
                     # Update the personal guides
                     self.update_personal_guides()
+                    # Update global guides
+                    self.global_guide_method()
                     # Store some data of the population before the movement
                     self.pre_allocated.position_copy[:] = self.population.position.copy()
                     self.pre_allocated.velocity_copy[:] = self.population.velocity.copy()
@@ -493,7 +481,7 @@ class Mesh():
                     # Select the best particles from those before and after the moviment
                     self.elitism()
                     # Update memory
-                    self.update_memory(self.population.position, self.population.fitness)
+                    self.update_memory()
                     # Update the progress bar
                     prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
             # The end of the algorithm

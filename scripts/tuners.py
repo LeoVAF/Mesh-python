@@ -191,9 +191,6 @@ def fine_tune_mesh(experiment: dict[str, Any],
 	n_steps = tuning_configuration['n_steps']
 	pruner = tuning_configuration['pruner']
 
-	# Get the fixed parameters
-	memory_size = fixed_parameters['memory_size']
-
 	def tuning(trial: optuna.Trial):
 		global_best_attribution_type = trial.suggest_categorical('global_best_attribution_type', [0, 1])
 		dm_pool_type = trial.suggest_categorical('differential_mutation_pool_type', [0, 1, 2])
@@ -207,7 +204,6 @@ def fine_tune_mesh(experiment: dict[str, Any],
 									decision_lower_bounds = lower_bound_array,
 									decision_upper_bounds = upper_bound_array, 
 									population_size = population_size,
-									memory_size = memory_size,
 									global_guide_method = global_best_attribution_type,
 									dm_pool_type = dm_pool_type,
 									dm_operation_type = dm_operation_type,

@@ -60,7 +60,7 @@ class Memory:
     Args:
         population (:class:`Population`): The attributes :attr:`~Population.position` and :attr:`~Population.fitness` are used to set the memory position and fitness.
         pareto_front (:type:`NDArray[np.integer]`): A numpy array of the particle indices for the population position and fitness matrices.
-        params (:class:`~mesh.parameters.MeshParameters`): The attribute :attr:`~mesh.parameters.MeshParameters.memory_size` is used to limit the memory size.
+        params (:class:`~mesh.parameters.MeshParameters`): The attribute :attr:`~mesh.parameters.MeshParameters.objective_dim` is used to set the memory fitness matrix number of columns. The attribute :attr:`~mesh.parameters.MeshParameters.position_dim` is used to set the memory position matrix number of columns.
 
     Raises:
         TypeError: If the input is not of the expected type.

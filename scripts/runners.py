@@ -169,7 +169,7 @@ def run_maco(experiment: dict[str, Any],
 	n_gen_mark = tuned_parameters_dict['n_gen_mark'] if ('n_gen_mark' in tuned_parameters_dict) else parameters['n_gen_mark']
 	focus = tuned_parameters_dict['focus'] if ('focus' in tuned_parameters_dict) else parameters['focus']
 	
-	# Execute NSPSO
+	# Execute MACO
 	results = {}
 	combined_F = np.empty((0, objective_dim))
 	combined_P = np.empty((0, decision_dim))
@@ -212,8 +212,6 @@ def run_mesh(experiment: dict[str, Any],
 	lower_bound_array = problem['lower_bound_array']
 	upper_bound_array = problem['upper_bound_array']
 
-	# Get the fixed parameters
-	memory_size = parameters['memory_size']
 	# Get tunable parameters (check if the parameters were tuned)
 	tuned_parameters = get_tuned_parameters(experiment_name, fine_tuning_folder)
 	global_best_attribution_type = tuned_parameters['global_best_attribution_type'] if ('global_best_attribution_type' in tuned_parameters) else parameters['global_best_attribution_type']
@@ -231,7 +229,6 @@ def run_mesh(experiment: dict[str, Any],
 								decision_lower_bounds = lower_bound_array,
 								decision_upper_bounds = upper_bound_array, 
 								population_size = population_size,
-								memory_size = memory_size,
 								global_guide_method = global_best_attribution_type,
 								dm_pool_type = dm_pool_type,
 								dm_operation_type = dm_operation_type,
@@ -348,7 +345,7 @@ def run_nsga2(experiment: dict[str, Any],
 	mutation_probability = tuned_parameters_dict['mutation_probability'] if ('mutation_probability' in tuned_parameters_dict) else parameters['mutation_probability']
 	eta_mutation = tuned_parameters_dict['eta_mutation'] if ('eta_mutation' in tuned_parameters_dict) else parameters['eta_mutation']
 	
-	# Execute NSPSO
+	# Execute NSGA2
 	results = {}
 	combined_F = np.empty((0, objective_dim))
 	combined_P = np.empty((0, decision_dim))

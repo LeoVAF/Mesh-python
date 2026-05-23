@@ -24,7 +24,7 @@ def test_pool_from_population():
   # Initialize a random Mesh instance
   test_params = MeshParameters(objective_dim=objective_dim,
                           decision_dim=decision_dim, decision_lower_bounds=lower_bound, decision_upper_bounds=upper_bound, 
-                          population_size=population_size, memory_size=None,
+                          population_size=population_size,
                           dm_pool_type=1,
                           max_gen=max_gen, max_fit_eval=max_fit_eval,
                           max_personal_guides=max_personal_guides,
@@ -45,7 +45,7 @@ def test_pool_from_memory():
   # Initialize a random Mesh instance
   test_params = MeshParameters(objective_dim=objective_dim,
                           decision_dim=decision_dim, decision_lower_bounds=lower_bound, decision_upper_bounds=upper_bound, 
-                          population_size=population_size, memory_size=None,
+                          population_size=population_size,
                           dm_pool_type=0,
                           max_gen=max_gen, max_fit_eval=max_fit_eval,
                           max_personal_guides=max_personal_guides,
@@ -66,7 +66,7 @@ def test_pool_from_population_and_memory():
   # Initialize a random Mesh instance
   test_params = MeshParameters(objective_dim=objective_dim,
                           decision_dim=decision_dim, decision_lower_bounds=lower_bound, decision_upper_bounds=upper_bound, 
-                          population_size=population_size, memory_size=None,
+                          population_size=population_size,
                           dm_pool_type=2,
                           max_gen=max_gen, max_fit_eval=max_fit_eval,
                           max_personal_guides=max_personal_guides,
