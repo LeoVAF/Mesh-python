@@ -1,6 +1,5 @@
 from mesh import Mesh, MeshParameters
 
-from pymoo.algorithms.moo.cmopso import CMOPSO
 from pymoo.algorithms.moo.mopso_cd import MOPSO_CD
 from pymoo.algorithms.moo.spea2 import SPEA2
 from pymoo.core.problem import Problem
@@ -74,65 +73,6 @@ def dump_results(file_name: str,
 	Path(file_path).mkdir(parents=False, exist_ok=True)
 	with open(f'{file_path}/{file_name}.pkl', 'wb') as file:
 		dump(results, file)
-
-
-def run_cmopso(experiment: dict[str, Any],
-			  problem: dict[str, Any],
-			  parameters: dict[str, Any]) -> str:
-	# Get the experiment configuration
-	experiment_name = experiment['name']
-	results_folder = experiment['results_folder']
-	fine_tuning_folder = experiment['fine_tuning_folder']
-	num_runs = experiment['num_runs']
-	max_fitness_eval = experiment['max_fitness_eval']
-	population_size = experiment['population_size']
-	random_state = experiment['random_state']
-    # Get the problem configuration
-	fitness = problem['fitness']
-	objective_dim = problem['objective_dim']
-	decision_dim = problem['decision_dim']
-	lower_bound_array = problem['lower_bound_array']
-	upper_bound_array = problem['upper_bound_array']
-	class MyProblem(Problem):
-		def __init__(self, n_var, n_obj, xl, xu):
-			super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu)
-		def _evaluate(self, X, out, *args, **kwargs):
-			out["F"] = np.array([fitness(x) for x in X])
-	pymoo_fitness = MyProblem(n_obj=objective_dim, n_var=decision_dim, xl=lower_bound_array, xu=upper_bound_array)
-
-	# Get tunable parameters (check if the parameters were tuned)
-	tuned_parameters_dict = get_tuned_parameters(experiment_name, fine_tuning_folder)
-	max_velocity_rate = tuned_parameters_dict['max_velocity_rate'] if ('max_velocity_rate' in tuned_parameters_dict) else parameters['max_velocity_rate']
-	elite_size = tuned_parameters_dict['elite_size'] if ('elite_size' in tuned_parameters_dict) else parameters['elite_size']
-	initial_velocity = tuned_parameters_dict['initial_velocity'] if ('initial_velocity' in tuned_parameters_dict) else parameters['initial_velocity']
-	mutate_rate = tuned_parameters_dict['mutate_rate'] if ('mutate_rate' in tuned_parameters_dict) else parameters['mutate_rate']
-
-	# Execute CMOPSO
-	results = {}
-	combined_F = np.empty((0, objective_dim))
-	combined_P = np.empty((0, decision_dim))
-	for i in range(num_runs):
-		cmopso = CMOPSO(pop_size=population_size,
-						max_velocity_rate=max_velocity_rate,
-						elite_size=elite_size,
-						initial_velocity=initial_velocity,
-						mutate_rate=mutate_rate,
-						sampling=LHS(), # type: ignore
-						eliminate_duplicates=True,
-						seed=random_state)
-		res = minimize(pymoo_fitness,
-                	   cmopso,
-                	   ('n_eval', max_fitness_eval),
-					   seed=random_state,
-                	   verbose=False)
-		# Accumulate the results at each step
-		Pos, Fit = np.array(res.X), np.array(res.F)
-		results[i+1] = {"P":Pos, "F":Fit,}
-		combined_P = np.vstack((combined_P, Pos))
-		combined_F = np.vstack((combined_F, Fit))
-	# Store the results
-	dump_results(experiment_name, results_folder, results, combined_P, combined_F, population_size)
-	return f'{experiment_name} with tunable parameters ({max_velocity_rate}, {elite_size}, {initial_velocity}, {mutate_rate}) was successfully executed!'
 
 
 def run_maco(experiment: dict[str, Any],

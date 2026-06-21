@@ -1,7 +1,6 @@
 from mesh.core import Mesh, MeshParameters
 
 from pathlib import Path
-from pymoo.algorithms.moo.cmopso import CMOPSO
 from pymoo.algorithms.moo.mopso_cd import MOPSO_CD
 from pymoo.algorithms.moo.spea2 import SPEA2
 from pymoo.core.problem import Problem
@@ -32,76 +31,6 @@ def dump_results(file_name: str, file_folder: str, results: dict) -> None:
     with open(file_path, 'w', encoding='utf-8') as file:
         for key, value in results.items():
             file.write(f"{key}: {value} ({type(value).__name__})\n")
-
-
-def fine_tune_cmopso(experiment: dict[str, Any],
-				    problem: dict[str, Any],
-                    tuning_configuration: dict[str, Any],
-                    fixed_parameters: dict[str, Any],
-                    performance_indicator: Callable) -> str:
-	# Get the experiment configuration
-	experiment_name = experiment['name']
-	fine_tuning_folder = experiment['fine_tuning_folder']
-	max_fitness_eval = experiment['max_fitness_eval']
-	population_size = experiment['population_size']
-	random_state = experiment['random_state']
-    # Get the problem configuration
-	fitness = problem['fitness']
-	objective_dim = problem['objective_dim']
-	decision_dim = problem['decision_dim']
-	lower_bound_array = problem['lower_bound_array']
-	upper_bound_array = problem['upper_bound_array']
-	# Get the fine tuning configuration
-	n_trials = tuning_configuration['n_trials']
-	n_steps = tuning_configuration['n_steps']
-	pruner = tuning_configuration['pruner']
-	class PymooProblem(Problem):
-		def __init__(self, n_var, n_obj, xl, xu):
-			super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu)
-		def _evaluate(self, X, out, *args, **kwargs):
-			out["F"] = np.array([fitness(x) for x in X])
-	pymoo_fitness = PymooProblem(n_obj=objective_dim, n_var=decision_dim, xl=lower_bound_array, xu=upper_bound_array)
-
-	def tuning(trial: optuna.Trial):
-		# Get tunable parameters (check if the parameters was tuned)
-		max_velocity_rate = trial.suggest_float('max_velocity_rate', 0.0, 1.0)
-		elite_size = trial.suggest_int('max_elite_size', 1, population_size)
-		initial_velocity = trial.suggest_categorical('initial_velocity', ['random', 'zero'])
-		mutate_rate = trial.suggest_float('mutate_rate', 0.0, 1.0) # Probability
-		# Execute CMOPSO
-		loss_values = []
-		for step in range(n_steps):
-			cmopso = CMOPSO(pop_size=population_size,
-							max_velocity_rate=max_velocity_rate,
-							elite_size=elite_size,
-							initial_velocity=initial_velocity,
-							mutate_rate=mutate_rate,
-							sampling=LHS(), # type: ignore
-							eliminate_duplicates=True,
-							seed=random_state)
-			res = minimize(pymoo_fitness,
-						   cmopso,
-						   ('n_eval', max_fitness_eval),
-						   seed=random_state,
-						   verbose=False)
-			# Get the result and calculate the loss value
-			Fit = np.array(res.F)
-			loss = performance_indicator(Fit)
-			trial.report(loss, step)
-			# If the prune criterion is satisfied, so prune this trial
-			if trial.should_prune():
-				raise optuna.exceptions.TrialPruned()
-			# Accumulate the loss value at each step
-			loss_values.append(loss)
-		# Calculate the value to optimize
-		fitness_value = tuning_fitness(loss_values)
-		return fitness_value
-	# Apply the fine tuning
-	study = optuna.create_study(pruner=pruner)
-	study.optimize(tuning, n_trials=n_trials)
-	# Store the best parameters
-	dump_results(experiment_name, fine_tuning_folder, study.best_params)
-	return f'{experiment_name} was successfully executed!'
 
 
 def fine_tune_maco(experiment: dict[str, Any],
