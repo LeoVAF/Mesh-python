@@ -11,7 +11,7 @@ class Population:
     """ Represents the MESH population.
 
     Args:
-        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.lower_bound_array`, :attr:`~mesh.parameters.MeshParameters.upper_bound_array`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.global_guide_method` and :attr:`~mesh.parameters.MeshParameters.max_personal_guides` are used to initialize the population.
+        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.decision_dim`, :attr:`~mesh.parameters.MeshParameters.lower_bound_array`, :attr:`~mesh.parameters.MeshParameters.upper_bound_array`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.global_guide_method` and :attr:`~mesh.parameters.MeshParameters.max_personal_guides` are used to initialize the population.
     
     Raises:
         TypeError: If the input is not an instance of :class:`~mesh.parameters.MeshParameters`.
@@ -38,19 +38,16 @@ class Population:
         if params.initial_points is None:
             sampler = qmc.LatinHypercube(d=params.decision_dim, scramble=True)
             sample = sampler.random(n=params.population_size)
-            self.position = qmc.scale(sample, params.position_lower_bounds[:params.decision_dim], params.position_upper_bounds[:params.decision_dim])
+            self.position = qmc.scale(sample, params.decision_lower_bounds, params.decision_upper_bounds)
         else:
             self.position = params.initial_points
-        hiperparameter_dim = params.position_dim - params.decision_dim
-        # Position = decision varibles plus (DE scaling factor, crossover probability, communication probability, three weights and mutation rate)
-        self.position = np.hstack((self.position, np.random.rand(params.population_size, hiperparameter_dim)))
-        self.velocity = np.random.uniform(params.velocity_lower_bounds, params.velocity_upper_bounds, (params.population_size, params.position_dim))
+        self.velocity = np.random.uniform(params.velocity_lower_bounds, params.velocity_upper_bounds, (params.population_size, params.decision_dim))
         self.fitness = np.full((params.population_size, params.objective_dim), np.inf)
         if params.global_guide_method in {0, 1}:
             self.sigma = np.full((params.population_size, comb(params.objective_dim, 2)), np.nan)
         else:
             self.sigma = np.empty((0, comb(params.objective_dim, 2)))
-        self.global_guide = np.full((params.population_size, params.position_dim), np.nan)
+        self.global_guide = np.full((params.population_size, params.decision_dim), np.nan)
         self.personal_guide_pos = np.repeat(self.position[:, np.newaxis, :], params.max_personal_guides, axis=1)
         self.personal_guide_fit = np.full((params.population_size, params.max_personal_guides, params.objective_dim), np.inf)
 
@@ -60,7 +57,7 @@ class Memory:
     Args:
         population (:class:`Population`): The attributes :attr:`~Population.position` and :attr:`~Population.fitness` are used to set the memory position and fitness.
         pareto_front (:type:`NDArray[np.integer]`): A numpy array of the particle indices for the population position and fitness matrices.
-        params (:class:`~mesh.parameters.MeshParameters`): The attribute :attr:`~mesh.parameters.MeshParameters.objective_dim` is used to set the memory fitness matrix number of columns. The attribute :attr:`~mesh.parameters.MeshParameters.position_dim` is used to set the memory position matrix number of columns.
+        params (:class:`~mesh.parameters.MeshParameters`): The attribute :attr:`~mesh.parameters.MeshParameters.objective_dim` is used to set the memory fitness matrix number of columns. The attribute :attr:`~mesh.parameters.MeshParameters.decision_dim` is used to set the memory position matrix number of columns.
 
     Raises:
         TypeError: If the input is not of the expected type.
@@ -70,7 +67,7 @@ class Memory:
         assert_type(params, 'params', MeshParameters)
 
         # Set the class attributes
-        self.position: NDArray[np.number] = np.empty((0, params.position_dim))
+        self.position: NDArray[np.number] = np.empty((0, params.decision_dim))
         """ Numpy matrix with the memory position. """
         self.fitness: NDArray[np.number] = np.empty((0, params.objective_dim))
         """ Numpy matrix with the memory fitness. """

@@ -42,7 +42,7 @@ def test_rand_1():
   mesh = Mesh(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.position_dim)
+  pool = np.random.rand(population_size, mesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -56,7 +56,7 @@ def test_rand_1():
     # Initialize the algorithm
     mesh.initialize()
 
-    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
+    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
     Xst, _ = dm.rand_1(mesh, (pool, pool_idxs))
@@ -66,7 +66,7 @@ def test_rand_1():
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
       x2 = pool[r_idxs[2]]
-      xst = np.clip(x0 + operation_weight[i] * (x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(x0 + operation_weight[i] * (x1 - x2), test_params.decision_lower_bounds, test_params.decision_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -92,7 +92,7 @@ def test_rand_2():
   mesh = Mesh(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.position_dim)
+  pool = np.random.rand(population_size, mesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -106,7 +106,7 @@ def test_rand_2():
     # Initialize the algorithm
     mesh.initialize()
 
-    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
+    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
     Xst, _ = dm.rand_2(mesh, (pool, pool_idxs))
@@ -118,7 +118,7 @@ def test_rand_2():
       x2 = pool[r_idxs[2]]
       x3 = pool[r_idxs[3]]
       x4 = pool[r_idxs[4]]
-      xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(x0 + operation_weight[i] * (x1 - x2 + x3 - x4), test_params.decision_lower_bounds, test_params.decision_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -144,7 +144,7 @@ def test_best_1():
   mesh = Mesh(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.position_dim)
+  pool = np.random.rand(population_size, mesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -159,7 +159,7 @@ def test_best_1():
     # Initialize the algorithm
     mesh.initialize()
 
-    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
+    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
     Xst, idxs = dm.best_1(mesh, (pool, pool_idxs))
@@ -169,7 +169,7 @@ def test_best_1():
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
       xgb = mesh.population.global_guide[idxs[i]]
-      xst = np.clip(xgb + operation_weight[i] * (x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(xgb + operation_weight[i] * (x0 - x1), test_params.decision_lower_bounds, test_params.decision_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -195,7 +195,7 @@ def test_current_to_best_1():
   mesh = Mesh(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.position_dim)
+  pool = np.random.rand(population_size, mesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -210,7 +210,7 @@ def test_current_to_best_1():
     # Initialize the algorithm
     mesh.initialize()
 
-    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
+    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
     Xst, idxs = dm.current_to_best_1(mesh, (pool, pool_idxs))
@@ -221,7 +221,7 @@ def test_current_to_best_1():
       x1 = pool[r_idxs[1]]
       x = mesh.population.position[idxs[i]]
       xgb = mesh.population.global_guide[idxs[i]]
-      xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), test_params.decision_lower_bounds, test_params.decision_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
@@ -247,7 +247,7 @@ def test_current_to_rand_1():
   mesh = Mesh(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.position_dim)
+  pool = np.random.rand(population_size, mesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -262,7 +262,7 @@ def test_current_to_rand_1():
     # Initialize the algorithm
     mesh.initialize()
 
-    operation_weight = mesh.population.position[valid_idxs, decision_dim:decision_dim+1]
+    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
     Xst, idxs = dm.current_to_rand_1(mesh, (pool, pool_idxs))
@@ -273,7 +273,7 @@ def test_current_to_rand_1():
       x1 = pool[r_idxs[1]]
       x2 = pool[r_idxs[2]]
       x = mesh.population.position[idxs[i]]
-      xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), test_params.position_lower_bounds, test_params.position_upper_bounds)
+      xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), test_params.decision_lower_bounds, test_params.decision_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 

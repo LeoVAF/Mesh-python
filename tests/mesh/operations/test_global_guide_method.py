@@ -9,7 +9,7 @@ objective_dim = np.random.randint(2, 101) # Randomly choose objective dimension
 decision_dim = np.random.randint(2, 101) # Randomly choose position dimension
 population_size = np.random.randint(4, 101) # Randomly choose population size
 lower_bound = np.array([0] * decision_dim)
-upper_bound = np.array([3] * decision_dim)
+upper_bound = np.array([5] * decision_dim)
 mutation_rate = 0.5
 communication_probability = 0.8
 max_gen = None
@@ -110,8 +110,8 @@ def test_sigma_method_in_fronts():
   steps = np.linspace(0, 1, population_size)
   ranks = [0, 4]
   initial_points = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[2]]),
-                                 np.array([[steps[i]] for i in range(population_size)]),
-                                 np.random.rand(population_size, decision_dim-2)))
+                              np.array([[steps[i]] for i in range(population_size)]),
+                              np.random.rand(population_size, decision_dim-2)))
   test_params = MeshParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,

@@ -122,7 +122,7 @@ def fine_tune_mesh(experiment: dict[str, Any],
 
 	def tuning(trial: optuna.Trial):
 		global_best_attribution_type = trial.suggest_categorical('global_best_attribution_type', [0, 1])
-		dm_pool_type = trial.suggest_categorical('differential_mutation_pool_type', [0, 1, 2])
+		dm_pool_type = trial.suggest_categorical('differential_mutation_pool_type', [0, 1])
 		dm_operation_type = trial.suggest_categorical('differential_mutation_type', [0, 1, 2, 3, 4])
 		personal_guide_array_size = trial.suggest_int('personal_guide_array_size', 1, 3)
 		# Execute MESH

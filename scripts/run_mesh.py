@@ -15,11 +15,11 @@ def main():
     num_runs = 30 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
-    objective_dim = 2 # Number of objectives
+    objective_dim = 3 # Number of objectives
     decision_dim = 20 # Design space dimension
     
     # Benchmark problems
-    experiment_name = 'zdt6'
+    experiment_name = 'dtlz1'
     func, position_min_value, position_max_value = get_problem(experiment_name, n_var=decision_dim, n_obj=objective_dim, wfg_k=objective_dim-1)
     
     ############### Microgrid function ###############
@@ -47,7 +47,7 @@ def main():
     random_state = None # Defines a seed for random numbers (not used if it is None)
 
     global_guide_method = 0 # 0 -> Sigma method (G1) | 1 -> Sigma Method in fronts (G2)
-    dm_pool_type = 0 # 0 -> Sampling from population (S1) | 1 -> Sampling from memory (S2) | 2 -> Sampling from population and memory (S3)
+    dm_pool_type = 0 # 0 -> Sampling from population (S1) | 1 -> Sampling from memory (S2)
     dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
     config = f"MESH_{experiment_name}_{objective_dim}_{decision_dim}"

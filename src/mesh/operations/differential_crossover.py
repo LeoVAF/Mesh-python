@@ -39,9 +39,9 @@ def binomial_crossover(self: Mesh,
   # Get the size of the X1 to apply the crossover
   size = X1.shape[0]
   # Make the crossover index for each particle
-  crossover_index = np.random.randint(0, self.params.position_dim, size=size)
+  crossover_index = np.random.randint(0, self.params.decision_dim, size=size)
   # Calculate the crossover chance to apply the Binomial Crossover
-  crossover_chance = np.random.uniform(0.0, 1.0, size=(size, self.params.position_dim))
+  crossover_chance = np.random.uniform(0.0, 1.0, size=(size, self.params.decision_dim))
   # Get the crossover mask
   crossover_mask = crossover_chance <= crossover_probability
   crossover_mask[np.arange(size), crossover_index] = True

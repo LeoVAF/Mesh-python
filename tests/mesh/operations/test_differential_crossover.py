@@ -43,12 +43,12 @@ def test_binomial_crossover():
   mesh.initialize()
 
   # Generate two random arrays for crossover
-  X1 = np.random.rand(test_size, mesh.params.position_dim)
-  X2 = np.random.rand(test_size, mesh.params.position_dim)
+  X1 = np.random.rand(test_size, mesh.params.decision_dim)
+  X2 = np.random.rand(test_size, mesh.params.decision_dim)
 
   # Mock the random functions to return predetermined values
-  crossover_idxs = np.random.randint(0, mesh.params.position_dim, size=test_size)
-  crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, mesh.params.position_dim))
+  crossover_idxs = np.random.randint(0, mesh.params.decision_dim, size=test_size)
+  crossover_chances = np.random.uniform(0.0, 1.0, size=(test_size, mesh.params.decision_dim))
   crossover_probability = np.random.rand(test_size, 1)
   with patch("numpy.random.randint", return_value=crossover_idxs),\
        patch("numpy.random.uniform", return_value=crossover_chances):

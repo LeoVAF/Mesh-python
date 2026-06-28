@@ -42,11 +42,11 @@ def rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.int
     # Get three random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = self.population.position[valid_idxs, self.params.decision_dim:self.params.decision_dim+1]
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\1 strategy
     Xst = Xr[:, 0, :] + operation_weight * (Xr[:, 1, :] - Xr[:, 2, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -84,11 +84,11 @@ def rand_2(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.int
     # Get five random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = self.population.position[valid_idxs, self.params.decision_dim:self.params.decision_dim+1]
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\2 strategy
     Xst = Xr[:, 0, :] + operation_weight * (Xr[:, 1, :] - Xr[:, 2, :]  + Xr[:, 3, :] - Xr[:, 4, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -129,11 +129,11 @@ def best_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.int
     # Get two random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = self.population.position[valid_idxs, self.params.decision_dim:self.params.decision_dim+1]
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\1 strategy
     Xst = self.population.global_guide[valid_idxs] + operation_weight * (Xr[:, 0, :] - Xr[:, 1, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -175,12 +175,12 @@ def current_to_best_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDA
     # Get two random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = self.population.position[valid_idxs, self.params.decision_dim:self.params.decision_dim+1]
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\1 strategy
     X = self.population.position[valid_idxs]
     Xst = X + operation_weight * (self.population.global_guide[valid_idxs] - X + Xr[:, 0, :] - Xr[:, 1, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -220,12 +220,12 @@ def current_to_rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDA
     # Get three random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = self.population.position[valid_idxs, self.params.decision_dim:self.params.decision_dim+1]
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\2 strategy
     X = self.population.position[valid_idxs]
     Xst = X + operation_weight * (Xr[:, 0, :] - X + Xr[:, 1, :] - Xr[:, 2, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])

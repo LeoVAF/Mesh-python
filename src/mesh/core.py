@@ -72,10 +72,12 @@ class Mesh():
         ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is not None, so the fitness evaluations will be counted. '''
         self.count_generation: Callable[[], None]
         ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is not None. '''
-        self.update_progress_bar: Callable[[tqdm, int], int]
-        ''' Function to update the progress bar. '''
-        self.total_bar: int
-        ''' Total value of the progress bar. '''
+        self.algorithm_progress: int = 0
+        ''' Current algorithm progress counter. '''
+        self.max_algorithm_progress: int
+        ''' Maximum algorithm progress value. '''
+        self.update_algorithm_progress: Callable[[tqdm, int], int]
+        ''' Function to update the algorithm progress. '''
 
         # Receive the algorithm parameters
         assert_type(params, 'params', MeshParameters)
@@ -117,24 +119,24 @@ class Mesh():
             self.evaluate = self.stopping_by_fitness_evaluation
         else:
             self.evaluate = self.evaluation_way
-        # Choose the way to update the algorithm progress bar
+        # Choose the way to update the algorithm progress
         if params.max_gen == 0:
-            self.total_bar = params.max_fit_eval
-            self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
+            self.max_algorithm_progress = params.max_fit_eval
+            self.update_algorithm_progress = self.update_progress_by_fitness_evaluation
         elif params.max_fit_eval == 0:
-            self.total_bar = params.max_gen
-            self.update_progress_bar = self.update_progress_bar_by_generation
+            self.max_algorithm_progress = params.max_gen
+            self.update_algorithm_progress = self.update_progress_by_generation
         else:
-            self.update_progress_bar = self.update_progress_bar_by_fitness_evaluation
-            self.total_bar = min(params.population_size*(2*params.max_gen+1), params.max_fit_eval)
-    
+            self.update_algorithm_progress = self.update_progress_by_fitness_evaluation
+            self.max_algorithm_progress = min(params.population_size*(2*params.max_gen+1), params.max_fit_eval)
+
     def initialize(self):
         ''' Initializes the MESH with some initial operations. It initializes the population, memory and personal guide fitness, does initial fitness evaluations and calculates the domination fronts. '''
 
         # Evaluate the initial population
         self.population.fitness[:] = self.evaluate(self.population.position)
-        # Update memory
-        self.update_memory()
+        # Update MESH memory
+        self.update_mesh_memory()
         # Repeat the population fitness for all personal guide input
         self.population.personal_guide_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
 
@@ -214,23 +216,93 @@ class Mesh():
         non_dominated_fronts, _, _, _ = fast_non_dominated_sorting(points=fitness_matrix)
         return non_dominated_fronts
 
+    def update_de_memory(self,
+                         pop_promising_position: NDArray[np.number],
+                         survival_position: NDArray[np.number],
+                         pop_promising_idxs: NDArray[np.intp]) -> None:
+        r''' Updates the DE historical means using successful offspring. The scaling factor ``F`` is updated using a weighted Lehmer mean, while the crossover rate ``CR`` is updated using a weighted arithmetic mean.
+
+        Args:
+            pop_promising_position (:type:`NDArray[np.number]`): Matrix containing the original decision vectors associated with the successful offspring. Its shape must be ``(n_success, decision_dim)``.
+            survival_position (:type:`NDArray[np.number]`): Matrix containing the surviving offspring decision vectors corresponding to ``position``. Its shape must be ``(n_success, decision_dim)``.
+            pop_promising_idxs (:type:`NDArray[np.intp]`): Indices of the particles from population that generated successful offspring. These indices are used to retrieve the successful ``F`` and ``CR`` values.
+        '''
+
+        if len(pop_promising_idxs) == 0:
+            return
+        # Get successful values of F and CR
+        successful_F = self.params.DE_F[pop_promising_idxs]
+        successful_CR = self.params.DE_CR[pop_promising_idxs]
+        # Calculate the weight based on Euclidean distance between the position and the survival position
+        normalized_step = (pop_promising_position - survival_position) / (self.params.decision_upper_bounds - self.params.decision_lower_bounds)
+        euclidean_distance = np.linalg.norm(normalized_step, axis=1)
+        distance_sum = np.sum(euclidean_distance)
+        if distance_sum > 0:
+            weight = euclidean_distance / distance_sum
+        else:
+            weight = np.full(len(euclidean_distance), 1.0 / len(euclidean_distance))
+        # Weighted SHADE-style Lehmer mean for F
+        mean_F = np.sum((successful_F ** 2) * weight) / np.sum(successful_F * weight)
+        # Weighted arithmetic mean for CR
+        mean_CR = np.sum(successful_CR * weight)
+        # Update the DE memory
+        k = self.params.hyperparameter_last_index
+        self.params.DE_memory[k, 0] = mean_F
+        self.params.DE_memory[k, 1] = mean_CR
+
+    def sample_from_cauchy(self,
+                           parameter: NDArray[np.floating],
+                           loc: NDArray[np.floating],
+                           scale: float,
+                           bounds: tuple[float,float]) -> None:
+        ''' Generate a array by sampling number from Cauchy distribution.
+        
+        Args:
+            parameter (:type:`NDArray[np.floating]`): Output array where the sampled values will be stored (in-place).
+            loc (:type:`NDArray[np.floating]`): Location values of the Cauchy distribution. Must be broadcastable to ``parameter.shape``.
+            scale (:type:`float`): Scale parameter of the Cauchy distribution.
+            bounds (:type:`tuple[float, float]`): Lower and upper bounds allowed for the sampled values.
+        '''
+
+        # Calculate adaptative parameter by sampling from Cauchy
+        parameter[:] = loc + scale * np.random.standard_cauchy(size=parameter.shape)
+        lower = bounds[0]
+        invalid_mask = parameter <= lower
+        while np.any(invalid_mask):
+            parameter[invalid_mask] = loc[invalid_mask] + scale * np.random.standard_cauchy(np.count_nonzero(invalid_mask))
+            invalid_mask = parameter <= lower
+        # Safety fallback for rare pathological cases
+        parameter[invalid_mask] = lower
+        # SHADE-style truncation above the upper bound
+        upper = bounds[1]
+        parameter[parameter > upper] = upper
+
     def differential_evolution(self) -> None:
         r''' Generates solutions by Differential Evolution algorithm according to a differential mutation strategy decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type`, with solutions sampled in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`. When new solutions are generated, an elitism is performed to update the position of the current population's less promising solutions.
         
         Note:
             The criteria for the best elitism solutions are the same as those for the method :meth:`elitism`.
         '''
-        
+
+        # Calculate the DE parameter F
+        random_index = np.random.randint(self.params.hyperparameter_memory_length, size=self.params.population_size)
+        self.sample_from_cauchy(self.params.DE_F,
+                                self.params.DE_memory[random_index, 0],
+                                self.params.shade_scale,
+                                (0., 1.))
         # Apply a differential mutation strategy
         Xst, applied_st_pop_idxs = self.differential_mutation(self.differential_mutation_pool())
         if len(Xst):
+            # Calcualte the DE parameter CR
+            self.params.DE_CR[:] = np.random.normal(loc=self.params.DE_memory[random_index, 1], scale=self.params.shade_scale)
+            np.clip(self.params.DE_CR, 0, 1, out=self.params.DE_CR)
+            # Apply the differential crossover
             population_size = self.params.population_size
             population_positions = self.population.position
-            # Apply the differential crossover
             Xst_rec = self.differential_crossover(
                 population_positions[applied_st_pop_idxs],
                 Xst,
-                population_positions[applied_st_pop_idxs, self.params.decision_dim+1:self.params.decision_dim+2]
+                self.params.DE_CR[applied_st_pop_idxs, np.newaxis]
             )
             # Update the current particle if the new particle from the strategy is better
             Fst_rec = self.evaluate(Xst_rec)
@@ -248,6 +320,11 @@ class Mesh():
             worst_pop_idxs = np.flatnonzero(mask_pop_worst)
             population_positions[worst_pop_idxs] = Xst_rec[best_st_indices]
             self.population.fitness[worst_pop_idxs] = Fst_rec[best_st_indices]
+            # Update the DE memory
+            pop_promising_idxs = applied_st_pop_idxs[best_st_indices]
+            self.update_de_memory(self.population.position[pop_promising_idxs],
+                                  Xst[best_st_indices],
+                                  pop_promising_idxs)
 
     def mutation(self) -> None:
         r''' Calculates the mutation of the global guides are done by the following equation:
@@ -259,14 +336,60 @@ class Mesh():
         where :math:`\vec{r}` is calculated as a decision variable.
         '''
         
-        # Mutate the global guides with a vector sampled from the Standard Gaussian Distribution
+        pop_size = self.params.population_size
+        decision_dim = self.params.decision_dim
+        # Calculate adaptative mutation rate
+        random_index = np.random.randint(self.params.hyperparameter_memory_length, size=pop_size)
+        self.sample_from_cauchy(
+            self.params.SWARM_mutation_scale,
+            self.params.SWARM_memory[random_index, 4],
+            self.params.shade_scale,
+            (0., 1.)
+        )
+        # Mutate the global guides
         np.clip(
-            self.population.global_guide + np.random.normal(0, 1, (self.params.population_size, self.params.position_dim)) *
-                self.population.position[:, self.params.decision_dim+2:self.params.decision_dim+3],
-            self.params.position_lower_bounds,
-            self.params.position_upper_bounds,
+            self.population.global_guide + np.random.normal(0, 1, (pop_size, decision_dim)) * self.params.SWARM_mutation_scale[:, np.newaxis],
+            self.params.decision_lower_bounds,
+            self.params.decision_upper_bounds,
             out=self.pre_allocated.global_guide_mutated
         )
+
+    def update_swarm_memory(self,
+                            pop_promising_position: NDArray[np.number],
+                            survival_position: NDArray[np.number],
+                            pop_promising_idxs: NDArray[np.intp]) -> None:
+        r''' Updates the swarm historical means using successful offspring. The inetia, assimilation and communication weights, and mutation rate are updated using a weighted Lehmer mean, while the communcation probability is updated using a weighted arithmetic mean.
+        
+        Args:
+            pop_promising_position (:type:`NDArray[np.number]`): Matrix containing the original decision vectors associated with the successful offspring. Its shape must be ``(n_success, decision_dim)``.
+            survival_position (:type:`NDArray[np.number]`): Matrix containing the surviving offspring decision vectors corresponding to ``position``. Its shape must be ``(n_success, decision_dim)``.
+            pop_promising_idxs (:type:`NDArray[np.intp]`): Indices of the particles from population that generated successful offspring. These indices are used to retrieve the successful ``F`` and ``CR`` values.
+        '''
+
+        if len(pop_promising_idxs) == 0:
+            return
+        # Get successful values of swarm hyperparameters
+        successful_W = self.params.SWARM_W[pop_promising_idxs]
+        successful_Pcom = self.params.SWARM_Pcom[pop_promising_idxs]
+        successful_mutation_rate = self.params.SWARM_mutation_scale[pop_promising_idxs]
+        # Calculate the weight based on Euclidean distance between the position and the survival position
+        normalized_step = (pop_promising_position - survival_position) / (self.params.decision_upper_bounds - self.params.decision_lower_bounds)
+        euclidean_distance = np.linalg.norm(normalized_step, axis=1)
+        distance_sum = np.sum(euclidean_distance)
+        if distance_sum > 0:
+            weight = euclidean_distance / distance_sum
+        else:
+            weight = np.full(len(euclidean_distance), 1.0 / len(euclidean_distance))
+        # SHADE-style Lehmer mean
+        mean_W = np.sum((successful_W ** 2) * weight[:, np.newaxis], axis=0) / np.sum(successful_W * weight[:, np.newaxis], axis=0)
+        mean_mutation_rate = np.sum((successful_mutation_rate ** 2) * weight) / np.sum(successful_mutation_rate * weight)
+        # Arithmetic mean
+        mean_Pcom = np.sum(successful_Pcom * weight)
+        # Update the swarm memory
+        k = self.params.hyperparameter_last_index
+        self.params.SWARM_memory[k, 0:3] = mean_W
+        self.params.SWARM_memory[k, 3] = mean_Pcom
+        self.params.SWARM_memory[k, 4] = mean_mutation_rate
 
     def move_population(self) -> None:
         r''' Applies the equation of motion to the copy particles. The MESH equation of motion is given by:
@@ -313,26 +436,35 @@ class Mesh():
         V_copy = self.pre_allocated.velocity_copy
         F_copy = self.pre_allocated.fitness_copy
         # Get the equation of motion parameters
-        W = X_copy[:, params.decision_dim+4:]
-        C = np.random.rand(population_size, params.position_dim) <= X_copy[:, params.decision_dim+3:params.decision_dim+4]
+        random_index = np.random.randint(self.params.hyperparameter_memory_length, size=self.params.population_size)
+        self.sample_from_cauchy(
+            self.params.SWARM_W,
+            self.params.SWARM_memory[random_index, 0:3],
+            self.params.shade_scale,
+            (0., 1.)
+        )
+        W = self.params.SWARM_W
+        self.params.SWARM_Pcom[:] = np.random.normal(loc=self.params.SWARM_memory[random_index, 3], scale=self.params.shade_scale)
+        np.clip(self.params.SWARM_Pcom, 0, 1, out=self.params.SWARM_Pcom)
+        C = np.random.rand(population_size, params.decision_dim) <= self.params.SWARM_Pcom[:, np.newaxis]
         # Calculate the new velocity
         V_copy[:] = W[:, 0:1] * V_copy + W[:, 1:2] * (Xpb - X_copy) + W[:, 2:3] * C * (Xgb_mut - X_copy)
         # Calculate the clipped velocity
         np.clip(V_copy, params.velocity_lower_bounds, params.velocity_upper_bounds, out=V_copy)
         # Calculate the clipped position
         X_copy += V_copy
-        np.clip(X_copy, params.position_lower_bounds, params.position_upper_bounds, out=X_copy)
+        np.clip(X_copy, params.decision_lower_bounds, params.decision_upper_bounds, out=X_copy)
         # Evaluate the positions with the fitness function
         F_copy[:] = self.evaluate(X_copy)
     
-    def elitism(self) -> None:
+    def elitism(self) -> NDArray[np.intp]:
         ''' Selects the best particles from the previous (before applying the equation of motion) and current populations (after applying the equation of motion). The top :attr:`~mesh.parameters.MeshParameters.population_size` particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
         
         Note:
             The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with rank zero.
         
         Returns:
-            :type:`NDArray[np.integer]`: A numpy array with the indices of the current population that were selected.
+            :type:`NDArray[np.intp]`: A numpy array with the indices of the copy population that were selected.
         '''
 
         population_size = self.params.population_size
@@ -357,6 +489,7 @@ class Mesh():
         self.population.fitness[worst_pop_idxs] = pre_allocated.fitness_copy[best_copy_idxs]
         self.population.personal_guide_pos[worst_pop_idxs] = self.population.personal_guide_pos[best_copy_idxs]
         self.population.personal_guide_fit[worst_pop_idxs] = self.population.personal_guide_fit[best_copy_idxs]
+        return best_copy_idxs
 
     def update_personal_guides(self) -> None:
         ''' Updates the personal guides of the population particles.
@@ -392,7 +525,7 @@ class Mesh():
         self.population.personal_guide_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
         self.population.personal_guide_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
 
-    def update_memory(self) -> None:
+    def update_mesh_memory(self) -> None:
         ''' Updates the memory position and fitness faster using position and fitness numpy matrices from population. '''
         
         # Get the unique positions from the population positions and the memory
@@ -417,7 +550,7 @@ class Mesh():
             self.memory.position = unique_pop_positions[memory_pareto_idxs[idxs]]
             self.memory.fitness = selected_fitness[idxs]
 
-    def generic_update_memory(self, position_matrix: NDArray[np.number], fitness_matrix: NDArray[np.number]) -> None:
+    def generic_update_mesh_memory(self, position_matrix: NDArray[np.number], fitness_matrix: NDArray[np.number]) -> None:
         ''' Updates the memory position and fitness using a position and fitness numpy matrices.
         
         Args:
@@ -452,10 +585,8 @@ class Mesh():
         ''' This method runs the MESH algorithm. It stops when the maximum number of generations and/or fitness evaluations is reached. '''
 
         # Start the progress bars
-        with tqdm(total=self.total_bar, leave=False) as pbar:
+        with tqdm(total=self.max_algorithm_progress, leave=False) as pbar:
             try:    
-                # A variable to update the tqdm bar
-                prev_bar_value = 0
                 # Initialize the algorithm with initial operations
                 self.initialize()
                 # Main loop
@@ -465,13 +596,13 @@ class Mesh():
                     # Calculate Xst for each particle
                     self.differential_evolution()
                     # Update the memory
-                    self.update_memory()
-                    # Mutate the global guides
-                    self.mutation()
+                    self.update_mesh_memory()
                     # Update the personal guides
                     self.update_personal_guides()
                     # Update global guides
                     self.global_guide_method()
+                    # Mutate the global guides
+                    self.mutation()
                     # Store some data of the population before the movement
                     self.pre_allocated.position_copy[:] = self.population.position.copy()
                     self.pre_allocated.velocity_copy[:] = self.population.velocity.copy()
@@ -479,44 +610,52 @@ class Mesh():
                     # Apply the movviment to the particles
                     self.move_population()
                     # Select the best particles from those before and after the moviment
-                    self.elitism()
-                    # Update memory
-                    self.update_memory()
-                    # Update the progress bar
-                    prev_bar_value = self.update_progress_bar(pbar, prev_bar_value)
+                    best_copy_idxs = self.elitism()
+                    # Update the swarm hyperparameter memory
+                    self.update_swarm_memory(self.population.position[best_copy_idxs],
+                                             self.pre_allocated.position_copy[best_copy_idxs],
+                                             best_copy_idxs)
+                    # Update MESH memory
+                    self.update_mesh_memory()
+                    # Update the algorithm progress
+                    self.algorithm_progress = self.update_algorithm_progress(pbar, self.algorithm_progress)
+                    # Upgrade hyperparameter last index
+                    self.params.hyperparameter_last_index += 1
+                    if self.params.hyperparameter_last_index >= self.params.hyperparameter_memory_length:
+                        self.params.hyperparameter_last_index = 0
             # The end of the algorithm
             except StoppingAlgorithm as stop:
                 # Updated the memory
-                self.generic_update_memory(stop.position, stop.fitness)
+                self.generic_update_mesh_memory(stop.position, stop.fitness)
                 # Log the memory if it is necessary
                 self.logging()
 
-    def update_progress_bar_by_fitness_evaluation(self, pbar: tqdm, prev_bar_value: int) -> int:
-        ''' Updates the progress bar by fitness evaluations. It is used when the stopping criterion is fitness evaluation or both generation and fitness evaluation.
+    def update_progress_by_fitness_evaluation(self, pbar: tqdm, prev_progress_value: int) -> int:
+        ''' Updates the algorithm progress by fitness evaluations. It is used when the stopping criterion is fitness evaluation or both generation and fitness evaluation.
         
         Args:
             pbar (:type:`tqdm`): A :type:`tqdm` object.
-            prev_bar_value (:type:`int`): The previous value of the progress bar.
+            prev_progress_value (:type:`int`): The previous value of the algorithm progress.
 
         Returns:
-            :type:`int`: The current value of the progress bar.
+            :type:`int`: The current value of the algorithm progress.
         '''
 
-        pbar.update(self.fitness_eval_counter - prev_bar_value)
+        pbar.update(self.fitness_eval_counter - prev_progress_value)
         return self.fitness_eval_counter
     
-    def update_progress_bar_by_generation(self, pbar: tqdm, prev_bar_value: int) -> int:
-        ''' Updates the progress bar by generations. It is used when the stopping criterion is generation counter.
+    def update_progress_by_generation(self, pbar: tqdm, prev_progress_value: int) -> int:
+        ''' Updates the algorithm progress by generations. It is used when the stopping criterion is generation counter.
         
         Args:
             pbar (:type:`tqdm`): A :type:`tqdm` object.
-            prev_bar_value (:type:`int`): The previous value of the progress bar.
+            prev_progress_value (:type:`int`): The previous value of the algorithm progress.
 
         Returns:
-            :type:`int`: The current value of the progress bar.
+            :type:`int`: The current value of the algorithm progress.
         '''
 
-        pbar.update(self.generation_counter - prev_bar_value)
+        pbar.update(self.generation_counter - prev_progress_value)
         return self.generation_counter
 
     def stopping_by_generation(self) -> None:
@@ -529,7 +668,7 @@ class Mesh():
         self.generation_counter += 1
         if self.generation_counter > self.params.max_gen:
             self.generation_counter -= 1
-            raise StoppingAlgorithm(np.empty((0, self.params.position_dim)), np.empty((0, self.params.objective_dim)))
+            raise StoppingAlgorithm(np.empty((0, self.params.decision_dim)), np.empty((0, self.params.objective_dim)))
     
     def stopping_by_fitness_evaluation(self, X: NDArray[np.number]) -> NDArray[np.number]:
         ''' Evaluates the position matrix ``X`` and counts the fitness evaluations. This method is used when the stopping criterion is by fitness evaluations.
@@ -568,7 +707,7 @@ class Mesh():
             :type:`tuple[NDArray[np.number], NDArray[np.number]]`: A tuple with the memory position and fitness, respectively.
         '''
 
-        return self.memory.position[:, :self.params.decision_dim], self.memory.fitness
+        return self.memory.position, self.memory.fitness
 
     def logging(self) -> None:
         ''' Logs memory position and fitness at the end of the algorithm in two .txt files if :attr:`log_memory` is a string. Then this method uses the string value :attr:`log_memory` at the beginning of both files as the name of the fitness and position logs.
@@ -591,7 +730,7 @@ class Mesh():
             # Log the position
             file2 = open(self.log_memory + "-pos.txt", "a+")
             memory_position = ""
-            for pos in self.memory.position[self.params.decision_dim]:
+            for pos in self.memory.position:
                 string = ""
                 for i in range(self.params.decision_dim):
                     string += str(pos[i])+" "

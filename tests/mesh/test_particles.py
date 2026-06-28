@@ -47,8 +47,8 @@ def test_Population():
 
   # Check if the positions and velocities were initialized correctly
   for p in mesh_population.position:
-    assert np.all(p <= test_params.position_upper_bounds)
-    assert np.all(p >= test_params.position_lower_bounds)
+    assert np.all(p <= test_params.decision_upper_bounds)
+    assert np.all(p >= test_params.decision_lower_bounds)
   for v in mesh_population.velocity:
     assert np.all(v <= test_params.velocity_upper_bounds)
     assert np.all(v >= test_params.velocity_lower_bounds)

@@ -63,18 +63,16 @@ class MeshParameters:
         ''' Number of problem objectives. '''
         self.decision_dim: int
         ''' Number of problem variables. '''
-        self.position_dim: int
-        ''' Number of decision variables plus hiperparameters to auto-optimize. '''
-        self.position_lower_bounds: NDArray[np.floating]
-        ''' Numpy array with the lower bounds of the problem for each variable and hiperparameters. '''
-        self.position_upper_bounds: NDArray[np.floating]
-        ''' Numpy array with the upper bounds of the problem for each variable and hiperparameters. '''
+        self.decision_lower_bounds: NDArray[np.floating]
+        ''' Numpy array with the lower bounds of the problem for each decision variable. '''
+        self.decision_upper_bounds: NDArray[np.floating]
+        ''' Numpy array with the upper bounds of the problem for each decision variable. '''
         self.velocity_upper_bounds: NDArray[np.floating]
         ''' Numpy array with the upper bounds of the velocity calculated by:
 
         .. math::
             V_{max} = X_{max} - X_{min}.
-        '''
+        s'''
         self.velocity_lower_bounds: NDArray[np.floating]
         ''' Numpy array with the upper bounds of the velocity calculated by:
 
@@ -99,22 +97,41 @@ class MeshParameters:
         ''' The initial points of the particles. '''
         self.random_state: int | None
         ''' Seed to generate random numbers. '''
+        
+        self.shade_scale: float = 0.316227766
+        ''' SHADE scale for hyperparameters. '''
+        self.DE_F: NDArray[np.floating]
+        ''' DE scaling factor. '''
+        self.DE_CR: NDArray[np.floating]
+        ''' DE crossover rate. '''
+        self.SWARM_W: NDArray[np.floating]
+        ''' Swarm weights. '''
+        self.SWARM_Pcom: NDArray[np.floating]
+        ''' Swarm probability communication '''
+        self.SWARM_mutation_scale: NDArray[np.floating]
+        ''' Swarm mutation rate. '''
+        self.hyperparameter_last_index: int = 0
+        ''' Index for the last position of hyperparameter memories. '''
+        self.hyperparameter_memory_length: int = 5
+        ''' Length of the success-history memories used by the DE and swarm adaptive parameters. '''
+        self.DE_memory: NDArray[np.floating] = np.full((self.hyperparameter_memory_length, 2), 0.5)
+        ''' DE historical mean of hyperparameters. Stores F first and then CR historical means. '''
+        self.SWARM_memory: NDArray[np.floating] = np.full((self.hyperparameter_memory_length, 5), 0.5)
+        ''' Success-history memory of the swarm adaptive hyperparameters. The columns store, respectively: inertia weight, assimilation weight, communication weight, communication probability, and global-guide mutation scale. '''
 
         # Set the number of objectives
         is_greater_in_type(objective_dim, 'objective_dim', int, 1)
         self.objective_dim = objective_dim
-        # Set the position dimension
+        # Set the decision dimension
         is_greater_in_type(decision_dim, 'decision_dim', int, 0)
         self.decision_dim = decision_dim
-        # Set the problem position dimension plus hiperparameter dimension
-        self.position_dim = decision_dim + 7
-        # Set the maximum and the minimum boundaries for positions
+        # Set the maximum and the minimum boundaries for decision variables
         assert_np_vectors_for_boundary(decision_lower_bounds, 'decision_lower_bounds', decision_upper_bounds, 'decision_upper_bounds', decision_dim)
         # Decision varibles plus (DE scaling factor, crossover probability, mutation rate, communication probability and three weights)
-        self.position_lower_bounds = np.hstack((decision_lower_bounds, np.zeros(7)))
-        self.position_upper_bounds = np.hstack((decision_upper_bounds, np.ones(7)))
+        self.decision_lower_bounds = decision_lower_bounds
+        self.decision_upper_bounds = decision_upper_bounds
         # Set the maximum and minimum boundaries for velocities
-        self.velocity_lower_bounds =  (self.position_lower_bounds - self.position_upper_bounds)
+        self.velocity_lower_bounds =  (self.decision_lower_bounds - self.decision_upper_bounds)
         self.velocity_upper_bounds = -self.velocity_lower_bounds
         # Set the population size
         is_greater_in_type(population_size, 'population_size', int, 0)
@@ -144,10 +161,16 @@ class MeshParameters:
         if initial_points is not None:
             assert_np_array_for_operations(initial_points, 'initial_points', (population_size, decision_dim))
             if np.any(initial_points > decision_upper_bounds) or np.any(initial_points < decision_lower_bounds):
-                ValueError('The parameter "initial_points" is the bounds of the bounding arrays.')
+                raise ValueError('The parameter "initial_points" is the bounds of the bounding arrays.')
             self.initial_points = initial_points.copy()
         else:
             self.initial_points = None
         # Set the random state
         assert_type(random_state, 'random_state', int, is_optional=True)
         self.random_state = random_state
+        # Initialize hyperparameter structures
+        self.DE_F = np.empty(population_size)
+        self.DE_CR = np.empty(population_size)
+        self.SWARM_W = np.empty((population_size, 3))
+        self.SWARM_Pcom = np.empty(population_size)
+        self.SWARM_mutation_scale = np.empty(population_size)

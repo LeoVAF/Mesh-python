@@ -12,7 +12,7 @@ objective_dim = 5
 decision_dim = 5
 population_size = 20
 lower_bound = np.array([0] * decision_dim)
-upper_bound = np.array([1] * decision_dim)
+upper_bound = np.array([5] * decision_dim)
 max_gen = None
 max_fit_eval = 200
 max_personal_guides = 3
@@ -24,7 +24,6 @@ params = MeshParameters(
     decision_lower_bounds=lower_bound,
     decision_upper_bounds=upper_bound,
     population_size=population_size,
-    memory_size=population_size,
     max_gen=max_gen,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
@@ -100,7 +99,7 @@ def test_parallel_fitness_evaluation():
   mesh.initialize()
 
   # Test the fitness evaluation
-  positions = np.random.rand(population_size, mesh.params.position_dim)
+  positions = np.random.rand(population_size, mesh.params.decision_dim)
   fitnesses = mesh.parallel_fitness_evaluation(positions)
   for i, p in enumerate(positions):
     assert np.array_equal(toy_function(p), fitnesses[i])
@@ -119,7 +118,6 @@ def test_differential_evolution():
     decision_lower_bounds=lower_bound,
     decision_upper_bounds=upper_bound,
     population_size=test_population_size,
-    memory_size=test_population_size,
     max_gen=max_gen,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
@@ -132,7 +130,7 @@ def test_differential_evolution():
   # Set the Xst and pop_idxs
   Xst = np.hstack((np.array([[0] for _ in range(population_size)]),
                    np.array([[steps[i]] for i in range(population_size)]),
-                   np.random.rand(population_size, mesh.params.position_dim-2)))
+                   np.random.rand(population_size, mesh.params.decision_dim-2)))
   pop_idxs = np.array([i for i in range(population_size)])
   with patch.object(mesh, 'differential_mutation', return_value=(Xst, pop_idxs)), patch.object(mesh, 'differential_crossover', return_value=Xst):
     # Run the Differential Evolution phase
@@ -147,10 +145,10 @@ def test_mutation():
   mesh = Mesh(params, toy_function)
   mesh.initialize()
 
-  mutation_rate = mesh.population.position[:, decision_dim+2:decision_dim+3]
+  mutation_rate = mesh.params.SWARM_mutation_scale
 
   # Mock the random function to return predetermined values
-  global_guide_noise = np.random.normal(0.0, 1.0, size=(mesh.params.population_size, mesh.params.position_dim))
+  global_guide_noise = np.random.normal(0.0, 1.0, size=(mesh.params.population_size, mesh.params.decision_dim))
   with patch('numpy.random.normal', return_value=global_guide_noise):
 
     # Find the global guides
@@ -162,50 +160,114 @@ def test_mutation():
     # Check if the mutation operation was applied correctly
     for i, gb_mut in enumerate(mesh.pre_allocated.global_guide_mutated):
       gb_expected = np.clip(mesh.population.global_guide[i] + global_guide_noise[i] * mutation_rate[i],
-                            mesh.params.position_lower_bounds,
-                            mesh.params.position_upper_bounds)
+                            mesh.params.decision_lower_bounds,
+                            mesh.params.decision_upper_bounds)
       assert np.linalg.norm(gb_mut - gb_expected) < equal_tolerance_for_array
 
 def test_move_population():
-  # Initialize the algortihm and prepare the population for the equation of motion
   mesh = Mesh(params, toy_function)
   mesh.initialize()
-  mesh.population.personal_guide_pos = np.random.uniform(mesh.params.position_lower_bounds,
-                                                         mesh.params.position_upper_bounds,
-                                                         size=(mesh.params.population_size, mesh.params.max_personal_guides, mesh.params.position_dim))
+
+  mesh.population.personal_guide_pos = np.random.uniform(
+      mesh.params.decision_lower_bounds,
+      mesh.params.decision_upper_bounds,
+      size=(
+          mesh.params.population_size,
+          mesh.params.max_personal_guides,
+          mesh.params.decision_dim,
+      ),
+  )
+  
   mesh.global_guide_method()
   mesh.mutation()
+  
+  pop_size = mesh.params.population_size
+  dim = mesh.params.decision_dim
+  # Mock of the personal guide index
+  pb_indices = np.random.randint(0, mesh.params.max_personal_guides, size=pop_size,)
+  # Mock of the SHADE memory index used for W and Pcom
+  random_index = np.random.randint(0, mesh.params.hyperparameter_memory_length, size=pop_size)
+  # Deterministic E weights: shape (population size, 3)
+  W_mock = np.random.uniform(0.0, 1.0, size=(pop_size, 3))
+  # Probability of communication per particle: shape (population_size,)
+  Pcom_mock = np.random.uniform(0.0, 1.0, size=pop_size)
+  # Random values ​​used to form C: shape (population_size, decision_dim)
+  communication_probs = np.random.rand(pop_size, dim)
+  def mock_sample_from_cauchy(out, loc, scale, bounds):
+      out[:] = W_mock
+  with (
+      patch("numpy.random.randint", side_effect=[pb_indices, random_index]),
+      patch.object(mesh, "sample_from_cauchy", side_effect=mock_sample_from_cauchy),
+      patch("numpy.random.normal", return_value=Pcom_mock.copy()),
+      patch("numpy.random.rand", return_value=communication_probs),
+  ):
+      # Original state before the move
+      mesh.pre_allocated.position_copy[:] = mesh.population.position.copy()
+      mesh.pre_allocated.velocity_copy[:] = mesh.population.velocity.copy()
+      mesh.pre_allocated.fitness_copy[:] = mesh.population.fitness.copy()
 
-  # Mock the random function to return predetermined values
-  pb_indices = np.random.randint(0, mesh.params.max_personal_guides, size=mesh.params.population_size)
-  communication_probs = np.random.rand(mesh.params.population_size, mesh.params.position_dim)
-  with patch('numpy.random.randint', return_value=pb_indices), patch('numpy.random.rand', return_value=communication_probs):
-    # Copy the population position, velocity and fitness
-    mesh.pre_allocated.position_copy[:] = mesh.population.position.copy()
-    mesh.pre_allocated.velocity_copy[:] = mesh.population.velocity.copy()
-    mesh.pre_allocated.fitness_copy[:] = mesh.population.fitness.copy()
+      X0 = mesh.pre_allocated.position_copy.copy()
+      V0 = mesh.pre_allocated.velocity_copy.copy()
+      Xgb_mut = mesh.pre_allocated.global_guide_mutated.copy()
+      # Expected by the same rule as the actual function.
+      W = W_mock
+      Pcom = np.clip(Pcom_mock, 0.0, 1.0)
+      C = communication_probs <= Pcom[:, np.newaxis]
+      # Move the population and then test if the particles were correctly moved
+      mesh.move_population()
+      for i in range(pop_size):
+          x = X0[i]
+          v_old = V0[i]
 
-    # Get the parameter for the equation of motion
-    W = mesh.population.position[:, decision_dim+4:]
-    C = communication_probs <= mesh.population.position[:, decision_dim+3:decision_dim+4]
+          x_pb = mesh.population.personal_guide_pos[i, pb_indices[i], :]
+          x_gb_mut = Xgb_mut[i]
 
-    # Move the particles
-    mesh.move_population()
+          v_expected = W[i, 0] * v_old + W[i, 1] * (x_pb - x) + W[i, 2] * C[i] * (x_gb_mut - x)
+          np.clip(v_expected, mesh.params.velocity_lower_bounds, mesh.params.velocity_upper_bounds, out=v_expected)
+          x_expected = np.clip(x + v_expected, mesh.params.decision_lower_bounds, mesh.params.decision_upper_bounds)
 
-    for i, x in enumerate(mesh.population.position):
-      # Check the velocity
-      x_pb = mesh.population.personal_guide_pos[i, pb_indices[i], :]
-      x_gb_mut = mesh.pre_allocated.global_guide_mutated[i]
-      v = W[i, 0] * mesh.population.velocity[i] + W[i, 1] * (x_pb - x) + W[i, 2] * C[i] * (x_gb_mut - x)
-      np.clip(v, mesh.params.velocity_lower_bounds, mesh.params.velocity_upper_bounds, out=v)
-      assert np.linalg.norm(mesh.pre_allocated.velocity_copy[i] - v) < equal_tolerance_for_array
-      # Check the position
-      x_clipped = np.clip(x + v, mesh.params.position_lower_bounds, mesh.params.position_upper_bounds)
-      assert np.linalg.norm(mesh.pre_allocated.position_copy[i] - x_clipped) < equal_tolerance_for_array
-      # Check the fitness
-      assert np.linalg.norm(mesh.pre_allocated.fitness_copy[i] - mesh.fitness_function(x_clipped)) < equal_tolerance_for_array
+          np.testing.assert_allclose(mesh.pre_allocated.velocity_copy[i], v_expected, atol=equal_tolerance_for_array)
+          np.testing.assert_allclose(mesh.pre_allocated.position_copy[i], x_expected, atol=equal_tolerance_for_array)
+          np.testing.assert_allclose(mesh.pre_allocated.fitness_copy[i], mesh.fitness_function(x_expected), atol=equal_tolerance_for_array)
 
-test_move_population()
+# def test_move_population():
+#   # Initialize the algortihm and prepare the population for the equation of motion
+#   mesh = Mesh(params, toy_function)
+#   mesh.initialize()
+#   mesh.population.personal_guide_pos = np.random.uniform(mesh.params.decision_lower_bounds,
+#                                                          mesh.params.decision_upper_bounds,
+#                                                          size=(mesh.params.population_size, mesh.params.max_personal_guides, mesh.params.decision_dim))
+#   mesh.global_guide_method()
+#   mesh.mutation()
+
+#   # Mock the random function to return predetermined values
+#   pb_indices = np.random.randint(0, mesh.params.max_personal_guides, size=mesh.params.population_size)
+#   communication_probs = np.random.rand(mesh.params.population_size, mesh.params.decision_dim)
+#   with patch('numpy.random.randint', return_value=pb_indices), patch('numpy.random.rand', return_value=communication_probs), patch('numpy.random.standard_cauchy', return_value=):
+#     # Copy the population position, velocity and fitness
+#     mesh.pre_allocated.position_copy[:] = mesh.population.position.copy()
+#     mesh.pre_allocated.velocity_copy[:] = mesh.population.velocity.copy()
+#     mesh.pre_allocated.fitness_copy[:] = mesh.population.fitness.copy()
+
+#     # Get the parameter for the equation of motion
+#     W = mesh.params.SWARM_W
+#     C = communication_probs <= mesh.params.SWARM_Pcom
+
+#     # Move the particles
+#     mesh.move_population()
+
+#     for i, x in enumerate(mesh.population.position):
+#       # Check the velocity
+#       x_pb = mesh.population.personal_guide_pos[i, pb_indices[i], :]
+#       x_gb_mut = mesh.pre_allocated.global_guide_mutated[i]
+#       v = W[i, 0] * mesh.population.velocity[i] + W[i, 1] * (x_pb - x) + W[i, 2] * C[i] * (x_gb_mut - x)
+#       np.clip(v, mesh.params.velocity_lower_bounds, mesh.params.velocity_upper_bounds, out=v)
+#       assert np.linalg.norm(mesh.pre_allocated.velocity_copy[i] - v) < equal_tolerance_for_array
+#       # Check the position
+#       x_clipped = np.clip(x + v, mesh.params.decision_lower_bounds, mesh.params.decision_upper_bounds)
+#       assert np.linalg.norm(mesh.pre_allocated.position_copy[i] - x_clipped) < equal_tolerance_for_array
+#       # Check the fitness
+#       assert np.linalg.norm(mesh.pre_allocated.fitness_copy[i] - mesh.fitness_function(x_clipped)) < equal_tolerance_for_array
 
 def test_elitism():
   test_population_size = 2 * population_size
@@ -217,7 +279,6 @@ def test_elitism():
     decision_lower_bounds=lower_bound,
     decision_upper_bounds=upper_bound,
     population_size=test_population_size,
-    memory_size=None,
     max_gen=max_gen,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
@@ -230,7 +291,7 @@ def test_elitism():
   mesh.initialize()
 
   # Set the velocity
-  mesh.population.velocity = np.array([[i % 2] * mesh.params.position_dim for i in range(test_population_size)])
+  mesh.population.velocity = np.array([[i % 2] * mesh.params.decision_dim for i in range(test_population_size)])
 
   # Copy the particles
   mesh.pre_allocated.position_copy = mesh.population.position.copy()
@@ -243,7 +304,7 @@ def test_elitism():
   # Check if the particles were selected correctly
   for i in range(test_population_size):
     assert np.array_equal(mesh.population.position[i, :decision_dim], np.zeros(decision_dim))
-    assert np.array_equal(mesh.population.velocity[i], np.zeros(mesh.params.position_dim))
+    assert np.array_equal(mesh.population.velocity[i], np.zeros(mesh.params.decision_dim))
     assert np.array_equal(mesh.population.fitness[i], np.zeros(objective_dim))
     for j in range(max_personal_guides):
       assert np.array_equal(mesh.population.personal_guide_pos[i, j, :decision_dim], np.zeros(decision_dim))
@@ -259,7 +320,6 @@ def test_elitism():
     decision_lower_bounds=lower_bound,
     decision_upper_bounds=upper_bound,
     population_size=test_population_size,
-    memory_size=None,
     max_gen=max_gen,
     max_fit_eval=max_fit_eval,
     max_personal_guides=max_personal_guides,
@@ -272,8 +332,8 @@ def test_elitism():
   mesh.initialize()
 
   # Set the velocity
-  mesh.population.velocity = np.zeros((test_population_size, mesh.params.position_dim))
-  mesh.population.velocity[one_idxs] = np.ones((population_size, mesh.params.position_dim))
+  mesh.population.velocity = np.zeros((test_population_size, mesh.params.decision_dim))
+  mesh.population.velocity[one_idxs] = np.ones((population_size, mesh.params.decision_dim))
 
   # Copy the particles
   mesh.pre_allocated.position_copy = mesh.population.position.copy()
@@ -286,7 +346,7 @@ def test_elitism():
   # Check if the particles were selected correctly
   for i in range(test_population_size):
     assert np.array_equal(mesh.population.position[i, :decision_dim], np.zeros(decision_dim))
-    assert np.array_equal(mesh.population.velocity[i], np.zeros(mesh.params.position_dim))
+    assert np.array_equal(mesh.population.velocity[i], np.zeros(mesh.params.decision_dim))
     assert np.array_equal(mesh.population.fitness[i], np.zeros(objective_dim))
     for j in range(max_personal_guides):
       assert np.array_equal(mesh.population.personal_guide_pos[i, j, :decision_dim], np.zeros(decision_dim))
@@ -296,7 +356,7 @@ def test_update_personal_guides():
   # Set some test parameters
   test_population_size = 3 * population_size
   test_max_personal_guides = 3
-  # initial_positions = np.random.rand(test_population_size, position_dim)
+  # initial_positions = np.random.rand(test_population_size, decision_dim)
   initial_points = np.array([[i % 3] * decision_dim for i in range(test_population_size)])
   # Initialize the algorithm with initial positions
   test_params = MeshParameters(
@@ -305,7 +365,6 @@ def test_update_personal_guides():
     decision_lower_bounds=lower_bound,
     decision_upper_bounds=upper_bound,
     population_size=test_population_size,
-    memory_size=population_size,
     max_gen=max_gen,
     max_fit_eval=max_fit_eval,
     max_personal_guides=test_max_personal_guides,
@@ -321,7 +380,7 @@ def test_update_personal_guides():
                                 np.full((test_max_personal_guides, objective_dim), 2)] # Check when there is no domination between current particle and the personal guides
   mesh.population.personal_guide_fit = np.array([personal_guide_fit_options[i % 3].copy() for i in range(test_population_size)])
   # Set personal guide positions randomly
-  pb_positions = np.random.rand(test_population_size, test_max_personal_guides, mesh.params.position_dim)
+  pb_positions = np.random.rand(test_population_size, test_max_personal_guides, mesh.params.decision_dim)
   mesh.population.personal_guide_pos = pb_positions.copy()
 
   # Update the personal guides

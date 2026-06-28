@@ -61,24 +61,3 @@ def test_pool_from_memory():
   # Check if each particle or personal best position in the respective particle pool is not in the pool
   for i, idxs in enumerate(pool_idxs):
     assert all([not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs])
-
-def test_pool_from_population_and_memory():
-  # Initialize a random Mesh instance
-  test_params = MeshParameters(objective_dim=objective_dim,
-                          decision_dim=decision_dim, decision_lower_bounds=lower_bound, decision_upper_bounds=upper_bound, 
-                          population_size=population_size,
-                          dm_pool_type=2,
-                          max_gen=max_gen, max_fit_eval=max_fit_eval,
-                          max_personal_guides=max_personal_guides,
-                          random_state=random_state)
-  mesh = Mesh(test_params, toy_function, log_memory=None)
-
-  # Initialize the algorithm
-  mesh.initialize()
-
-  # Get the pool list
-  pool, pool_idxs = dmp.pool_from_population_and_memory(mesh)
-
-  # Check if each particle or personal best position in the respective particle pool is not in the pool
-  for i, idxs in enumerate(pool_idxs):
-    assert all([not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs])

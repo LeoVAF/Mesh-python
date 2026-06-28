@@ -51,10 +51,10 @@ class PreAllocated():
         else:
             self.np_tril_indices = np.empty((0, 0), dtype=int), np.empty((0, 0), dtype=int)
         # Matrix for store the global guides after the mutation
-        self.global_guide_mutated = np.empty((params.population_size, params.position_dim))
+        self.global_guide_mutated = np.empty((params.population_size, params.decision_dim))
         # Fitness matrix for the elitism
         self.fitness_elitism = np.empty((2*params.population_size, params.objective_dim))
         # Copies for the population
-        self.position_copy = np.empty((params.population_size, params.position_dim))
-        self.velocity_copy = np.empty((params.population_size, params.position_dim))
+        self.position_copy = np.empty((params.population_size, params.decision_dim))
+        self.velocity_copy = np.empty((params.population_size, params.decision_dim))
         self.fitness_copy = np.empty((params.population_size, params.objective_dim))
