@@ -230,45 +230,6 @@ def test_move_population():
           np.testing.assert_allclose(mesh.pre_allocated.position_copy[i], x_expected, atol=equal_tolerance_for_array)
           np.testing.assert_allclose(mesh.pre_allocated.fitness_copy[i], mesh.fitness_function(x_expected), atol=equal_tolerance_for_array)
 
-# def test_move_population():
-#   # Initialize the algortihm and prepare the population for the equation of motion
-#   mesh = Mesh(params, toy_function)
-#   mesh.initialize()
-#   mesh.population.personal_guide_pos = np.random.uniform(mesh.params.decision_lower_bounds,
-#                                                          mesh.params.decision_upper_bounds,
-#                                                          size=(mesh.params.population_size, mesh.params.max_personal_guides, mesh.params.decision_dim))
-#   mesh.global_guide_method()
-#   mesh.mutation()
-
-#   # Mock the random function to return predetermined values
-#   pb_indices = np.random.randint(0, mesh.params.max_personal_guides, size=mesh.params.population_size)
-#   communication_probs = np.random.rand(mesh.params.population_size, mesh.params.decision_dim)
-#   with patch('numpy.random.randint', return_value=pb_indices), patch('numpy.random.rand', return_value=communication_probs), patch('numpy.random.standard_cauchy', return_value=):
-#     # Copy the population position, velocity and fitness
-#     mesh.pre_allocated.position_copy[:] = mesh.population.position.copy()
-#     mesh.pre_allocated.velocity_copy[:] = mesh.population.velocity.copy()
-#     mesh.pre_allocated.fitness_copy[:] = mesh.population.fitness.copy()
-
-#     # Get the parameter for the equation of motion
-#     W = mesh.params.SWARM_W
-#     C = communication_probs <= mesh.params.SWARM_Pcom
-
-#     # Move the particles
-#     mesh.move_population()
-
-#     for i, x in enumerate(mesh.population.position):
-#       # Check the velocity
-#       x_pb = mesh.population.personal_guide_pos[i, pb_indices[i], :]
-#       x_gb_mut = mesh.pre_allocated.global_guide_mutated[i]
-#       v = W[i, 0] * mesh.population.velocity[i] + W[i, 1] * (x_pb - x) + W[i, 2] * C[i] * (x_gb_mut - x)
-#       np.clip(v, mesh.params.velocity_lower_bounds, mesh.params.velocity_upper_bounds, out=v)
-#       assert np.linalg.norm(mesh.pre_allocated.velocity_copy[i] - v) < equal_tolerance_for_array
-#       # Check the position
-#       x_clipped = np.clip(x + v, mesh.params.decision_lower_bounds, mesh.params.decision_upper_bounds)
-#       assert np.linalg.norm(mesh.pre_allocated.position_copy[i] - x_clipped) < equal_tolerance_for_array
-#       # Check the fitness
-#       assert np.linalg.norm(mesh.pre_allocated.fitness_copy[i] - mesh.fitness_function(x_clipped)) < equal_tolerance_for_array
-
 def test_elitism():
   test_population_size = 2 * population_size
   # Initialize the algorithm with initial positions

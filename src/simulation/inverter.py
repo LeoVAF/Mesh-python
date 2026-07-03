@@ -42,19 +42,21 @@ class Inverter():
                         project_lifetime_intervals: npt.NDArray[np.integer],
                         maintenance_cost_rate: int | float,
                         discount_rate: int | float,
+                        resale_rate: int | float,
                         CRF: int | float) -> float:
     r''' Performs the economic analysis of the inverter using the Net Present Cost (NPC) approach.
 
     The total NPC of the inverter is given by:
 
     .. math::
-        NPC_{inv} = \text{IC}_{inv} + \text{NPV}_{om} + \text{NPV}_{repl}.
+        NPC_{inv} = \text{IC}_{inv} + \text{NPV}_{om} + \text{NPV}_{repl} - \text{NPV}_{sv}.
 
     Where:
     
     - :math:`\text{IC}_{inv}` is the installation cost;
     - :math:`\text{NPV}_{om}` is the Net Present Value of annual operation and maintenance costs;
-    - :math:`\text{NPV}_{repl}` is the Net Present Value of replacement costs during the project lifetime.
+    - :math:`\text{NPV}_{repl}` is the Net Present Value of replacement costs during the project lifetime;
+    - :math:`\text{NPV}_{sv}` is the Net Present Value of the resale value (salvage value) of the inverter at the end of its useful life.
 
     The installation cost is calculated as:
 
@@ -71,13 +73,17 @@ class Inverter():
     .. math::
       \text{NPV}_{repl} = \sum^{T}_{t=1}\frac{\left(\left\lfloor \frac{t}{T_{\text{repl}}} \right\rfloor - \left\lfloor \frac{t-1}{T_{\text{repl}}} \right\rfloor\right) \cdot \text{IC}_{inv}}{(1 + d)^t},
 
-    where :math:`T_{repl} = I^{\text{lifetime}}_{\text{inv}}` is the time when the euipament must to be replaced.
+    where :math:`T_{repl} = I^{\text{lifetime}}_{\text{inv}}` is the time when the equipament must to be replaced. The salvage value is calculated as:
+
+    .. math::
+      \text{NPV}_{sv} = \frac{\text{IC}_{inv} \cdot \tau_{sv}}{(1 + d)^T}.
 
     Args:
         rated_power (:type:`int | float`): The power supported by the inverter in [kW].
         project_lifetime_intervals (:type:`npt.NDArray[np.integer]`): Intervals of project lifetime.
         maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
         discount_rate (:type:`int | float`): Discount rate (per interval) during the project lifetime in [decimal].
+        resale_rate (:type:`int | float`): Resale rate during the project lifetime in [decimal].
         CRF (:type:`int | float`): Capital Recovery Factor (CRF) during the project lifetime in [decimal].
 
     Returns:
@@ -92,4 +98,6 @@ class Inverter():
     # Replacement costs (discounted)
     n_repl = np.ceil(project_lifetime_intervals / self.lifetime)
     NPC += np.sum(installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:]))
+    # Resale | salvage value (discounted)
+    NPC -= (installation_cost * resale_rate) / ((1 + discount_rate) ** project_lifetime_intervals[-1])
     return float(NPC)

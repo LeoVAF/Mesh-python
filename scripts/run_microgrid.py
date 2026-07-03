@@ -50,10 +50,10 @@ converter_efficiency = 0.95
 converter_lifetime = 15
 
 # Microgrid input
-load_ind = np.genfromtxt('scripts/microgrid_old/seasonal_data/loadind.txt')
+load_ind = np.genfromtxt('scripts//seasonal_data/load.txt')
 temperature = np.repeat(np.array([12, 13, 15, 16, 19, 22, 24, 24, 23, 20, 16, 13]), 720)
-solar_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/solreal.txt')
-wind_data = np.genfromtxt('scripts/microgrid_old/seasonal_data/wind_data.txt')
+solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
+wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
 wind_height = 10
 microgrid_lifetime = 24
 microgrid_maintenance_cost_rate = 0.02

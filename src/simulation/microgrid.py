@@ -21,6 +21,8 @@ class Microgrid:
     lifetime (:type:`int`): Microgrid project lifetime in time intervals.
     maintenance_cost_rate (:type:`int | float`): Operations and maintenance cost rate for installed componentes based on installation costs in [decimal].
     discount_rate (:type:`int | float`): The discount rate during the lifetime project in [decimal].
+    load_growth_rate (:type:`int | float`): The rate at which the load grows over time in [decimal].
+    resale_rate (:type:`int | float`): The rate at which the microgrid components can be resold in [decimal].
     photovoltaic_panel (:class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` :type:`| None`): A :class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``.
     wind_turbine (:class:`~simulation.wind_turbine.WindTurbine` :type:`| None`): A :class:`~simulation.wind_turbine.WindTurbine` instance. Default is ``None``.
     battery (:class:`~simulation.battery.Battery` :type:`| None`): A :class:`~simulation.battery.Battery` instance. Default is ``None``.
@@ -42,6 +44,8 @@ class Microgrid:
                lifetime: int = 24,
                maintenance_cost_rate: int | float = 0.02,
                discount_rate: int | float = 0.15,
+               load_growth_rate: int | float = 0.02,
+               resale_rate: int | float = 0.5,
                photovoltaic_panel: PhotovoltaicPanel | None = None,
                wind_turbine: WindTurbine | None = None,
                battery: Battery | None = None,
@@ -50,7 +54,7 @@ class Microgrid:
                converter: Converter | None = None) -> None:
     
     self.load: npt.NDArray[np.floating]
-    ''' A numpy array with the demanding load in [kWh]. '''
+    ''' A numpy array with the load in [kWh]. '''
     self.temperature: npt.NDArray[np.floating]
     ''' A numpy array with the temperature in [ºC]. '''
     self.solar_irradiance: npt.NDArray[np.floating]
@@ -65,6 +69,10 @@ class Microgrid:
     ''' Operations and maintenance cost rate for installed componentes based on installation costs in [decimal]. '''
     self.discount_rate: int | float
     ''' The discount rate during the lifetime project in [decimal]. '''
+    self.load_growth_rate: int | float
+    ''' The rate at which the load grows over time in [decimal]. '''
+    self.resale_rate: int | float
+    ''' The rate at which the microgrid components can be resold in [decimal]. '''
     self.photovoltaic_panel: PhotovoltaicPanel | None
     ''' A :class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``. '''
     self.wind_turbine: WindTurbine | None
@@ -99,6 +107,8 @@ class Microgrid:
     self.lifetime = lifetime
     self.maintenance_cost_rate = maintenance_cost_rate
     self.discount_rate = discount_rate
+    self.load_growth_rate = load_growth_rate
+    self.resale_rate = resale_rate
     self.photovoltaic_panel = photovoltaic_panel
     self.wind_turbine = wind_turbine
     self.battery = battery
@@ -247,24 +257,24 @@ class Microgrid:
     der_rated_power = 0.0
     # Perform economic analysis for photovoltaic panels
     if self.photovoltaic_panel:
-      self.lcoe += self.photovoltaic_panel.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
+      self.lcoe += self.photovoltaic_panel.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
       der_rated_power += self.photovoltaic_panel.rated_power
     # Perform economic analysis for wind turbines
     if self.wind_turbine:
-      self.lcoe += self.wind_turbine.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
+      self.lcoe += self.wind_turbine.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
       der_rated_power += self.wind_turbine.rated_power
     # Perform economic analysis for battery
     if self.battery:
-      self.lcoe += self.battery.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
+      self.lcoe += self.battery.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
     # Perform economic analysis for public grid
     if self.public_grid:
       self.lcoe += self.public_grid.economic_analysis(self.lifetime, self.discount_rate)
     # Perform economic analysis for inverter
     if self.inverter:
-      self.lcoe += self.inverter.economic_analysis(der_rated_power * 1.2, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
+      self.lcoe += self.inverter.economic_analysis(der_rated_power * 1.2, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
     # Perform economic analysis for converter
     if self.converter:
-      self.lcoe += self.converter.economic_analysis(der_rated_power * 1.2, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
+      self.lcoe += self.converter.economic_analysis(der_rated_power * 1.2, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
     # Calculate the Levelized Cost of Energy (lcoe)
     self.lcoe *= CRF / sum_of_loads
 
