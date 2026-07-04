@@ -58,9 +58,12 @@ wind_height = 10
 microgrid_lifetime = 24
 microgrid_maintenance_cost_rate = 0.02
 microgrid_discount_rate = 0.1
+microgrid_load_growth_rate = 0.02
+microgrid_resale_rate = 0.75
 photovoltaic_panel = PhotovoltaicPanel(cost_per_kwp=pv_cost_per_kwp,
                                        rated_power=pv_rated_power,
                                        lifetime=pv_lifetime)
+
 wind_turbine = WindTurbine(cost_per_kw=wt_cost_per_kw,
                            rated_power=wt_rated_power,
                            rated_wind_speed=wt_rated_wind_speed,
@@ -68,19 +71,23 @@ wind_turbine = WindTurbine(cost_per_kw=wt_cost_per_kw,
                            cut_out=cut_out,
                            height=wt_height,
                            lifetime=wt_lifetime)
+
 battery = Battery(capacity=bat_cap,
                   cost_per_kwh=bat_cap_cost_list[select_bat] * exchange_rate,
                   efficiency=bat_efficiency_list[select_bat],
                   lifetime=bat_lf_list[select_bat],
                   number_of_cycles=bat_cycle_list[select_bat],
                   depth_of_discharge=bat_dod)
+
 public_grid = PublicGrid(cost_per_kwh=grid_cost_per_kwh,
                          tariff_growth=grid_tariff_growth,
                          credit_rate=grid_credit_rate)
+
 inverter = Inverter(cost_per_kw=inverter_cost_per_kw,
                     cost_scale=inverter_cost_scale,
                     efficiency=inverter_efficiency,
                     lifetime=inverter_lifetime)
+
 converter = Converter(cost_per_kw=converter_cost_per_kw,
                       cost_scale=converter_cost_scale,
                       efficiency=converter_efficiency,
@@ -94,6 +101,8 @@ microgrid = Microgrid(load=load_ind[:8640],
                       lifetime=microgrid_lifetime,
                       maintenance_cost_rate=microgrid_maintenance_cost_rate,
                       discount_rate=microgrid_discount_rate,
+                      load_growth_rate=microgrid_load_growth_rate,
+                      resale_rate=microgrid_resale_rate,
                       photovoltaic_panel=photovoltaic_panel,
                       wind_turbine=wind_turbine,
                       battery=battery,

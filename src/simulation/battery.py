@@ -72,8 +72,8 @@ class Battery:
     self.energy_charged = np.zeros(hour_steps)
     self.energy_discharged = np.zeros(hour_steps)
     self.meet_demand = np.zeros(hour_steps)
-    # Start the state of charge with maximum capacity
-    self.state_of_charge[0] = self.capacity
+    # Start the state of charge with minimum capacity
+    self.state_of_charge[0] = self.min_soc
 
   def charge(self, surplus_energy: int | float, converter_efficiency: int | float, t: int) -> int | float:
     ''' Charges the battery with surplus power.

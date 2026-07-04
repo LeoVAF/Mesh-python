@@ -26,10 +26,8 @@ def main():
     # select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
     # position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
     # position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
-    # ''' ###### '''
     # select_bat = 0 # LAG AGM(0) Li4Ti5O12(1) LiCoO2(2) LiFePO4(3) LiMnO2(4) LiNiCoMnO2(5) LiNiCoAlO2(6) LiPoly(7) NaNiCl(8) NaS(9) NiCd(10) NiMH(11) RFV(12) Zn/Br Redox(13)
     # bat_name = ['LAG', 'LTO', 'LCO', 'LFP', 'LMO', 'LNCMO', 'LNCAO', 'LPoly', 'NNC', 'NaS', 'NiC', 'NMH', 'RFV', 'ZnBr']
-    # ''' ###### '''
     # load = np.genfromtxt('scripts/seasonal_data/load.txt')
     # temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
     # solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
