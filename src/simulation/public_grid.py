@@ -25,17 +25,21 @@ class PublicGrid:
     ''' Tariff growth over the course of the microgrid project between 0 and 1. '''
     self.credit_rate: int | float
     ''' Compensation percentage when sending energy to the public grid between 0 and 1. '''
-    self.operation_cost: float = 0.0
+    self.hours_per_interval: int
+    ''' Number of hours in each time interval in the simulation. '''
+    self.discount_rate: float
+    ''' Discount rate for economic analysis. '''
+    self.operation_cost: float
     ''' Grid purchasing costs in [$]. '''
     self.energy_purchased: npt.NDArray[np.floating]
     ''' Numpy array to store the energy purchased at each time step in [kWh]. '''
-    self.energy_credit: float = 0.0
+    self.energy_credit: float
     ''' Energy credit stored on the public grid in [kWh]. '''
     self.energy_credited: npt.NDArray[np.floating]
     ''' Numpy array to store the energy credited at each time step in [kWh]. '''
-    self.energy_to_credit: float = 0.0
+    self.energy_to_credit: float
     ''' Energy that will be credited next month in [kWh]. '''
-    self.next_month: int = 0
+    self.next_month: int
     ''' Variable to mark the month to account for energy credited. '''
     self.energy_compensated: npt.NDArray[np.floating]
     ''' Numpy array to store the energy compensated at each time step in [kWh]. '''
@@ -46,17 +50,26 @@ class PublicGrid:
     self.tariff_growth = tariff_growth
     self.credit_rate = credit_rate
 
-  def initialize(self, hour_steps: int) -> None:
+  def initialize(self, hours: int, hours_per_interval: int, discount_rate: float) -> None:
     ''' Initializes the components of the public grid.
     
     Args:
-      hour_steps (:type:`int`): Number of hour steps in the simulation.
+      hours (:type:`int`): Number of hours in the simulation.
+      hours_per_interval (:type:`int`): Number of hours in each time interval in the simulation.
+      discount_rate (:type:`float`): The discount rate for economic analysis.
     '''
     
-    self.energy_purchased = np.zeros(hour_steps)
-    self.energy_credited = np.zeros(hour_steps)
-    self.energy_compensated = np.zeros(hour_steps)
-    self.meet_demand = np.zeros(hour_steps)
+    self.energy_purchased = np.zeros(hours)
+    self.energy_credited = np.zeros(hours)
+    self.energy_compensated = np.zeros(hours)
+    self.meet_demand = np.zeros(hours)
+    self.hours_per_interval = hours_per_interval
+    self.discount_rate = discount_rate
+
+    self.operation_cost = 0.0
+    self.energy_credit = 0.0
+    self.energy_to_credit = 0.0
+    self.next_month = 0
 
   def update_month(self, t: int) -> None:
     ''' Updates the month to account for energy compensated.
@@ -86,10 +99,10 @@ class PublicGrid:
       :type:`float`: There is no surplus when store credit.
     '''
 
-    # Credit the energy sent to the public grid
-    self.energy_to_credit += surplus_energy * inverter_efficiency * self.credit_rate
     # Accounts for credited energy
     self.update_month(t)
+    # Credit the energy sent to the public grid
+    self.energy_to_credit += surplus_energy * inverter_efficiency * self.credit_rate
     return 0.0
 
   def import_energy(self, energy_demanded: float, t: int) -> None:
@@ -100,6 +113,8 @@ class PublicGrid:
       t (:type:`int`): Time step.
     '''
     
+    # Accounts for compensated energy
+    self.update_month(t)
     # Compensate as much as possible
     compensated = min(energy_demanded, self.energy_credit)
     self.energy_compensated[t] = compensated
@@ -110,13 +125,10 @@ class PublicGrid:
     # The energy that effectively meets the demand
     self.meet_demand[t] = compensated + energy_to_purchase
     # Calculate the operation cost
-    self.operation_cost += energy_to_purchase * self.cost_per_kwh
-    # Accounts for compensated energy
-    self.update_month(t)
+    i = t // self.hours_per_interval
+    self.operation_cost += energy_to_purchase * self.cost_per_kwh * ((1 + self.tariff_growth) ** (i)) / ((1 + self.discount_rate) ** (i+1))
 
-  def economic_analysis(self,
-                        project_lifetime: int | float,
-                        discount_rate: int | float) -> float:
+  def economic_analysis(self) -> float:
     r''' Performs the economic analysis of the public grid. It is calculated according to the following equation:
 
     .. math::
@@ -128,20 +140,10 @@ class PublicGrid:
     - :math:`C_{grid}` is the simulated purchasing cost during a interval in [$];
     - :math:`e` is the tariff growth rate during the project lifetime;
     - :math:`d` is the discount rate during the project lifetime.
-
-    Args:
-      project_lifetime (:type:`int | float`): The microgrid project lifetime in time intervals.
-      discout_rate (:type:`int | float`): Discount rate (per interval) during the project lifetime.
     
     Returns:
       :type:`float`: Total Net Present Cost of purchasing from the public grid in present value in [$].
     '''
 
     # Calculate the Net Present Cost for the purchasing from public grid
-    if self.tariff_growth == discount_rate:
-      # If the tariff growth is equal to the discount rate, the NPV is simply the operation cost times the project lifetime
-      NPV = self.operation_cost * project_lifetime
-    else:
-      NPV = self.operation_cost * (1 + discount_rate) / (discount_rate - self.tariff_growth) * (1 - ((1 + self.tariff_growth) / (1 + discount_rate)) ** project_lifetime)
-
-    return NPV
+    return self.operation_cost
