@@ -1,13 +1,13 @@
 import numpy as np
 import numpy.typing as npt
 
-class PublicGrid:
-  ''' Represents a AC public grid in the microgrid system. This class is used to manage the public grid's properties and behaviors.
+class UtilityGrid:
+  ''' Represents a AC utility grid in the microgrid system. This class is used to manage the utility grid's properties and behaviors.
   
   Args:
-    cost_per_kwh (:type:`int | float`): Cost per kWh of the public grid in [$].
+    cost_per_kwh (:type:`int | float`): Cost per kWh of the utility grid in [$].
     tariff_growth (:type:`int | float`): Tariff growth over the course of the microgrid project between 0 and 1.
-    credit_rate (:type:`int | float`): Credit rate when sending energy to the public grid between 0 and 1.
+    credit_rate (:type:`int | float`): Credit rate when sending energy to the utility grid between 0 and 1.
 
   Raises:
     TypeError: If the input is not the expected type.
@@ -20,11 +20,11 @@ class PublicGrid:
                credit_rate: int | float = 0):
     
     self.cost_per_kwh: int | float
-    ''' Cost per kWh of the public grid in [$/kWh]. '''
+    ''' Cost per kWh of the utility grid in [$/kWh]. '''
     self.tariff_growth: int | float
     ''' Tariff growth over the course of the microgrid project between 0 and 1. '''
     self.credit_rate: int | float
-    ''' Compensation percentage when sending energy to the public grid between 0 and 1. '''
+    ''' Compensation percentage when sending energy to the utility grid between 0 and 1. '''
     self.hours_per_interval: int
     ''' Number of hours in each time interval in the simulation. '''
     self.discount_rate: float
@@ -34,7 +34,7 @@ class PublicGrid:
     self.energy_purchased: npt.NDArray[np.floating]
     ''' Numpy array to store the energy purchased at each time step in [kWh]. '''
     self.energy_credit: float
-    ''' Energy credit stored on the public grid in [kWh]. '''
+    ''' Energy credit stored on the utility grid in [kWh]. '''
     self.energy_credited: npt.NDArray[np.floating]
     ''' Numpy array to store the energy credited at each time step in [kWh]. '''
     self.energy_to_credit: float
@@ -51,7 +51,7 @@ class PublicGrid:
     self.credit_rate = credit_rate
 
   def initialize(self, hours: int, hours_per_interval: int, discount_rate: float) -> None:
-    ''' Initializes the components of the public grid.
+    ''' Initializes the components of the utility grid.
     
     Args:
       hours (:type:`int`): Number of hours in the simulation.
@@ -101,12 +101,12 @@ class PublicGrid:
 
     # Accounts for credited energy
     self.update_month(t)
-    # Credit the energy sent to the public grid
+    # Credit the energy sent to the utility grid
     self.energy_to_credit += surplus_energy * inverter_efficiency * self.credit_rate
     return 0.0
 
   def import_energy(self, energy_demanded: float, t: int) -> None:
-    ''' Import energy from the public grid, compensating with available credits.
+    ''' Import energy from the utility grid, compensating with available credits.
 
     Args:
       energy_demanded (:type:`float`): Energy demanded in [kWh].
@@ -129,7 +129,7 @@ class PublicGrid:
     self.operation_cost += energy_to_purchase * self.cost_per_kwh * ((1 + self.tariff_growth) ** (i)) / ((1 + self.discount_rate) ** (i+1))
 
   def economic_analysis(self) -> float:
-    r''' Performs the economic analysis of the public grid. It is calculated according to the following equation:
+    r''' Performs the economic analysis of the utility grid. It is calculated according to the following equation:
 
     .. math::
       \sum^{T}_{t=1}\frac{C_{grid}(1 + e)^t}{(1 + d)^t},
@@ -142,8 +142,8 @@ class PublicGrid:
     - :math:`d` is the discount rate during the project lifetime.
     
     Returns:
-      :type:`float`: Total Net Present Cost of purchasing from the public grid in present value in [$].
+      :type:`float`: Total Net Present Cost of purchasing from the utility grid in present value in [$].
     '''
 
-    # Calculate the Net Present Cost for the purchasing from public grid
+    # Calculate the Net Present Cost for the purchasing from utility grid
     return self.operation_cost

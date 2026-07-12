@@ -1,4 +1,4 @@
-from simulation import Microgrid, PhotovoltaicPanel, WindTurbine, Battery, PublicGrid, Inverter, Converter
+from simulation import Microgrid, PhotovoltaicPanel, WindTurbine, Battery, UtilityGrid, Inverter, Converter
 
 import numpy as np
 
@@ -79,7 +79,7 @@ battery = Battery(capacity=bat_cap,
                   number_of_cycles=bat_cycle_list[select_bat],
                   depth_of_discharge=bat_dod)
 
-public_grid = PublicGrid(cost_per_kwh=grid_cost_per_kwh,
+utility_grid = UtilityGrid(cost_per_kwh=grid_cost_per_kwh,
                          tariff_growth=grid_tariff_growth,
                          credit_rate=grid_credit_rate)
 
@@ -106,7 +106,7 @@ microgrid = Microgrid(load=load_ind[:8640],
                       photovoltaic_panel=photovoltaic_panel,
                       wind_turbine=wind_turbine,
                       battery=battery,
-                      public_grid=public_grid,
+                      utility_grid=utility_grid,
                       inverter=inverter,
                       converter=converter)
 

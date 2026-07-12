@@ -2,7 +2,7 @@ from simulation.microgrid import Microgrid
 from simulation.photovoltaic_panel import PhotovoltaicPanel
 from simulation.wind_turbine import WindTurbine
 from simulation.battery import Battery
-from simulation.public_grid import PublicGrid
+from simulation.utility_grid import UtilityGrid
 from simulation.inverter import Inverter
 from simulation.converter import Converter
 
@@ -40,7 +40,7 @@ def simulation(pv_rated_power: int | float,
   # Each battery cycle number
   bat_cycle_list = [1125, 5000, 3000, 3000, 1000, 1050, 12000, 1750]
 
-  # Public grid input
+  # Utility grid input
   grid_cost_per_kwh = 0.12
   grid_tariff_growth = 0.07
   grid_credit_rate = 0.8
@@ -84,7 +84,7 @@ def simulation(pv_rated_power: int | float,
                     number_of_cycles=bat_cycle_list[select_bat],
                     depth_of_discharge=bat_dod)
   
-  public_grid = PublicGrid(cost_per_kwh=grid_cost_per_kwh,
+  utility_grid = UtilityGrid(cost_per_kwh=grid_cost_per_kwh,
                           tariff_growth=grid_tariff_growth,
                           credit_rate=grid_credit_rate)
   
@@ -111,7 +111,7 @@ def simulation(pv_rated_power: int | float,
                         photovoltaic_panel=photovoltaic_panel,
                         wind_turbine=wind_turbine,
                         battery=battery,
-                        public_grid=public_grid,
+                        utility_grid=utility_grid,
                         inverter=inverter,
                         converter=converter)
   

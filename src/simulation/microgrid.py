@@ -1,7 +1,7 @@
 from .photovoltaic_panel import PhotovoltaicPanel
 from .wind_turbine import WindTurbine
 from .battery import Battery
-from .public_grid import PublicGrid
+from .utility_grid import UtilityGrid
 from .inverter import Inverter
 from .converter import Converter
 
@@ -26,7 +26,7 @@ class Microgrid:
     photovoltaic_panel (:class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` :type:`| None`): A :class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``.
     wind_turbine (:class:`~simulation.wind_turbine.WindTurbine` :type:`| None`): A :class:`~simulation.wind_turbine.WindTurbine` instance. Default is ``None``.
     battery (:class:`~simulation.battery.Battery` :type:`| None`): A :class:`~simulation.battery.Battery` instance. Default is ``None``.
-    public_grid (:class:`~simulation.public_grid.PublicGrid` :type:`| None`): A :class:`~simulation.public_grid.PublicGrid` instance. Default is ``None``.
+    utility_grid (:class:`~simulation.utility_grid.UtilityGrid` :type:`| None`): A :class:`~simulation.utility_grid.UtilityGrid` instance. Default is ``None``.
     inverter (:class:`~simulation.inverter.Inverter` :type:`| None`): A :class:`simulation.inverter.Inverter` instance. Default is ``None``.
     converter (:class:`~simulation.converter.Converter` :type:`| None`): A :class:`simulation.converter.Converter` instance. Default is ``None``.
 
@@ -49,7 +49,7 @@ class Microgrid:
                photovoltaic_panel: PhotovoltaicPanel | None = None,
                wind_turbine: WindTurbine | None = None,
                battery: Battery | None = None,
-               public_grid: PublicGrid | None = None,
+               utility_grid: UtilityGrid | None = None,
                inverter: Inverter | None = None,
                converter: Converter | None = None) -> None:
     
@@ -79,8 +79,8 @@ class Microgrid:
     ''' A :class:`~simulation.wind_turbine.WindTurbine` instance. Default is ``None``. '''
     self.battery: Battery | None
     ''' A :class:`~simulation.battery.Battery` instance. Default is ``None``. '''
-    self.public_grid: PublicGrid | None
-    ''' A :class:`~simulation.public_grid.PublicGrid` instance. Default is ``None``.'''
+    self.utility_grid: UtilityGrid | None
+    ''' A :class:`~simulation.utility_grid.UtilityGrid` instance. Default is ``None``.'''
     self.inverter: Inverter | None
     ''' A :class:`simulation.inverter.Inverter` instance. Default is ``None``.'''
     self.converter: Converter | None
@@ -118,7 +118,7 @@ class Microgrid:
     self.photovoltaic_panel = photovoltaic_panel
     self.wind_turbine = wind_turbine
     self.battery = battery
-    self.public_grid = public_grid
+    self.utility_grid = utility_grid
     self.inverter = inverter
     self.converter = converter
     self.hours = len(self.load)
@@ -132,10 +132,10 @@ class Microgrid:
   def _no_battery_discharge(deficit_energy: float, inverter_efficiency: int | float, t: int) -> float:
     return deficit_energy
   @staticmethod
-  def _no_public_grid_export(surplus_energy: float, inverter_efficiency: int | float, t: int) -> float:
+  def _no_utility_grid_export(surplus_energy: float, inverter_efficiency: int | float, t: int) -> float:
     return surplus_energy
   @staticmethod
-  def _no_public_grid_import(energy_demanded: float, t: int) -> None:
+  def _no_utility_grid_import(energy_demanded: float, t: int) -> None:
     return None
   @staticmethod
   def _no_battery_replacement(t: int)-> None:
@@ -159,8 +159,8 @@ class Microgrid:
       self.wind_turbine.initialize(self.hours)
     if self.battery:
       self.battery.initialize(self.hours, self.hours_per_interval)
-    if self.public_grid:
-      self.public_grid.initialize(self.hours, self.hours_per_interval, self.discount_rate)
+    if self.utility_grid:
+      self.utility_grid.initialize(self.hours, self.hours_per_interval, self.discount_rate)
 
   def generate_energy(self) -> None:
     ''' Generates energy by generators. '''
@@ -225,16 +225,16 @@ class Microgrid:
       inverter_efficiency = self.inverter.efficiency
     else:
       inverter_efficiency = 1.0
-    # Get the functions to export and import energy from the public grid
-    if self.public_grid and self.public_grid.credit_rate > 0:
-      export_energy = self.public_grid.export_energy
-      import_energy = self.public_grid.import_energy
-    elif self.public_grid:
-      export_energy = self._no_public_grid_export
-      import_energy = self.public_grid.import_energy
+    # Get the functions to export and import energy from the utility grid
+    if self.utility_grid and self.utility_grid.credit_rate > 0:
+      export_energy = self.utility_grid.export_energy
+      import_energy = self.utility_grid.import_energy
+    elif self.utility_grid:
+      export_energy = self._no_utility_grid_export
+      import_energy = self.utility_grid.import_energy
     else:
-      export_energy = self._no_public_grid_export
-      import_energy = self._no_public_grid_import
+      export_energy = self._no_utility_grid_export
+      import_energy = self._no_utility_grid_import
     # Adjust load demanded by inverter efficiency
     energy_demanded_adjusted = self.load / inverter_efficiency
     # Calculate the energy dispatched by generators that met demand
@@ -249,14 +249,14 @@ class Microgrid:
         surplus_energy = balance
         # Charge the battery with the surplus energy (if the battery is connected)
         remaining_surplus_energy_after_charging = charge_battery(surplus_energy, converter_efficiency, t)
-        # Send the surplus energy to the public grid (if the public grid is connected)
+        # Send the surplus energy to the utility grid (if the utility grid is connected)
         self.surplus_energy[t] = export_energy(remaining_surplus_energy_after_charging, inverter_efficiency, t)
       # If there is deficit energy
       else:
         deficit_energy_adjusted = - balance
         # Discharge the battery to cover the deficit adjusted (if the battery is connected)
         remaining_deficit_energy_after_discharging_adjusted = discharge_battery(deficit_energy_adjusted, inverter_efficiency, t)
-        # If there is still deficit, purchase energy from the public grid (if the public grid is connected)
+        # If there is still deficit, purchase energy from the utility grid (if the utility grid is connected)
         import_energy(remaining_deficit_energy_after_discharging_adjusted * inverter_efficiency, t)
     # Disconsider the first time step for the battery state of charge
     if self.battery:
@@ -285,9 +285,9 @@ class Microgrid:
     # Perform economic analysis for battery
     if self.battery:
       self.lcoe += self.battery.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
-    # Perform economic analysis for public grid
-    if self.public_grid:
-      self.lcoe += self.public_grid.economic_analysis()
+    # Perform economic analysis for utility grid
+    if self.utility_grid:
+      self.lcoe += self.utility_grid.economic_analysis()
     # Perform economic analysis for inverter
     if self.inverter:
       self.lcoe += self.inverter.economic_analysis(der_rated_power * 1.2, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
@@ -400,9 +400,9 @@ class Microgrid:
       'Battery Charge [kWh]': self.battery.energy_charged if self.battery else 0.0,
       'Battery Discharge [kWh]': self.battery.energy_discharged if self.battery else 0.0,
       'Battery Supply [kWh]': self.battery.meet_demand if self.battery else 0.0,
-      'Energy Purchased [kWh]': self.public_grid.energy_purchased if self.public_grid else 0.0,
-      'Energy Credited [kWh]': self.public_grid.energy_credited if self.public_grid else 0.0,
-      'Energy Compensated [kWh]': self.public_grid.energy_compensated if self.public_grid else 0.0,
+      'Energy Purchased [kWh]': self.utility_grid.energy_purchased if self.utility_grid else 0.0,
+      'Energy Credited [kWh]': self.utility_grid.energy_credited if self.utility_grid else 0.0,
+      'Energy Compensated [kWh]': self.utility_grid.energy_compensated if self.utility_grid else 0.0,
       'Energy Surplus [kWh]': self.surplus_energy
     })
 
