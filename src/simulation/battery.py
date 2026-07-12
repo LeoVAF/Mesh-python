@@ -113,11 +113,16 @@ class Battery:
     # Return the remaining surplus energy after charging
     return (surplus_energy_adjusted - energy_to_charge) / converter_efficiency
 
-  def discharge(self, deficit_energy: float, inverter_efficiency: int | float, t: int) -> float:
+  def discharge(self,
+                deficit_energy: float,
+                converter_efficiency: int | float,
+                inverter_efficiency: int | float,
+                t: int) -> float:
     ''' Discharges the battery to meet demand considering the battery efficiency in this operation.
     
     Args:
       deficit_energy (:type:`float`): Deficit energy to discharge the battery in [kWh].
+      converter_efficiency (:type:`int | float`): The efficiency of the converter between 0 and 1.
       inverter_efficiency (:type:`int | float`): The efficiency of the inverter between 0 and 1.
       t (:type:`int`): Time step.
 
@@ -129,16 +134,18 @@ class Battery:
     t_soc = t + 1
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
+    # Calculate the battery effective efficiency considering the converter efficiency
+    effective_efficiency = self.efficiency * converter_efficiency
     # Discharge the battery
-    self.state_of_charge[t_soc] = max(state_of_charge - deficit_energy / self.efficiency, self.min_soc)
+    self.state_of_charge[t_soc] = max(state_of_charge - deficit_energy / effective_efficiency, self.min_soc)
     energy_to_discharge = state_of_charge - self.state_of_charge[t_soc]
     self.energy_discharged[t] = energy_to_discharge
     # The energy that effectively meets the demand
-    self.meet_demand[t] = energy_to_discharge * self.efficiency * inverter_efficiency
+    self.meet_demand[t] = energy_to_discharge * effective_efficiency * inverter_efficiency
     # Update the battery cycles based on the energy discharged
     self.cycles += energy_to_discharge / (2 * self.energy_per_cycle)
     # Return the remaining demand adjusted after discharging
-    return deficit_energy - energy_to_discharge * self.efficiency
+    return deficit_energy - energy_to_discharge * effective_efficiency
 
   def check_replacement(self, t: int) -> None:
     ''' Checks if the battery needs to be replaced based on its lifetime and number of cycles.

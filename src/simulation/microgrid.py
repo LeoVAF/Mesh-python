@@ -129,7 +129,7 @@ class Microgrid:
   def _no_battery_charge(surplus_energy: float, converter_efficiency: int | float, t: int) -> float:
     return surplus_energy
   @staticmethod
-  def _no_battery_discharge(deficit_energy: float, inverter_efficiency: int | float, t: int) -> float:
+  def _no_battery_discharge(deficit_energy: float, converter_efficiency: int | float, inverter_efficiency: int | float, t: int) -> float:
     return deficit_energy
   @staticmethod
   def _no_utility_grid_export(surplus_energy: float, inverter_efficiency: int | float, t: int) -> float:
@@ -255,7 +255,7 @@ class Microgrid:
       else:
         deficit_energy_adjusted = - balance
         # Discharge the battery to cover the deficit adjusted (if the battery is connected)
-        remaining_deficit_energy_after_discharging_adjusted = discharge_battery(deficit_energy_adjusted, inverter_efficiency, t)
+        remaining_deficit_energy_after_discharging_adjusted = discharge_battery(deficit_energy_adjusted, converter_efficiency, inverter_efficiency, t)
         # If there is still deficit, purchase energy from the utility grid (if the utility grid is connected)
         import_energy(remaining_deficit_energy_after_discharging_adjusted * inverter_efficiency, t)
     # Disconsider the first time step for the battery state of charge
