@@ -98,7 +98,7 @@ class WindTurbine:
     # Calculate the output power using power curve
     mask = (self.cut_in <= wind_speed_hub) & (wind_speed_hub <= self.cut_out)
     turbine_power = self.rated_power * (wind_speed_hub[mask]**3 - self.cut_in**3)/(self.rated_wind_speed**3 - self.cut_in**3)
-    self.output_power[mask] = np.minimum(turbine_power, self.rated_power)
+    self.output_power[mask] = turbine_power
 
   
   def economic_analysis(self,
