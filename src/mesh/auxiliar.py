@@ -1,5 +1,5 @@
-from mesh.parameters import MeshParameters
-from mesh.validations.python_validations import assert_type
+from .parameters import MeshParameters
+from .validations.python_validations import assert_type
 
 import numpy as np
 import numpy.typing as npt
@@ -36,10 +36,6 @@ class PreAllocated():
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
         self.global_guide_mutated: npt.NDArray[np.number]
         ''' Numpy matrix for store the global guides after the mutation operation. '''
-        self.matrix_for_operations: npt.NDArray[np.number]
-        ''' Numpy matrix for operations. '''
-        self.vector_for_operations: npt.NDArray[np.number]
-        ''' Numpy array for operations. '''
         self.fitness_elitism: npt.NDArray[np.number]
         ''' Numpy matrix used in :meth:`~mesh.core.Mesh.elitism` to store the fitness of the population before and after the particle moviment. '''
         self.position_copy: npt.NDArray[np.number]
@@ -55,13 +51,10 @@ class PreAllocated():
         else:
             self.np_tril_indices = np.empty((0, 0), dtype=int), np.empty((0, 0), dtype=int)
         # Matrix for store the global guides after the mutation
-        self.global_guide_mutated = np.empty((params.population_size, params.position_dim))
-        # Structures used to calculate repetitive operations
-        self.matrix_for_operations = np.empty((params.population_size, params.position_dim))
-        self.vector_for_operations = np.empty(params.population_size)
+        self.global_guide_mutated = np.empty((params.population_size, params.decision_dim))
         # Fitness matrix for the elitism
         self.fitness_elitism = np.empty((2*params.population_size, params.objective_dim))
         # Copies for the population
-        self.position_copy = np.empty((params.population_size, params.position_dim))
-        self.velocity_copy = np.empty((params.population_size, params.position_dim))
+        self.position_copy = np.empty((params.population_size, params.decision_dim))
+        self.velocity_copy = np.empty((params.population_size, params.decision_dim))
         self.fitness_copy = np.empty((params.population_size, params.objective_dim))

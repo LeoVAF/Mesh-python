@@ -29,54 +29,69 @@ class Battery:
     ''' Nominal battery capacity in [kWh]. '''
     self.cost_per_kwh: int | float
     ''' Cost per kWh of the battery. '''
-    self.efficiency: int | float
-    ''' Battery efficiency as a fraction between 0 and 1. '''
     self.lifetime: int | float
     ''' Battery lifetime in time intervals. '''
     self.number_of_cycles: int
     ''' Number of cycles the battery can perform. '''
     self.depth_of_discharge: int | float
     ''' Depth of discharge as a fraction between 0 and 1. '''
+    self.charge_efficiency: int | float
+    '''Battery charging efficiency as a fraction between 0 and 1. '''
+    self.discharge_efficiency: int | float
+    ''' Battery discharging efficiency as a fraction between 0 and 1. '''
+    self.hours_per_interval: int
+    ''' Number of hours in each time interval in the simulation. '''
+    self.cycles: float
+    ''' Number of cycles the battery has performed. '''
     self.state_of_charge: npt.NDArray[np.floating]
     ''' Current state of charge in [kWh]. '''
     self.min_soc: int | float
     ''' Minimum battery state of charge in [kWh]. '''
-    self.cycles: float = 0.0
-    ''' Number of discharge cycles performed by the battery during the simulation. '''
     self.energy_per_cycle: float
-    ''' Energy required to complete a discharge cycle in [kWh]. '''
+    ''' Energy required to complete a charge/discharge cycle in [kWh]. '''
     self.energy_charged: npt.NDArray[np.floating]
     ''' Numpy array to store the energy charged at each time step in [kWh]. '''
     self.energy_discharged: npt.NDArray[np.floating]
     ''' Numpy array to store the energy discharged at each time step in [kWh]. '''
     self.meet_demand: npt.NDArray[np.floating]
     ''' Energy that will effectively meet demand in [kWh]. '''
+    self.replacements: npt.NDArray[np.floating]
+    ''' Numpy array to store the number of replacements at each time step. '''
+    self.last_replacement_hour: int
+    ''' Last hour when the battery was replaced. '''
 
     self.capacity = capacity
     self.cost_per_kwh = cost_per_kwh
-    self.efficiency = efficiency
     self.lifetime = lifetime
     self.number_of_cycles = number_of_cycles
     self.energy_per_cycle = capacity * depth_of_discharge
     self.depth_of_discharge = depth_of_discharge
+    self.charge_efficiency = np.sqrt(efficiency)
+    self.discharge_efficiency = np.sqrt(efficiency)
     self.min_soc = capacity * (1 - depth_of_discharge)
 
-  def initialize(self, hour_steps: int) -> None:
+  def initialize(self, hours: int, hours_per_interval: int) -> None:
     ''' Initializes the components of the battery.
 
     Args:
-      hour_steps (:type:`int`): The number of hour steps in the simulation.
+      hours (:type:`int`): The number of hours in the simulation.
+      hours_per_interval (:type:`int`): The number of hours in each time interval.
     '''
 
-    self.state_of_charge = np.zeros(hour_steps + 1)
-    self.energy_charged = np.zeros(hour_steps)
-    self.energy_discharged = np.zeros(hour_steps)
-    self.meet_demand = np.zeros(hour_steps)
-    # Start the state of charge with maximum capacity
-    self.state_of_charge[0] = self.capacity
+    self.state_of_charge = np.zeros(hours + 1)
+    self.energy_charged = np.zeros(hours)
+    self.energy_discharged = np.zeros(hours)
+    self.meet_demand = np.zeros(hours)
+    self.replacements = np.zeros(hours // hours_per_interval)
+    self.hours_per_interval = hours_per_interval
+
+    self.cycles = 0.0
+    self.last_replacement_hour = 0
+    # Start the state of charge with minimum capacity
+    self.state_of_charge[0] = self.min_soc
 
   def charge(self, surplus_energy: int | float, converter_efficiency: int | float, t: int) -> int | float:
-    ''' Charges the battery with surplus power.
+    ''' Charges the battery using surplus energy.
     
     Args:
       surplus_energy (:type:`int | float`): Surplus energy to charge the battery in [kWh].
@@ -91,21 +106,28 @@ class Battery:
     t_soc = t + 1
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
+    # Calculate the battery effective efficiency considering the converter efficiency
+    effective_efficiency = self.charge_efficiency * converter_efficiency
     # Charge the battery
-    surplus_energy_adjusted = surplus_energy * converter_efficiency
+    surplus_energy_adjusted = surplus_energy * effective_efficiency
     self.state_of_charge[t_soc] = min(state_of_charge + surplus_energy_adjusted, self.capacity)
     energy_to_charge = self.state_of_charge[t_soc] - state_of_charge
     self.energy_charged[t] = energy_to_charge
-    # Update the number of cycles
+    # Update the battery cycles based on the energy charged
     self.cycles += energy_to_charge / (2 * self.energy_per_cycle)
     # Return the remaining surplus energy after charging
-    return surplus_energy_adjusted - energy_to_charge
+    return surplus_energy - energy_to_charge / effective_efficiency
 
-  def discharge(self, energy_demanded_adjusted: float, inverter_efficiency: int | float, t: int) -> float:
+  def discharge(self,
+                deficit_energy: float,
+                converter_efficiency: int | float,
+                inverter_efficiency: int | float,
+                t: int) -> float:
     ''' Discharges the battery to meet demand considering the battery efficiency in this operation.
     
     Args:
-      energy_demanded_adjusted (:type:`float`): Energy demanded adjusted by the microgrid inverter to discharge the battery in [kWh].
+      deficit_energy (:type:`float`): Deficit energy to discharge the battery in [kWh].
+      converter_efficiency (:type:`int | float`): The efficiency of the converter between 0 and 1.
       inverter_efficiency (:type:`int | float`): The efficiency of the inverter between 0 and 1.
       t (:type:`int`): Time step.
 
@@ -117,56 +139,81 @@ class Battery:
     t_soc = t + 1
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
+    # Calculate the battery effective efficiency considering the converter efficiency
+    effective_efficiency = self.discharge_efficiency * converter_efficiency
     # Discharge the battery
-    self.state_of_charge[t_soc] = max(state_of_charge - energy_demanded_adjusted / self.efficiency, self.min_soc)
+    self.state_of_charge[t_soc] = max(state_of_charge - deficit_energy / effective_efficiency, self.min_soc)
     energy_to_discharge = state_of_charge - self.state_of_charge[t_soc]
     self.energy_discharged[t] = energy_to_discharge
-    # Update the number of cycles
-    self.cycles += energy_to_discharge / (2 * self.energy_per_cycle)
     # The energy that effectively meets the demand
-    self.meet_demand[t] = energy_to_discharge * self.efficiency * inverter_efficiency
+    self.meet_demand[t] = energy_to_discharge * effective_efficiency * inverter_efficiency
+    # Update the battery cycles based on the energy discharged
+    self.cycles += energy_to_discharge / (2 * self.energy_per_cycle)
     # Return the remaining demand adjusted after discharging
-    return energy_demanded_adjusted - energy_to_discharge * self.efficiency
+    return deficit_energy - energy_to_discharge * effective_efficiency
+
+  def check_replacement(self, t: int) -> None:
+    ''' Checks if the battery needs to be replaced based on its lifetime and number of cycles.
+
+    Args:
+      t (:type:`int`): Time step.
+    '''
+
+    # Check if the battery has reached its lifetime or number of cycles
+    if self.cycles >= self.number_of_cycles or (t - self.last_replacement_hour) / self.hours_per_interval >= self.lifetime:
+        # Replace the battery
+        self.state_of_charge[t] = self.min_soc
+        self.cycles = 0.0
+        self.replacements[t // self.hours_per_interval] += 1
+        self.last_replacement_hour = t
 
   def economic_analysis(self,
                         project_lifetime_intervals: npt.NDArray[np.integer],
                         maintenance_cost_rate: int | float,
                         discount_rate: int | float,
+                        resale_rate: int | float,
                         CRF: int | float) -> float:
     r''' Performs the economic analysis of the battery using the Net Present Cost (NPC) approach.
 
     The total NPC of the battery is given by:
 
     .. math::
-      NPC_{bat} = \text{IC}_{bat} + \text{NPV}_{om} + \text{NPV}_{repl}.
+      NPC = \text{IC} + \text{NPV}_{om} + \text{NPV}_{repl} - \text{NPV}_{sv}.
 
     Where:
     
-    - :math:`\text{IC}_{bat}` is the installation cost;
+    - :math:`\text{IC}` is the installation cost;
     - :math:`\text{NPV}_{om}` is the Net Present Value of annual operation and maintenance costs;
     - :math:`\text{NPV}_{repl}` is the Net Present Value of replacement costs during the project lifetime;
+    - :math:`\text{NPV}_{sv}` is the Net Present Value of the resale value (salvage value) of the battery at the end of its useful life.
 
     The installation cost is calculated as:
 
     .. math::
-      \text{IC}_{bat} = C_{kwh} \cdot B_{cap}.
+      \text{IC} = C_{kwh} \cdot B_{cap}.
 
     :math:`C_{kwh}` is the cost per kWh of nominal capacity for the battery and :math:`B_{cap}` is the nominal capacity of the battery. The operation and maintenance costs are calculated as:
 
     .. math::
-      \text{NPV}_{om} = \sum^{T}_{t=1}\frac{\text{IC}_{bat} \cdot \tau_{om}}{(1 + d)^t}.
+      \text{NPV}_{om} = \sum^{T}_{t=1}\frac{\text{IC} \cdot \tau_{om}}{(1 + d)^t}.
 
     :math:`T` is the project lifetime in time intervals, :math:`d` is the discount rate per interval (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` intervals and are equal to the installation cost, discounted to present value according to the following equation:
     
     .. math::
-      \text{NPV}_{repl} = \sum^{T}_{t=1}\frac{\left(\left\lfloor \frac{t}{T_{\text{repl}}} \right\rfloor - \left\lfloor \frac{t-1}{T_{\text{repl}}} \right\rfloor\right) \cdot \text{IC}_{bat}}{(1 + d)^t},
+      \text{NPV}_{repl} = \sum^{T}_{t=1}\frac{\left(\left\lfloor \frac{t}{T_{\text{repl}}} \right\rfloor - \left\lfloor \frac{t-1}{T_{\text{repl}}} \right\rfloor\right) \cdot \text{IC}}{(1 + d)^t},
 
-    where :math:`T_{repl} = \min\left(I^{\text{lifetime}}_{\text{bat}},\ \dfrac{B^{\text{max}}_{\text{cycles}}}{\sum^{H}_{h=1}B_{\text{cycles}}(h)}\right)` is the time when the equipment must be replaced.
+    where :math:`T_{repl} = \min\left(I^{\text{lifetime}},\ \dfrac{B^{\text{max}}_{\text{cycles}}}{\sum^{H}_{h=1}B_{\text{cycles}}(h)}\right)` is the time when the equipment must be replaced. The salvage value is calculated as:
+
+    .. math::
+      \text{NPV}_{sv} = \frac{\text{IC} \cdot \tau_{sv} \cdot T_{\text{remaining}}}{(1 + d)^T},
+
+    where :math:`\tau_{sv}` is the resale rate of the battery in [decimal] and :math:`T_{\text{remaining}}` is the remaining lifetime of the battery in time intervals.
 
     Args:
       project_lifetime_intervals (:type:`npt.NDArray[np.integer]`): Intervals of project lifetime.
       maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
       discount_rate (:type:`int | float`): Discount rate (per interval) during the project lifetime in [decimal].
+      resale_rate (:type:`int | float`): Resale rate during the project lifetime in [decimal].
       CRF (:type:`int | float`): Capital Recovery Factor (CRF) during the project lifetime in [decimal].
 
     Returns:
@@ -178,13 +225,12 @@ class Battery:
     NPC = installation_cost
     # O&M costs (discounted)
     NPC += (installation_cost * maintenance_cost_rate) / CRF
-    # Effective lifetime
-    if self.cycles > 0:
-      lifetime_cycles = self.number_of_cycles / self.cycles
-    else:
-      lifetime_cycles = np.inf
-    t_eff = min(self.lifetime, lifetime_cycles)
     # Replacement costs (discounted)
-    n_repl = np.ceil(project_lifetime_intervals / t_eff)
-    NPC += np.sum(installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:]))
+    NPC += np.sum(installation_cost * (self.replacements) / ((1 + discount_rate) ** project_lifetime_intervals[1:]))
+    # Resale | salvage value (discounted)
+    project_lifetime = project_lifetime_intervals[-1]
+    remaining_cycles = 1 - min(self.cycles, self.number_of_cycles) / self.number_of_cycles
+    remaining_time = 1 - (project_lifetime * self.hours_per_interval - self.last_replacement_hour) / (self.hours_per_interval * self.lifetime)
+    remaining_lifetime = min(remaining_cycles, remaining_time)
+    NPC -= (installation_cost * resale_rate * remaining_lifetime) / ((1 + discount_rate) ** project_lifetime_intervals[-1])
     return float(NPC)

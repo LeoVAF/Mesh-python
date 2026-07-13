@@ -34,15 +34,15 @@ class PhotovoltaicPanel:
     self.rated_power = rated_power
     self.lifetime = lifetime
 
-  def initialize(self, hour_steps: int) -> None:
+  def initialize(self, hours: int) -> None:
     ''' Initializes the components of the photovoltaic panel.
 
     Args:
-      hour_steps (:type:`int`): Number of hour steps in the simulation.
+      hours (:type:`int`): Number of hours in the simulation.
     '''
 
-    self.output_power = np.zeros(hour_steps)
-    self.meet_demand = np.zeros(hour_steps)
+    self.output_power = np.zeros(hours)
+    self.meet_demand = np.zeros(hours)
 
   def generate_power(self, temperature: npt.NDArray[np.floating], solar_irradiance: npt.NDArray[np.floating]) -> None:
     r''' Generates the output power according to the following equation:
@@ -72,49 +72,57 @@ class PhotovoltaicPanel:
 
     irradiance_ref = 1 # Reference irradiance [kW/m^2]
     temperature_ref = 25 # Reference temperature in [ºC]
-    power_temperature_coefficient = 3.7e-3 # Power temperature coefficient of maximum power in [1/°C]
-    cell_temperature = temperature + 0.03125 * solar_irradiance # Cell temperature
+    power_temperature_coefficient = -3.7e-3 # Power temperature coefficient of maximum power in [1/°C]
+    cell_temperature = temperature + 31.25 * solar_irradiance # Cell temperature
     self.output_power[:] = np.minimum(self.rated_power * (solar_irradiance/irradiance_ref) * (1 + power_temperature_coefficient*(cell_temperature - temperature_ref)), self.rated_power)
 
   def economic_analysis(self,
                         project_lifetime_intervals: npt.NDArray[np.integer],
                         maintenance_cost_rate: int | float,
                         discount_rate: int | float,
+                        resale_rate: int | float,
                         CRF: int |float) -> float:
     r''' Performs the economic analysis of the photovoltaic panels using the Net Present Cost (NPC) approach.
 
     The total NPC of the photovoltaic system is given by:
 
     .. math::
-        NPC_{pv} = \text{IC}_{pv} + \text{NPV}_{om} + \text{NPV}_{repl}.
+        NPC = \text{IC} + \text{NPV}_{om} + \text{NPV}_{repl} - \text{NPV}_{sv}.
 
     Where:
 
-    - :math:`\text{IC}_{pv}` is the installation cost;
+    - :math:`\text{IC}` is the installation cost;
     - :math:`\text{NPV}_{om}` is the Net Present Value of annual operation and maintenance costs;
-    - :math:`\text{NPV}_{repl}` is the Net Present Value of replacement costs during the project lifetime.
+    - :math:`\text{NPV}_{repl}` is the Net Present Value of replacement costs during the project lifetime;
+    - :math:`\text{NPV}_{sv}` is the Net Present Value of the resale value (salvage value) of the photovoltaic panels at the end of their useful life.
 
     The installation cost is calculated as:
 
     .. math::
-        \text{IC}_{pv} = C_{kwp} \cdot P_{rated}.
+      \text{IC} = C_{kwp} \cdot P_{rated}.
 
     :math:`C_{kwp}` is the cost per kWp of the photovoltaic panels and :math:`P_{rated}` is the rated power of the photovoltaic panel. The operation and maintenance costs are calculated as:
 
     .. math::
-        \text{NPV}_{om} = \sum^{T}_{t=1}\frac{\text{IC}_{pv} \cdot \tau_{om}}{(1 + d)^t}.
+      \text{NPV}_{om} = \sum^{T}_{t=1}\frac{\text{IC} \cdot \tau_{om}}{(1 + d)^t}.
 
     :math:`T` is the project lifetime in time intervals, :math:`d` is the discount rate per interval (assumed to be constant) in [decimal] and :math:`\tau_{om}` is the operation and maintenance cost rate in [decimal]. The replacement costs occur every :attr:`lifetime` intervals and are equal to the installation cost, discounted to present value according to the following equation:
     
     .. math::
-      \text{NPV}_{repl} = \sum^{T}_{t=1}\frac{\left(\left\lfloor \frac{t}{T_{\text{repl}}} \right\rfloor - \left\lfloor \frac{t-1}{T_{\text{repl}}} \right\rfloor\right) \cdot \text{IC}_{pv}}{(1 + d)^t},
+      \text{NPV}_{repl} = \sum^{T}_{t=1}\frac{\left(\left\lfloor \frac{t}{T_{\text{repl}}} \right\rfloor - \left\lfloor \frac{t-1}{T_{\text{repl}}} \right\rfloor\right) \cdot \text{IC}}{(1 + d)^t},
 
-    where :math:`T_{repl} = I^{\text{lifetime}}_{\text{pv}}` is the time when the euipament must to be replaced.
+    where :math:`T_{repl} = I^{\text{lifetime}}` is the time when the equipament must to be replaced. The salvage value is calculated as:
+
+    .. math::
+      \text{NPV}_{sv} = \frac{\text{IC} \cdot \tau_{sv} \cdot T_{\text{remaining}}}{(1 + d)^T},
+
+    where :math:`\tau_{sv}` is the resale rate of the photovoltaic panels in [decimal] and :math:`T_{\text{remaining}}` is the remaining lifetime of the photovoltaic panels in time intervals.
 
     Args:
         project_lifetime_intervals (:type:`npt.NDArray[np.integer]`): Intervals of project lifetime.
         maintenance_cost_rate (:type:`int | float`): Operation and maintenance cost rate based on installation costs in [decimal].
         discount_rate (:type:`int | float`): Discount rate (per interval) during the project lifetime in [decimal].
+        resale_rate (:type:`int | float`): Resale rate during the project lifetime in [decimal].
         CRF (:type:`int | float`): Capital Recovery Factor (CRF) during the project lifetime in [decimal].
 
     Returns:
@@ -127,6 +135,10 @@ class PhotovoltaicPanel:
     # O&M costs (discounted)
     NPC += (installation_cost * maintenance_cost_rate) / CRF
     # Replacement costs (discounted)
-    n_repl = np.ceil(project_lifetime_intervals / self.lifetime)
+    n_repl = np.floor(project_lifetime_intervals / self.lifetime)
     NPC += np.sum(installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:]))
+    # Resale | salvage value (discounted)
+    project_lifetime = project_lifetime_intervals[-1]
+    remaining_lifetime = 1 - (project_lifetime % self.lifetime) / self.lifetime
+    NPC -= (installation_cost * resale_rate * remaining_lifetime) / ((1 + discount_rate) ** project_lifetime_intervals[-1])
     return float(NPC)

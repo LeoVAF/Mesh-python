@@ -1,5 +1,4 @@
 from mesh.core import Mesh, MeshParameters
-from mesh.MESH_old import MESH_old, MESH_Params_old
 
 from problems.benchmark_problems import get_problem
 from problems.microgrid_function import microgrid_function
@@ -9,16 +8,16 @@ import cProfile
 import pstats
 
 
-objective_dim = 3
-position_dim = 3
+objective_dim = 10
+decision_dim = 30
 max_iterations = None
-max_fitness_eval = 5000
-population_size = 100
+max_fitness_eval = 50000
+population_size = 2048
 
 random_state = 42
 
-position_min_value = np.array([0]*position_dim)
-position_max_value = np.array([1]*position_dim)
+position_min_value = np.array([0]*decision_dim)
+position_max_value = np.array([1]*decision_dim)
 num_final_solutions = population_size
 memory_size = population_size
 communication_probability = 0.7
@@ -47,51 +46,31 @@ optimization_type = [False]*objective_dim
 #     return objective_function
 # func = generate_objective_function(objective_dim)
 
-# func, position_min_value, position_max_value = get_problem('dtlz1', n_obj=objective_dim, n_var=position_dim)
+func, position_min_value, position_max_value = get_problem('dtlz1', n_obj=objective_dim, n_var=decision_dim)
 
-select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
-position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
-position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
-load = np.genfromtxt('scripts/seasonal_data/load.txt')
-temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
-solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
-wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
-bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
-experiment_name = bat_name[select_bat]
-def func(args):
-    return microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
+# select_bat = 0 # Lead_Acid(0) Li-ion(1) ZEBRA(2) NaS(3) NiCd(4) NiMH(5) RFV(6) ZnBr(7)
+# position_min_value = np.array([10, 10, 10]) # Lower bound of problem [max PV generation, max WT generation , battery capacity]
+# position_max_value = np.array([450, 450, 500]) # Upper bound of problem [max PV generation, max WT generation, battery capacity]
+# load = np.genfromtxt('scripts/seasonal_data/load.txt')
+# temperature = np.genfromtxt('scripts/seasonal_data/temperature.txt')
+# solar_data = np.genfromtxt('scripts/seasonal_data/irradiance.txt')
+# wind_data = np.genfromtxt('scripts/seasonal_data/wind.txt')
+# bat_name = ['Lead_Acid', 'Li-ion', 'ZEBRA', 'NaS', 'NiCd', 'NiMH', 'RFV', 'ZnBr']
+# experiment_name = bat_name[select_bat]
+# def func(args):
+#     return microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
 
 def run_new():
     params = MeshParameters(objective_dim,
-                             position_dim, position_min_value, position_max_value, 
+                             decision_dim, position_min_value, position_max_value, 
                              population_size, memory_size,
-                             global_best_attribution_type, dm_pool_type, dm_operation_type,
-                             communication_probability, mutation_rate,
+                             global_guide_method=global_best_attribution_type, dm_pool_type=dm_pool_type, dm_operation_type=dm_operation_type,
                              max_gen=max_iterations, max_fit_eval=max_fitness_eval,
                              max_personal_guides=personal_guide_array_size,
                              random_state=random_state)
 
     new_mesh = Mesh(params, func)
     new_mesh.run()
-
-def run_old():
-    params_old = MESH_Params_old(objective_dim,
-                                [False]*objective_dim,
-                                max_iterations,
-                                max_fitness_eval,
-                                position_dim,
-                                position_max_value, position_min_value,
-                                population_size,memory_size,
-                                0,
-                                global_best_attribution_type,
-                                dm_operation_type,
-                                dm_pool_type,
-                                crowding_distance_type,
-                                communication_probability,
-                                mutation_rate,
-                                personal_guide_array_size)
-    old_mesh = MESH_old(params_old, func)
-    old_mesh.run()
 
 cProfile.run('run_new()', sort='time', filename="profile.prof")
 stats = pstats.Stats('profile.prof')

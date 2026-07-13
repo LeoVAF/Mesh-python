@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from numpy.typing import NDArray
 from random import sample
-from scipy.stats import truncnorm
 from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
 if TYPE_CHECKING:
-    from mesh.core import Mesh
+    from mesh import Mesh
 
 def rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.intp]]]) -> tuple[NDArray[np.number], NDArray[np.intp]]:
   r''' Applies the DE/rand/1 strategy. The strategy is defined as follows:
@@ -22,7 +21,7 @@ def rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.int
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -43,11 +42,11 @@ def rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.int
     # Get three random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\1 strategy
     Xst = Xr[:, 0, :] + operation_weight * (Xr[:, 1, :] - Xr[:, 2, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -64,7 +63,7 @@ def rand_2(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.int
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -85,11 +84,11 @@ def rand_2(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.int
     # Get five random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\2 strategy
     Xst = Xr[:, 0, :] + operation_weight * (Xr[:, 1, :] - Xr[:, 2, :]  + Xr[:, 3, :] - Xr[:, 4, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -107,7 +106,7 @@ def best_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.int
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -130,11 +129,11 @@ def best_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDArray[np.int
     # Get two random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\1 strategy
     Xst = self.population.global_guide[valid_idxs] + operation_weight * (Xr[:, 0, :] - Xr[:, 1, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -153,7 +152,7 @@ def current_to_best_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDA
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -176,12 +175,12 @@ def current_to_best_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDA
     # Get two random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\1 strategy
     X = self.population.position[valid_idxs]
     Xst = X + operation_weight * (self.population.global_guide[valid_idxs] - X + Xr[:, 0, :] - Xr[:, 1, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
@@ -200,7 +199,7 @@ def current_to_rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDA
   - :math:`\alpha` is the scaling factor.
 
   Note:
-    In this implementation, the scaling factor :math:`\alpha` is calculated by a Truncated Normal Distribution between 0 and 2 with mean 0 and standard deviation 1, and then multiplied by :attr:`~mesh.parameters.MeshParameters.mutation_rate`.
+    In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
     self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
@@ -221,12 +220,12 @@ def current_to_rand_1(self: Mesh, pool_tuple: tuple[NDArray[np.number], list[NDA
     # Get three random indices for particle positions from pool
     Xr = np.array([pool[sample(pool_idxs[idx].tolist(), k=valid_size)] for idx in valid_idxs], order='F')
     # Get the operation weight
-    operation_weight = truncnorm.rvs(0, 2, size=(valid_idx_size, 1))
+    operation_weight = self.params.DE_F[valid_idxs, np.newaxis]
     # Apply the DE\rand\2 strategy
     X = self.population.position[valid_idxs]
     Xst = X + operation_weight * (Xr[:, 0, :] - X + Xr[:, 1, :] - Xr[:, 2, :])
     # Clip the positions to the boundaries
-    np.clip(Xst, self.params.position_lower_bounds, self.params.position_upper_bounds, out=Xst)
+    np.clip(Xst, self.params.decision_lower_bounds, self.params.decision_upper_bounds, out=Xst)
     return Xst, valid_idxs
   else:
     return np.array([]), np.array([])
