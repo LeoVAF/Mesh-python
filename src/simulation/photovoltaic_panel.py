@@ -72,8 +72,8 @@ class PhotovoltaicPanel:
 
     irradiance_ref = 1 # Reference irradiance [kW/m^2]
     temperature_ref = 25 # Reference temperature in [ºC]
-    power_temperature_coefficient = 3.7e-3 # Power temperature coefficient of maximum power in [1/°C]
-    cell_temperature = temperature + 0.03125 * solar_irradiance # Cell temperature
+    power_temperature_coefficient = -3.7e-3 # Power temperature coefficient of maximum power in [1/°C]
+    cell_temperature = temperature + 31.25 * solar_irradiance # Cell temperature
     self.output_power[:] = np.minimum(self.rated_power * (solar_irradiance/irradiance_ref) * (1 + power_temperature_coefficient*(cell_temperature - temperature_ref)), self.rated_power)
 
   def economic_analysis(self,
@@ -127,6 +127,6 @@ class PhotovoltaicPanel:
     # O&M costs (discounted)
     NPC += (installation_cost * maintenance_cost_rate) / CRF
     # Replacement costs (discounted)
-    n_repl = np.ceil(project_lifetime_intervals / self.lifetime)
+    n_repl = np.floor(project_lifetime_intervals / self.lifetime)
     NPC += np.sum(installation_cost * (n_repl[1:] - n_repl[:-1]) / ((1 + discount_rate) ** project_lifetime_intervals[1:]))
     return float(NPC)
