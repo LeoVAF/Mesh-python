@@ -29,14 +29,16 @@ class Battery:
     ''' Nominal battery capacity in [kWh]. '''
     self.cost_per_kwh: int | float
     ''' Cost per kWh of the battery. '''
-    self.efficiency: int | float
-    ''' Battery efficiency as a fraction between 0 and 1. '''
     self.lifetime: int | float
     ''' Battery lifetime in time intervals. '''
     self.number_of_cycles: int
     ''' Number of cycles the battery can perform. '''
     self.depth_of_discharge: int | float
     ''' Depth of discharge as a fraction between 0 and 1. '''
+    self.charge_efficiency: int | float
+    '''Battery charging efficiency as a fraction between 0 and 1. '''
+    self.discharge_efficiency: int | float
+    ''' Battery discharging efficiency as a fraction between 0 and 1. '''
     self.hours_per_interval: int
     ''' Number of hours in each time interval in the simulation. '''
     self.cycles: float
@@ -60,11 +62,12 @@ class Battery:
 
     self.capacity = capacity
     self.cost_per_kwh = cost_per_kwh
-    self.efficiency = efficiency
     self.lifetime = lifetime
     self.number_of_cycles = number_of_cycles
     self.energy_per_cycle = capacity * depth_of_discharge
     self.depth_of_discharge = depth_of_discharge
+    self.charge_efficiency = np.sqrt(efficiency)
+    self.discharge_efficiency = np.sqrt(efficiency)
     self.min_soc = capacity * (1 - depth_of_discharge)
 
   def initialize(self, hours: int, hours_per_interval: int) -> None:
@@ -88,7 +91,7 @@ class Battery:
     self.state_of_charge[0] = self.min_soc
 
   def charge(self, surplus_energy: int | float, converter_efficiency: int | float, t: int) -> int | float:
-    ''' Charges the battery with surplus power.
+    ''' Charges the battery using surplus energy.
     
     Args:
       surplus_energy (:type:`int | float`): Surplus energy to charge the battery in [kWh].
@@ -103,15 +106,17 @@ class Battery:
     t_soc = t + 1
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
+    # Calculate the battery effective efficiency considering the converter efficiency
+    effective_efficiency = self.charge_efficiency * converter_efficiency
     # Charge the battery
-    surplus_energy_adjusted = surplus_energy * converter_efficiency
+    surplus_energy_adjusted = surplus_energy * effective_efficiency
     self.state_of_charge[t_soc] = min(state_of_charge + surplus_energy_adjusted, self.capacity)
     energy_to_charge = self.state_of_charge[t_soc] - state_of_charge
     self.energy_charged[t] = energy_to_charge
     # Update the battery cycles based on the energy charged
     self.cycles += energy_to_charge / (2 * self.energy_per_cycle)
     # Return the remaining surplus energy after charging
-    return (surplus_energy_adjusted - energy_to_charge) / converter_efficiency
+    return surplus_energy - energy_to_charge / effective_efficiency
 
   def discharge(self,
                 deficit_energy: float,
@@ -135,7 +140,7 @@ class Battery:
     # Get the state of charge
     state_of_charge = self.state_of_charge[t]
     # Calculate the battery effective efficiency considering the converter efficiency
-    effective_efficiency = self.efficiency * converter_efficiency
+    effective_efficiency = self.discharge_efficiency * converter_efficiency
     # Discharge the battery
     self.state_of_charge[t_soc] = max(state_of_charge - deficit_energy / effective_efficiency, self.min_soc)
     energy_to_discharge = state_of_charge - self.state_of_charge[t_soc]
