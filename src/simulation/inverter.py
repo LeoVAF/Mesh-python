@@ -76,7 +76,7 @@ class Inverter():
     .. math::
       \text{NPV}_{sv} = \frac{\text{IC} \cdot \tau_{sv} \cdot T_{\text{remaining}}}{(1 + d)^T},
 
-    where :math:`\tau_{sv}` is the resale rate of the inverter in [decimal] and :math:`T_{\text{remaining}}` is the remaining lifetime of the inverter in time intervals.
+    where :math:`\tau_{sv}` is the resale rate of the inverter in [decimal] and :math:`T_{\text{remaining}}` is the remaining lifetime of the inverter in [decimal].
 
     Args:
         rated_power (:type:`int | float`): The power supported by the inverter in [kW].

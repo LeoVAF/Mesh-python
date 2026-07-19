@@ -79,7 +79,7 @@ class UtilityGrid:
     '''
 
     # Get month number
-    month_number = t // 720
+    month_number = t // 730
     # Update credit if new month started
     if self.next_month < month_number:
         self.next_month = month_number
@@ -121,12 +121,13 @@ class UtilityGrid:
     self.energy_credit -= compensated
     # Buy the remaining energy
     energy_to_purchase = energy_demanded - compensated
-    self.energy_purchased[t] = energy_to_purchase
+    if energy_to_purchase > 0:
+      self.energy_purchased[t] = energy_to_purchase
+      # Calculate the operation cost
+      i = t // self.hours_per_interval
+      self.operation_cost += energy_to_purchase * self.cost_per_kwh * ((1 + self.tariff_growth) ** (i)) / ((1 + self.discount_rate) ** (i+1))
     # The energy that effectively meets the demand
     self.meet_demand[t] = compensated + energy_to_purchase
-    # Calculate the operation cost
-    i = t // self.hours_per_interval
-    self.operation_cost += energy_to_purchase * self.cost_per_kwh * ((1 + self.tariff_growth) ** (i)) / ((1 + self.discount_rate) ** (i+1))
 
   def economic_analysis(self) -> float:
     r''' Performs the economic analysis of the utility grid. It is calculated according to the following equation:

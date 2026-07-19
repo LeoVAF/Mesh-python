@@ -141,7 +141,7 @@ class WindTurbine:
     .. math::
       \text{NPV}_{sv} = \frac{\text{IC} \cdot \tau_{sv} \cdot T_{\text{remaining}}}{(1 + d)^T},
 
-    where :math:`\tau_{sv}` is the resale rate of the wind turbines in [decimal] and :math:`T_{\text{remaining}}` is the remaining lifetime of the wind turbines in time intervals.
+    where :math:`\tau_{sv}` is the resale rate of the wind turbines in [decimal] and :math:`T_{\text{remaining}}` is the remaining lifetime of the wind turbines in [decimal].
 
     Args:
         project_lifetime_intervals (:type:`npt.NDArray[np.integer]`): Intervals of project lifetime.

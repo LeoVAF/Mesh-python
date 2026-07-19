@@ -258,9 +258,9 @@ class Microgrid:
         remaining_deficit_energy_after_discharging_adjusted = discharge_battery(deficit_energy_adjusted, converter_efficiency, inverter_efficiency, t)
         # If there is still deficit, purchase energy from the utility grid (if the utility grid is connected)
         import_energy(remaining_deficit_energy_after_discharging_adjusted * inverter_efficiency, t)
-    # Disconsider the first time step for the battery state of charge
+    # Disconsider the first time step for the battery energy level
     if self.battery:
-      self.battery.state_of_charge = self.battery.state_of_charge[1:]
+      self.battery.energy_level = self.battery.energy_level[1:]
 
   def economic_analysis(self) -> None:
     ''' Performs the economic analysis of the microgrid and its components. '''
@@ -274,6 +274,8 @@ class Microgrid:
     project_lifetime_intervals = np.arange(self.lifetime + 1)
     # Get the rated power of the Distributed Energy Resources combined
     der_rated_power = 0.0
+    # Get the battery nominal capacity
+    bat_nominal_capacity = 0.0
     # Perform economic analysis for photovoltaic panels
     if self.photovoltaic_panel:
       self.lcoe += self.photovoltaic_panel.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
@@ -285,6 +287,7 @@ class Microgrid:
     # Perform economic analysis for battery
     if self.battery:
       self.lcoe += self.battery.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
+      bat_nominal_capacity = self.battery.capacity * self.battery.depth_of_discharge
     # Perform economic analysis for utility grid
     if self.utility_grid:
       self.lcoe += self.utility_grid.economic_analysis()
@@ -293,10 +296,10 @@ class Microgrid:
       self.lcoe += self.inverter.economic_analysis(der_rated_power * 1.2, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
     # Perform economic analysis for converter
     if self.converter:
-      self.lcoe += self.converter.economic_analysis(der_rated_power * 1.2, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
+      self.lcoe += self.converter.economic_analysis(bat_nominal_capacity, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
     # Calculate the Levelized Cost of Energy (LCOE) in $/kWh
     if self.load_growth_rate == self.discount_rate:
-      load_adjustment = self.lifetime
+      load_adjustment = self.lifetime / (1 + self.discount_rate)
     else:
       d = self.discount_rate
       g = self.load_growth_rate
@@ -337,7 +340,7 @@ class Microgrid:
     r''' Calculates the Renewable Self-Consumption Ratio (RSC) according to the following equation:
 
     .. math::
-      RSC = \frac{\sum^H_{h=1} E^{meet}_{pv}(h) + E^{meet}_{wt}(h) + E^{meet}_{bat}(h)}{\sum^H_{h=1} E^{gen}_{pv}(h) + E^{gen}_{wt}(h)},
+      RSC = \frac{\sum^{I \, H}_{h=1} E^{meet}_{pv}(h) + E^{meet}_{wt}(h) + E^{meet}_{bat}(h)}{\sum^{I \, H}_{h=1} E^{gen}_{pv}(h) + E^{gen}_{wt}(h)},
 
     where:
 
@@ -396,7 +399,7 @@ class Microgrid:
       'Wind Turbine Generation [kWh]': self.wind_turbine.output_power if self.wind_turbine else 0.0,
       'Photovoltaic Panel Supply [kWh]': self.photovoltaic_panel.meet_demand if self.photovoltaic_panel else 0.0,
       'Wind Turbine Supply [kWh]': self.wind_turbine.meet_demand if self.wind_turbine else 0.0,
-      'Battery State of Charge [kWh]': self.battery.state_of_charge if self.battery else 0.0,
+      'Battery Energy Level [kWh]': self.battery.energy_level if self.battery else 0.0,
       'Battery Charge [kWh]': self.battery.energy_charged if self.battery else 0.0,
       'Battery Discharge [kWh]': self.battery.energy_discharged if self.battery else 0.0,
       'Battery Supply [kWh]': self.battery.meet_demand if self.battery else 0.0,
