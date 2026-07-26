@@ -1,5 +1,12 @@
-from mesh import Mesh, MeshParameters
+import os
+from pathlib import Path
+from pickle import dump
+from typing import Any
 
+import numpy as np
+import pygmo as pg
+from numpy.typing import NDArray
+from pygmo import fast_non_dominated_sorting, select_best_N_mo  # type: ignore
 from pymoo.algorithms.moo.mopso_cd import MOPSO_CD
 from pymoo.algorithms.moo.spea2 import SPEA2
 from pymoo.core.problem import Problem
@@ -8,15 +15,7 @@ from pymoo.operators.mutation.pm import PM
 from pymoo.operators.sampling.lhs import LHS
 from pymoo.optimize import minimize
 
-from numpy.typing import NDArray
-from pathlib import Path
-from pickle import dump
-from pygmo import fast_non_dominated_sorting, select_best_N_mo # type: ignore
-from typing import Any
-
-import numpy as np
-import os
-import pygmo as pg
+from mesh import Mesh, MeshParameters
 
 
 def get_tuned_parameters(file_name: str, file_folder: str) -> dict:

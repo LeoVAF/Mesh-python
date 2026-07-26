@@ -1,18 +1,19 @@
-from mesh import Mesh, MeshParameters
-from problems.microgrid_function import microgrid_function
-from problems.benchmark_problems import get_problem
-
 from pathlib import Path
-from tqdm import tqdm
-from pygmo import fast_non_dominated_sorting, select_best_N_mo # type: ignore
 from pickle import dump
 
 import numpy as np
+from problems.benchmark_problems import get_problem
+from problems.microgrid_function import microgrid_function
+from pygmo import fast_non_dominated_sorting, select_best_N_mo  # type: ignore
+from tqdm import tqdm
+
+from mesh import Mesh, MeshParameters
+
 
 def main():
     Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
 
-    num_runs = 30 # Number of runs
+    num_runs = 5 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     objective_dim = 3 # Number of objectives
@@ -54,8 +55,8 @@ def main():
     combined_F = np.empty((0, objective_dim))
     combined_P = np.empty((0, decision_dim))
     for i in tqdm(range(num_runs)):
-        params = MeshParameters(objective_dim,
-                                decision_dim, position_min_value, position_max_value,
+        params = MeshParameters(objective_dim, decision_dim,
+                                position_min_value, position_max_value,
                                 population_size,
                                 global_guide_method=global_guide_method,
                                 dm_pool_type=dm_pool_type,

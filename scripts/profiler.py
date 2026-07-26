@@ -1,12 +1,11 @@
-from mesh.core import Mesh, MeshParameters
-
-from problems.benchmark_problems import get_problem
-from problems.microgrid_function import microgrid_function
-
-import numpy as np
 import cProfile
 import pstats
 
+import numpy as np
+from problems.benchmark_problems import get_problem
+from problems.microgrid_function import microgrid_function
+
+from mesh.core import Mesh, MeshParameters
 
 objective_dim = 10
 decision_dim = 30
@@ -61,10 +60,12 @@ func, position_min_value, position_max_value = get_problem('dtlz1', n_obj=object
 #     return microgrid_function(args[0], args[1], args[2], select_bat, load, temperature, solar_data, wind_data)
 
 def run_new():
-    params = MeshParameters(objective_dim,
-                             decision_dim, position_min_value, position_max_value, 
-                             population_size, memory_size,
-                             global_guide_method=global_best_attribution_type, dm_pool_type=dm_pool_type, dm_operation_type=dm_operation_type,
+    params = MeshParameters(objective_dim, decision_dim,
+                             position_min_value, position_max_value, 
+                             population_size,
+                             global_guide_method=global_best_attribution_type,
+                             dm_pool_type=dm_pool_type,
+                             dm_operation_type=dm_operation_type,
                              max_gen=max_iterations, max_fit_eval=max_fitness_eval,
                              max_personal_guides=personal_guide_array_size,
                              random_state=random_state)

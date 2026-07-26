@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from numpy.typing import NDArray
-from sklearn.neighbors import KDTree
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
+from numpy.typing import NDArray
+from sklearn.neighbors import KDTree
 
 if TYPE_CHECKING:
     from mesh import Mesh

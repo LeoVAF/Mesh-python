@@ -1,12 +1,27 @@
-from problems.DTLZ import dtlz1_pareto, dtlz2_pareto, dtlz3_pareto, dtlz4_pareto, dtlz5_pareto, dtlz6_pareto, dtlz7_pareto
-
-from numpy.typing import NDArray
-from pygmo import problem, dtlz, zdt, fast_non_dominated_sorting, select_best_N_mo # type: ignore
-from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
-from optproblems import zdt as opt_zdt, wfg as opt_wfg
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
+from numpy.typing import NDArray
+from optproblems import wfg as opt_wfg
+from optproblems import zdt as opt_zdt
+from problems.DTLZ import (
+  dtlz1_pareto,
+  dtlz2_pareto,
+  dtlz3_pareto,
+  dtlz4_pareto,
+  dtlz5_pareto,
+  dtlz6_pareto,
+  dtlz7_pareto,
+)
+from pygmo import (
+  dtlz,  # type: ignore
+  fast_non_dominated_sorting,  # type: ignore
+  problem,  # type: ignore
+  select_best_N_mo,  # type: ignore
+  zdt,  # type: ignore
+)
+from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
+
 
 def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> tuple[Callable, NDArray[np.floating], NDArray[np.floating]]:
   # Validation of inputs
@@ -16,7 +31,7 @@ def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> 
     if (n_var < n_obj):
       raise ValueError(f'Problem {name} requires at least {n_obj} variables.')
     if n_obj < 2:
-      ValueError(f'Problem {name} requires at least 2 objectives.')
+      raise ValueError(f'Problem {name} requires at least 2 objectives.')
   if name in {'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
     if wfg_k is None:
       raise ValueError('For WFG problems, the parameter "k" is required.')
@@ -29,7 +44,7 @@ def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> 
   if name in {'zdt1', 'zdt2', 'zdt3', 'zdt6'}:
     func = {'zdt1': problem(zdt(prob_id=1, param=n_var)).fitness, 'zdt2': problem(zdt(prob_id=2, param=n_var)).fitness,
             'zdt3': problem(zdt(prob_id=3, param=n_var)).fitness, 'zdt6': problem(zdt(prob_id=6, param=n_var)).fitness}
-    return func[name], np.zeros((n_var)), np.ones((n_var))
+    return func[name], np.zeros(n_var), np.ones(n_var)
   elif name == 'zdt4':
     return problem(zdt(prob_id=4, param=n_var)).fitness, np.array([0.0] + [-5.0]*(n_var-1)), np.array([1] + [5.0]*(n_var-1))
 
@@ -38,17 +53,17 @@ def get_problem(name: str, n_var: int, n_obj: int, wfg_k: int | None = None) -> 
             'dtlz3':problem(dtlz(prob_id=3, dim=n_var, fdim=n_obj)).fitness, 'dtlz4':problem(dtlz(prob_id=4, dim=n_var, fdim=n_obj)).fitness,
             'dtlz5':problem(dtlz(prob_id=5, dim=n_var, fdim=n_obj)).fitness, 'dtlz6':problem(dtlz(prob_id=6, dim=n_var, fdim=n_obj)).fitness,
             'dtlz7':problem(dtlz(prob_id=7, dim=n_var, fdim=n_obj)).fitness}
-    return func[name], np.zeros((n_var)), np.ones((n_var))
+    return func[name], np.zeros(n_var), np.ones(n_var)
 
   elif name in {'wfg1', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
     func = {'wfg1': WFG1(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg4': WFG4(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate,
             'wfg5': WFG5(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg6': WFG6(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate,
             'wfg7': WFG7(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg8': WFG8(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate,
             'wfg9': WFG9(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate}
-    return func[name], np.zeros((n_var)), np.arange(1, n_var+1, dtype=np.float64) * 2
+    return func[name], np.zeros(n_var), np.arange(1, n_var+1, dtype=np.float64) * 2
   elif name in {'wfg2', 'wfg3'}:
     func = {'wfg2': WFG2(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate, 'wfg3': WFG3(n_var=n_var, n_obj=n_obj, k=wfg_k).evaluate}
-    return func[name], np.zeros((n_var)), np.arange(1, n_var+1, dtype=np.float64) * 2
+    return func[name], np.zeros(n_var), np.arange(1, n_var+1, dtype=np.float64) * 2
 
   else:
     raise ValueError(f"Problem {name} not found.")
@@ -67,7 +82,7 @@ def get_pareto(name: str, N: int, n_var: int, n_obj: int, wfg_k: int | None = No
     if (n_var < n_obj):
       raise ValueError(f'Problem {name} requires at least {n_obj} variables.')
     if n_obj < 2:
-      ValueError(f'Problem {name} requires at least 2 objectives.')
+      raise ValueError(f'Problem {name} requires at least 2 objectives.')
   if name in {'wfg1', 'wfg2', 'wfg3', 'wfg4', 'wfg5', 'wfg6', 'wfg7', 'wfg8', 'wfg9'}:
     if wfg_k is None:
       raise ValueError('For WFG problems, the parameter "k" is required.')

@@ -1,7 +1,14 @@
-from simulation import Microgrid, PhotovoltaicPanel, WindTurbine, Battery, UtilityGrid, Inverter, Converter
-
 import numpy as np
 
+from simulation import (
+    Battery,
+    Converter,
+    Inverter,
+    Microgrid,
+    PhotovoltaicPanel,
+    UtilityGrid,
+    WindTurbine,
+)
 
 # Economic input
 exchange_rate = 1.14
@@ -83,13 +90,13 @@ utility_grid = UtilityGrid(cost_per_kwh=grid_cost_per_kwh,
                          tariff_growth=grid_tariff_growth,
                          credit_rate=grid_credit_rate)
 
-inverter = Inverter(cost_per_kw=inverter_cost_per_kw,
-                    cost_scale=inverter_cost_scale,
+inverter = Inverter(reference_cost=inverter_cost_per_kw,
+                    cost_exponent=inverter_cost_scale,
                     efficiency=inverter_efficiency,
                     lifetime=inverter_lifetime)
 
-converter = Converter(cost_per_kw=converter_cost_per_kw,
-                      cost_scale=converter_cost_scale,
+converter = Converter(reference_cost=converter_cost_per_kw,
+                      cost_exponent=converter_cost_scale,
                       efficiency=converter_efficiency,
                       lifetime=converter_lifetime)
 
@@ -102,7 +109,6 @@ microgrid = Microgrid(load=load_ind[:8640],
                       maintenance_cost_rate=microgrid_maintenance_cost_rate,
                       discount_rate=microgrid_discount_rate,
                       load_growth_rate=microgrid_load_growth_rate,
-                      resale_rate=microgrid_resale_rate,
                       photovoltaic_panel=photovoltaic_panel,
                       wind_turbine=wind_turbine,
                       battery=battery,

@@ -1,23 +1,28 @@
+import random
+from collections.abc import Callable
+from types import MethodType
+
+import numpy as np
+from joblib import Parallel, delayed
+from numpy.typing import NDArray
+from pygmo import (
+    crowding_distance,  # type: ignore
+    fast_non_dominated_sorting,  # type: ignore
+    select_best_N_mo,  # type: ignore
+)
+from tqdm import tqdm
+
+from .auxiliar import PreAllocated, StoppingAlgorithm
 from .operations.differential_crossover import get_differential_crossover
 from .operations.differential_mutation import get_differential_mutation
 from .operations.differential_mutation_pool import get_differential_mutation_pool
 from .operations.global_guide_method import get_global_guide_method
 from .parameters import MeshParameters
-from .particles import Population, Memory
-from .auxiliar import PreAllocated, StoppingAlgorithm
-from .validations.python_validations import assert_type, is_greater_in_type, is_function
+from .particles import Memory, Population
+from .validations.python_validations import assert_type, is_function, is_greater_in_type
 
-from joblib import Parallel, delayed
-from numpy.typing import NDArray
-from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance # type: ignore
-from tqdm import tqdm
-from types import MethodType
-from typing import Callable, Optional
 
-import numpy as np
-import random
-
-class Mesh():
+class Mesh:
     ''' MESH algorithm.
     
     Args:
@@ -37,8 +42,8 @@ class Mesh():
     def __init__(self,
                 params: MeshParameters,
                 fitness_function: Callable[[NDArray[np.number]], NDArray[np.number]],
-                log_memory: Optional[str] = None,
-                num_proc: Optional[int] = None):
+                log_memory: str | None = None,
+                num_proc: int | None = None):
         
         self.params: MeshParameters
         ''' Mesh parameters. '''
@@ -62,9 +67,9 @@ class Mesh():
         ''' Fitness evaluation counter. Used to stop the algorithm if its value is greater than 0. '''
         self.pre_allocated: PreAllocated
         ''' Pre-allocated data for the algorithm. '''
-        self.log_memory: Optional[str]
+        self.log_memory: str | None
         ''' A string to log the memory. If its value is ``None``, then the memory location and fitness will not be logged in a file. '''
-        self.num_proc: Optional[int]
+        self.num_proc: int | None
         ''' Number of processes to execute the fitness function in parallel. If it is ``None``, so the fitness function will execute sequentially. '''
         self.evaluation_way: Callable[[NDArray[np.number]], NDArray[np.number]]
         ''' The way to evaluate the fitness function. It can be sequentially or parallelly. If :attr:`num_proc` is not None, so the fitness evaluations will be parallel with :attr:`num_proc` processes. '''
@@ -715,28 +720,26 @@ class Mesh():
 
         if self.log_memory is not None:
             # Log the fitness
-            file = open(self.log_memory+"-fit.txt","a+")
-            memory_fitness = ""
-            for fit in self.memory.fitness:
-                string = ""
-                for i in range(self.params.objective_dim):
-                    string += str(fit[i]) + " "
-                string = string[:-1]
-                memory_fitness += string + ", "
-            memory_fitness = memory_fitness[:-2]
-            memory_fitness += "\n"
-            file.write(memory_fitness)
-            file.close()
+            with open(self.log_memory+"-fit.txt","a+") as file:
+                memory_fitness = ""
+                for fit in self.memory.fitness:
+                    string = ""
+                    for i in range(self.params.objective_dim):
+                        string += str(fit[i]) + " "
+                    string = string[:-1]
+                    memory_fitness += string + ", "
+                memory_fitness = memory_fitness[:-2]
+                memory_fitness += "\n"
+                file.write(memory_fitness)
             # Log the position
-            file2 = open(self.log_memory + "-pos.txt", "a+")
-            memory_position = ""
-            for pos in self.memory.position:
-                string = ""
-                for i in range(self.params.decision_dim):
-                    string += str(pos[i])+" "
-                string = string[:-1]
-                memory_position += string + ", "
-            memory_position = memory_position[:-2]
-            memory_position += "\n"
-            file2.write(memory_position)
-            file2.close()
+            with open(self.log_memory + "-pos.txt", "a+") as file:
+                memory_position = ""
+                for pos in self.memory.position:
+                    string = ""
+                    for i in range(self.params.decision_dim):
+                        string += str(pos[i])+" "
+                    string = string[:-1]
+                    memory_position += string + ", "
+                memory_position = memory_position[:-2]
+                memory_position += "\n"
+                file.write(memory_position)

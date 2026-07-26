@@ -1,6 +1,6 @@
-from pygmo import fast_non_dominated_sorting # type: ignore
-
 import numpy as np
+from pygmo import fast_non_dominated_sorting  # type: ignore
+
 
 def dtlz1(x, n_obj=3):
   k = len(x) - n_obj + 1
@@ -128,7 +128,8 @@ def dtlz6_pareto(N, n_obj=3):
 def dtlz7_pareto(N, n_obj=3):
   if n_obj == 2:
     f1 = np.linspace(0, 1, N)
-    all_points = np.column_stack((f1, (lambda x: 2 * (2 - x/2*(1 + np.sin(3 * np.pi * x))))(f1)))
+    f2 = lambda x: 2 * (2 - x/2*(1 + np.sin(3 * np.pi * x)))
+    all_points = np.column_stack((f1, f2(f1)))
     ndf, _, _, _ = fast_non_dominated_sorting(all_points)
     non_dominated_points = all_points[ndf[0]]
     return non_dominated_points

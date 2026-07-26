@@ -1,25 +1,25 @@
+import numpy as np
+
 from .parameters import MeshParameters
 from .validations.python_validations import assert_type
 
-import numpy as np
-import numpy.typing as npt
 
 class StoppingAlgorithm(Exception):
     ''' Class used to stop the algorithm with an exception.
     
     Args:
-        position (:type:`npt.NDArray[np.number]`): The position matrix of the particles when the algorithm was stopped.
-        fitness (:type:`npt.NDArray[np.number]`): The fitness matrix of the particles when the algorithm was stopped.
+        position (:type:`np.typing.NDArray[np.number]`): The position matrix of the particles when the algorithm was stopped.
+        fitness (:type:`np.typing.NDArray[np.number]`): The fitness matrix of the particles when the algorithm was stopped.
     '''
 
-    def __init__(self, position: npt.NDArray[np.number], fitness: npt.NDArray[np.number]):
-        self.position: npt.NDArray[np.number]
-        self.fitness: npt.NDArray[np.number]
+    def __init__(self, position: np.typing.NDArray[np.number], fitness: np.typing.NDArray[np.number]):
+        self.position: np.typing.NDArray[np.number]
+        self.fitness: np.typing.NDArray[np.number]
 
         self.position = position
         self.fitness = fitness
 
-class PreAllocated():
+class PreAllocated:
     ''' Used for data allocation. It stores some data structures to avoid new allocations.
     
     Args:
@@ -32,17 +32,17 @@ class PreAllocated():
     def __init__(self, params: MeshParameters):
         assert_type(params, 'params', MeshParameters)
 
-        self.np_tril_indices: tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]
+        self.np_tril_indices: tuple[np.typing.NDArray[np.intp], np.typing.NDArray[np.intp]]
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
-        self.global_guide_mutated: npt.NDArray[np.number]
+        self.global_guide_mutated: np.typing.NDArray[np.number]
         ''' Numpy matrix for store the global guides after the mutation operation. '''
-        self.fitness_elitism: npt.NDArray[np.number]
+        self.fitness_elitism: np.typing.NDArray[np.number]
         ''' Numpy matrix used in :meth:`~mesh.core.Mesh.elitism` to store the fitness of the population before and after the particle moviment. '''
-        self.position_copy: npt.NDArray[np.number]
+        self.position_copy: np.typing.NDArray[np.number]
         ''' Numpy matrix to store the position of the particles before the particle moviment. '''
-        self.velocity_copy: npt.NDArray[np.number]
+        self.velocity_copy: np.typing.NDArray[np.number]
         ''' Numpy matrix to store the velocity of the particles before the particle moviment. '''
-        self.fitness_copy: npt.NDArray[np.number]
+        self.fitness_copy: np.typing.NDArray[np.number]
         ''' Numpy matrix to store the fitness of the particles before the particle moviment. '''
 
         # Used to calculate the sigma

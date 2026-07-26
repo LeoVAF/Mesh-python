@@ -1,11 +1,12 @@
-from .parameters import MeshParameters
-from .validations.python_validations import assert_type
-
 from math import comb
+
+import numpy as np
 from numpy.typing import NDArray
 from scipy.stats import qmc
 
-import numpy as np
+from .parameters import MeshParameters
+from .validations.python_validations import assert_type
+
 
 class Population:
     """ Represents the MESH population.

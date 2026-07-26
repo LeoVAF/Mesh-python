@@ -1,6 +1,11 @@
-from mesh.core import Mesh, MeshParameters
-
+import statistics
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
+
+import numpy as np
+import optuna
+import pygmo as pg
 from pymoo.algorithms.moo.mopso_cd import MOPSO_CD
 from pymoo.algorithms.moo.spea2 import SPEA2
 from pymoo.core.problem import Problem
@@ -8,12 +13,8 @@ from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PM
 from pymoo.operators.sampling.lhs import LHS
 from pymoo.optimize import minimize
-from typing import Any, Callable
 
-import numpy as np
-import optuna
-import pygmo as pg
-import statistics
+from mesh.core import Mesh, MeshParameters
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)  # Suppress Optuna logs
 
@@ -29,8 +30,7 @@ def dump_results(file_name: str, file_folder: str, results: dict) -> None:
     file_path = f"{file_folder}/{file_name}.txt"
     # Open the file in text mode and write the results
     with open(file_path, 'w', encoding='utf-8') as file:
-        for key, value in results.items():
-            file.write(f"{key}: {value} ({type(value).__name__})\n")
+        file.writelines(f"{key}: {value} ({type(value).__name__})\n" for key, value in results.items())
 
 
 def fine_tune_maco(experiment: dict[str, Any],
