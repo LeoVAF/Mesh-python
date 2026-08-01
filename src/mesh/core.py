@@ -624,13 +624,13 @@ class Mesh:
                     self.update_mesh_memory()
                     # Update the algorithm progress
                     self.algorithm_progress = self.update_algorithm_progress(pbar, self.algorithm_progress)
-                    # Upgrade hyperparameter last index
+                    # Update hyperparameter last index
                     self.params.hyperparameter_last_index += 1
                     if self.params.hyperparameter_last_index >= self.params.hyperparameter_memory_length:
                         self.params.hyperparameter_last_index = 0
             # The end of the algorithm
             except StoppingAlgorithm as stop:
-                # Updated the memory
+                # Update the memory
                 self.generic_update_mesh_memory(stop.position, stop.fitness)
                 # Log the memory if it is necessary
                 self.logging()
