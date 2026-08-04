@@ -336,9 +336,9 @@ class Mesh:
 
         .. math::
                 
-            \tilde{x}_{gb} = x_{gb} + \tau_{mut} \cdot \vec{r},
+            \tilde{x}_{gb} = x_{gb} + \tau_{mut} \cdot \vec{r}, \quad \vec{r} \sim \mathcal{N}(\vec{0}, I),
             
-        where :math:`\vec{r}` is calculated as a decision variable.
+        where :math:`I` is the identity matrix.
         '''
         
         pop_size = self.params.population_size
