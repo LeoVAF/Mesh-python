@@ -1,11 +1,11 @@
-from mesh import Mesh
-from mesh.parameters import MeshParameters
-from mesh.auxiliar import StoppingAlgorithm
-
 from unittest.mock import patch
 
 import numpy as np
 import pytest
+
+from mesh import Mesh
+from mesh.auxiliar import StoppingAlgorithm
+from mesh.parameters import MeshParameters
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
@@ -158,8 +158,9 @@ def test_mutation():
     mesh.mutation()
 
     # Check if the mutation operation was applied correctly
+    bound_scale = mesh.params.decision_upper_bounds - mesh.params.decision_lower_bounds
     for i, gb_mut in enumerate(mesh.pre_allocated.global_guide_mutated):
-      gb_expected = np.clip(mesh.population.global_guide[i] + global_guide_noise[i] * mutation_rate[i],
+      gb_expected = np.clip(mesh.population.global_guide[i] + mutation_rate[i] * global_guide_noise[i] * bound_scale,
                             mesh.params.decision_lower_bounds,
                             mesh.params.decision_upper_bounds)
       assert np.linalg.norm(gb_mut - gb_expected) < equal_tolerance_for_array
@@ -317,7 +318,6 @@ def test_update_personal_guides():
   # Set some test parameters
   test_population_size = 3 * population_size
   test_max_personal_guides = 3
-  # initial_positions = np.random.rand(test_population_size, decision_dim)
   initial_points = np.array([[i % 3] * decision_dim for i in range(test_population_size)])
   # Initialize the algorithm with initial positions
   test_params = MeshParameters(
@@ -335,10 +335,15 @@ def test_update_personal_guides():
   mesh = Mesh(test_params, toy_function)
   
   # Set fitness values to check the personal guide update
-  mesh.population.fitness = np.array([[i % 3] * objective_dim for i in range(test_population_size)])
-  personal_guide_fit_options = [np.full((test_max_personal_guides, objective_dim), -1), # Check when the particle is dominated by one of the personal guides
-                                np.array([[2 * (i % 2)] * objective_dim for i in range(test_max_personal_guides)]), # Check when the current particle dominates some personal guides
-                                np.full((test_max_personal_guides, objective_dim), 2)] # Check when there is no domination between current particle and the personal guides
+  mesh.population.fitness = np.full((test_population_size, objective_dim), 1)
+  personal_guide_fit_options = [
+    # Check when the particle is dominated by one of the personal guides
+    np.full((test_max_personal_guides, objective_dim), 0),
+    # Check when the current particle dominates some personal guides
+    np.array([[(2 - (i % 2))] * objective_dim for i in range(test_max_personal_guides)]),
+    # Check when there is no domination between current particle and the personal guides
+    np.full((test_max_personal_guides, objective_dim), 1)
+  ]
   mesh.population.personal_guide_fit = np.array([personal_guide_fit_options[i % 3].copy() for i in range(test_population_size)])
   # Set personal guide positions randomly
   pb_positions = np.random.rand(test_population_size, test_max_personal_guides, mesh.params.decision_dim)
@@ -355,12 +360,13 @@ def test_update_personal_guides():
         assert np.array_equal(mesh.population.personal_guide_pos[i, j, :], pb_positions[i, j, :])
     # Particles in odd positions are updated
     elif i % 3 == 1:
-      for j in range(test_max_personal_guides):
+      assert np.array_equal(mesh.population.personal_guide_pos[i, 0, :], mesh.population.position[i, :])
+      for j in range(1, test_max_personal_guides):
         if j % 2 == 1:
           assert np.array_equal(mesh.population.personal_guide_pos[i, j, :], mesh.population.position[i, :])
         else:
-          assert np.array_equal(mesh.population.personal_guide_pos[i, j, :], pb_positions[i, j, :])
-    # The oldest particle is discarded
+          assert np.array_equal(mesh.population.personal_guide_pos[i, j, :], pb_positions[i, j-1, :])
+    # The rightmost position is discarded
     else:
       assert np.array_equal(mesh.population.personal_guide_pos[i, 0, :], mesh.population.position[i, :])
       for j in range(1, test_max_personal_guides):

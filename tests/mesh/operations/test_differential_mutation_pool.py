@@ -1,8 +1,8 @@
+import numpy as np
+
 from mesh import Mesh
 from mesh.operations import differential_mutation_pool as dmp
 from mesh.parameters import MeshParameters
-
-import numpy as np
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
@@ -39,7 +39,7 @@ def test_pool_from_population():
 
   # Check if each particle or personal best position in the respective particle pool is not in the pool
   for i, idxs in enumerate(pool_idxs):
-    assert all([not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs])
+    assert all(not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs)
 
 def test_pool_from_memory():
   # Initialize a random Mesh instance
@@ -60,4 +60,4 @@ def test_pool_from_memory():
 
   # Check if each particle or personal best position in the respective particle pool is not in the pool
   for i, idxs in enumerate(pool_idxs):
-    assert all([not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs])
+    assert all(not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs)

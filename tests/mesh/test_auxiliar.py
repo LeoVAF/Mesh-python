@@ -1,8 +1,8 @@
-from mesh import MeshParameters
-from mesh import auxiliar as aux
-
 import numpy as np
 import pytest
+
+from mesh import MeshParameters
+from mesh import auxiliar as aux
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5

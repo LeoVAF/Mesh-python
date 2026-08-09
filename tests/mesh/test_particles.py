@@ -1,7 +1,7 @@
+import numpy as np
+
 from mesh import MeshParameters
 from mesh.particles import Memory, Population
-
-import numpy as np
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5

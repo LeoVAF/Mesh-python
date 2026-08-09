@@ -1,11 +1,11 @@
-from mesh import Mesh
-from mesh.operations import differential_mutation as dm
-from mesh.parameters import MeshParameters
-
 from random import sample
 from unittest.mock import patch
 
 import numpy as np
+
+from mesh import Mesh
+from mesh.operations import differential_mutation as dm
+from mesh.parameters import MeshParameters
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5

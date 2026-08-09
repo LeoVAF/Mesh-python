@@ -1,8 +1,10 @@
-from mesh.validations import python_validations as pv
-
-from typing import Callable, cast
+from collections.abc import Callable
+from typing import cast
 
 import pytest
+
+from mesh.validations import python_validations as pv
+
 
 def test_assert_type_success():
   assert (pv.assert_type(1, 'int_value', int)) is None

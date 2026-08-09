@@ -1,8 +1,8 @@
+import numpy as np
+
 from mesh import Mesh
 from mesh.operations import global_guide_method as gba
 from mesh.parameters import MeshParameters
-
-import numpy as np
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = np.random.randint(2, 101) # Randomly choose objective dimension
@@ -51,7 +51,7 @@ def test_sigma_evaluation():
     fitness_squared_sum = np.sum(fitness ** 2)
     sigma_array = []
     for i in range(1, objective_dim):
-      for j in range(0, i):
+      for j in range(i):
         sigma_array.append(fitness[i] ** 2 - fitness[j] ** 2)
     sigma_array = np.array(sigma_array) / fitness_squared_sum
     # Treating numeric errors
@@ -62,7 +62,7 @@ def test_sigma_evaluation():
   for idx in range(population_size):
     sigma_array = []
     for i in range(1, objective_dim):
-      for j in range(0, i):
+      for j in range(i):
         sigma_array.append(0)
     # Treating numeric errors
     assert np.array_equal(sigma_arrays[idx], sigma_array)

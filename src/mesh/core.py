@@ -352,8 +352,10 @@ class Mesh:
             (0., 1.)
         )
         # Mutate the global guides
+        bound_scale = self.params.decision_upper_bounds - self.params.decision_lower_bounds
+        random_noise = np.random.normal(0, 1, (pop_size, decision_dim))
         np.clip(
-            self.population.global_guide + np.random.normal(0, 1, (pop_size, decision_dim)) * self.params.SWARM_mutation_scale[:, np.newaxis],
+            self.population.global_guide + self.params.SWARM_mutation_scale[:, np.newaxis] * random_noise * bound_scale,
             self.params.decision_lower_bounds,
             self.params.decision_upper_bounds,
             out=self.pre_allocated.global_guide_mutated
@@ -497,14 +499,18 @@ class Mesh:
         return best_copy_idxs
 
     def update_personal_guides(self) -> None:
-        ''' Updates the personal guides of the population particles.
+        ''' Updates the personal-guide memories of the population particles.
 
-        Note:
-            There is three cases to update the personal guides:
+            Notes:
+                Each particle maintains a fixed-size ordered memory of personal guides, where index 0 corresponds to the most recently accepted guide The memory is updated according to the following rules:
 
-            - When the current particle is dominated by any of its personal guide, the current particle is ignored;
-            - When the current particle dominates a personal guide, the current particle replaces the dominated personal guide. This replacement is done for all dominated personal guides, so the more the current particle dominates its personal guides, the more chance it has of being sampled in :meth:`move_population`;
-            - When the current particle don't dominate and is not dominated by any personal guide, the current particle is added to the personal guide matrix. The oldest personal guide is removed when the current particle is only added.
+                1. If the current particle is Pareto-dominated by at least one personal guide, the memory remains unchanged.
+
+                2. Otherwise, the current particle is inserted at the beginning of the memory. The existing guides are shifted one position toward the end of the list, and the oldest guide is discarded.
+
+                3. After insertion, every retained personal guide that is Pareto-dominated by the current particle is replaced by a copy of the current particle.
+
+                Therefore, a promising current particle may occupy multiple positions in the personal-guide memory. Since personal guides are sampled uniformly during the movement operation, these repeated entries implicitly reinforce particles that dominate previously stored guides without introducing an additional selection parameter.
         '''
 
         # Get the population fitness as a tensor
@@ -512,23 +518,22 @@ class Mesh:
         # Get the personal guide fitness
         pb_fitness = self.population.personal_guide_fit
         # Get the mask to update the personal guide
-        update_mask = ~np.all(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
+        update_mask = ~np.any(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
         update_idxs = np.flatnonzero(update_mask)
+        # Delete the last personal guide and include the current particle as a new personal guide
+        self.population.personal_guide_fit[update_idxs, 1:, :] = self.population.personal_guide_fit[update_idxs, :-1, :]
+        self.population.personal_guide_pos[update_idxs, 1:, :] = self.population.personal_guide_pos[update_idxs, :-1, :]
+        # Update the personal guide list by adding the current particle as a new personal guide
+        self.population.personal_guide_fit[update_idxs, 0, :] = self.population.fitness[update_idxs, :]
+        self.population.personal_guide_pos[update_idxs, 0, :] = self.population.position[update_idxs, :]
         # Get the mask to replace the personal guide dominated by the current particle
-        replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
+        replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask, 1:, :], axis=2)
         # Replace the dominated personal guide by the current particle
         replace_row, replace_col = np.nonzero(replace_mask)
         particle_to_replace_pb = update_idxs[replace_row]
-        self.population.personal_guide_fit[particle_to_replace_pb, replace_col, :] = self.population.fitness[particle_to_replace_pb, :]
-        self.population.personal_guide_pos[particle_to_replace_pb, replace_col, :] = self.population.position[particle_to_replace_pb, :]
-        # Get the mask to add the current to the personal guide list
-        add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
-        # Delete the oldest personal guide and include the current particle as a new personal guide
-        self.population.personal_guide_fit[add_idxs, 1:, :] = self.population.personal_guide_fit[add_idxs, :-1, :]
-        self.population.personal_guide_pos[add_idxs, 1:, :] = self.population.personal_guide_pos[add_idxs, :-1, :]
-        # Update the personal guide list by adding the current particle as a new personal guide
-        self.population.personal_guide_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
-        self.population.personal_guide_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
+        pb_to_replace = replace_col + 1
+        self.population.personal_guide_fit[particle_to_replace_pb, pb_to_replace, :] = self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_guide_pos[particle_to_replace_pb, pb_to_replace, :] = self.population.position[particle_to_replace_pb, :]
 
     def update_mesh_memory(self) -> None:
         ''' Updates the memory position and fitness faster using position and fitness numpy matrices from population. '''
