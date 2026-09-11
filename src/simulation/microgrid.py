@@ -1,51 +1,45 @@
-from .photovoltaic_panel import PhotovoltaicPanel
-from .wind_turbine import WindTurbine
-from .battery import Battery
-from .utility_grid import UtilityGrid
-from .inverter import Inverter
-from .converter import Converter
-
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
+
+from .battery import Battery
+from .converter import Converter
+from .inverter import Inverter
+from .photovoltaic_panel import PhotovoltaicPanel
+from .utility_grid import UtilityGrid
+from .wind_turbine import WindTurbine
+
 
 class Microgrid:
   ''' Microgrid simulation.
 
   Args:
-    load (:type:`npt.NDArray[np.floating]`): A numpy array with the demanding load in [kWh].
-    temperature (:type:`npt.NDArray[np.floating]`): A numpy array with the temperature in [ºC].
-    solar_irradiance (:type:`npt.NDArray[np.floating]`): A numpy array with solar irradiance in [kW/m^2].
-    wind_velocity (:type:`npt.NDArray[np.floating]`): A numpy array with the wind velocity in [m/s].
-    wind_height (:type:`int | float`): The height where the wind speed was measured in [m].
+    load (:type:`np.typing.NDArray[np.floating]`): A numpy array with the demanding load in [kWh].
+    temperature (:type:`np.typing.NDArray[np.floating]`): A numpy array with the temperature in [ºC].
+    solar_irradiance (:type:`np.typing.NDArray[np.floating]`): A numpy array with solar irradiance in [kW/m^2].
+    wind_velocity (:type:`np.typing.NDArray[np.floating]`): A numpy array with the wind velocity in [m/s].
+    wind_height (:type:`float`): The height where the wind speed was measured in [m].
     lifetime (:type:`int`): Microgrid project lifetime in time intervals.
-    maintenance_cost_rate (:type:`int | float`): Operations and maintenance cost rate for installed componentes based on installation costs in [decimal].
-    discount_rate (:type:`int | float`): The discount rate during the lifetime project in [decimal].
-    load_growth_rate (:type:`int | float`): The rate at which the load grows over time in [decimal].
-    resale_rate (:type:`int | float`): The rate at which the microgrid components can be resold in [decimal].
+    maintenance_cost_rate (:type:`float`): Operations and maintenance cost rate for installed componentes based on installation costs in [decimal].
+    discount_rate (:type:`float`): The discount rate during the lifetime project in [decimal].
+    load_growth_rate (:type:`float`): The rate at which the load grows over time in [decimal].
     photovoltaic_panel (:class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` :type:`| None`): A :class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``.
     wind_turbine (:class:`~simulation.wind_turbine.WindTurbine` :type:`| None`): A :class:`~simulation.wind_turbine.WindTurbine` instance. Default is ``None``.
     battery (:class:`~simulation.battery.Battery` :type:`| None`): A :class:`~simulation.battery.Battery` instance. Default is ``None``.
     utility_grid (:class:`~simulation.utility_grid.UtilityGrid` :type:`| None`): A :class:`~simulation.utility_grid.UtilityGrid` instance. Default is ``None``.
     inverter (:class:`~simulation.inverter.Inverter` :type:`| None`): A :class:`simulation.inverter.Inverter` instance. Default is ``None``.
     converter (:class:`~simulation.converter.Converter` :type:`| None`): A :class:`simulation.converter.Converter` instance. Default is ``None``.
-
-  Raises:
-    TypeError: If the input is not the expected type.
-    ValueError: If the input is not the allowed value.
   '''
 
   def __init__(self,
-               load: npt.NDArray[np.floating],
-               temperature: npt.NDArray[np.floating],
-               solar_irradiance: npt.NDArray[np.floating],
-               wind_velocity: npt.NDArray[np.floating],
-               wind_height: int | float,
+               load: np.typing.NDArray[np.floating],
+               temperature: np.typing.NDArray[np.floating],
+               solar_irradiance: np.typing.NDArray[np.floating],
+               wind_velocity: np.typing.NDArray[np.floating],
+               wind_height: float,
                lifetime: int = 24,
-               maintenance_cost_rate: int | float = 0.02,
-               discount_rate: int | float = 0.15,
-               load_growth_rate: int | float = 0.02,
-               resale_rate: int | float = 0.75,
+               maintenance_cost_rate: float = 0.02,
+               discount_rate: float = 0.15,
+               load_growth_rate: float = 0.02,
                photovoltaic_panel: PhotovoltaicPanel | None = None,
                wind_turbine: WindTurbine | None = None,
                battery: Battery | None = None,
@@ -53,26 +47,24 @@ class Microgrid:
                inverter: Inverter | None = None,
                converter: Converter | None = None) -> None:
     
-    self.load: npt.NDArray[np.floating]
+    self.load: np.typing.NDArray[np.floating]
     ''' A numpy array with the load in [kWh]. '''
-    self.temperature: npt.NDArray[np.floating]
+    self.temperature: np.typing.NDArray[np.floating]
     ''' A numpy array with the temperature in [ºC]. '''
-    self.solar_irradiance: npt.NDArray[np.floating]
+    self.solar_irradiance: np.typing.NDArray[np.floating]
     ''' A numpy array with solar irradiance in [kW/m^2]. '''
-    self.wind_velocity: npt.NDArray[np.floating]
+    self.wind_velocity: np.typing.NDArray[np.floating]
     ''' A numpy array with the wind velocity in [m/s]. '''
-    self.wind_height: int | float
+    self.wind_height: float
     ''' The height where the wind speed was measured in [m]. '''
     self.lifetime: int
     ''' Microgrid project lifetime in time intervals. '''
-    self.maintenance_cost_rate: int | float
+    self.maintenance_cost_rate: float
     ''' Operations and maintenance cost rate for installed componentes based on installation costs in [decimal]. '''
-    self.discount_rate: int | float
+    self.discount_rate: float
     ''' The discount rate during the lifetime project in [decimal]. '''
-    self.load_growth_rate: int | float
+    self.load_growth_rate: float
     ''' The rate at which the load grows over time in [decimal]. '''
-    self.resale_rate: int | float
-    ''' The rate at which the microgrid components can be resold in [decimal]. '''
     self.photovoltaic_panel: PhotovoltaicPanel | None
     ''' A :class:`~simulation.photovoltaic_panel.PhotovoltaicPanel` instance. Default is ``None``. '''
     self.wind_turbine: WindTurbine | None
@@ -89,9 +81,9 @@ class Microgrid:
     ''' Number of hours in the simulation. '''
     self.hours_per_interval: int
     ''' Number of hours in each time interval in the simulation. '''
-    self.surplus_energy: npt.NDArray[np.floating]
+    self.surplus_energy: np.typing.NDArray[np.floating]
     ''' Numpy array to store the energy surplus that will be throw away at each time step in [kWh]. '''
-    self.energy_generated: npt.NDArray[np.floating]
+    self.energy_generated: np.typing.NDArray[np.floating]
     ''' Energy generated at each time step in [kWh]. '''
     # Objectives
     self.lcoe: float
@@ -100,6 +92,10 @@ class Microgrid:
     ''' Renewable Factor between 0 and 1. '''
     self.rsc: float
     ''' Renewable Self-Consumption Ratio between 0 and 1. '''
+
+    # Input validations
+    if len(load) != len(temperature) or len(load) != len(solar_irradiance) or len(load) != len(wind_velocity):
+      raise ValueError("The input arrays must have the same length.")
 
     # Calculate the load growth over the lifetime of the microgrid
     demand_exponent = (1 + load_growth_rate) ** np.arange(lifetime)
@@ -114,7 +110,6 @@ class Microgrid:
     self.maintenance_cost_rate = maintenance_cost_rate
     self.discount_rate = discount_rate
     self.load_growth_rate = load_growth_rate
-    self.resale_rate = resale_rate
     self.photovoltaic_panel = photovoltaic_panel
     self.wind_turbine = wind_turbine
     self.battery = battery
@@ -126,13 +121,13 @@ class Microgrid:
 
   # Defining private functions to handle with None components
   @staticmethod
-  def _no_battery_charge(surplus_energy: float, converter_efficiency: int | float, t: int) -> float:
+  def _no_battery_charge(surplus_energy: float, converter_efficiency: float, t: int) -> float:
     return surplus_energy
   @staticmethod
-  def _no_battery_discharge(deficit_energy: float, converter_efficiency: int | float, inverter_efficiency: int | float, t: int) -> float:
+  def _no_battery_discharge(deficit_energy: float, converter_efficiency: float, inverter_efficiency: float, t: int) -> float:
     return deficit_energy
   @staticmethod
-  def _no_utility_grid_export(surplus_energy: float, inverter_efficiency: int | float, t: int) -> float:
+  def _no_utility_grid_export(surplus_energy: float, inverter_efficiency: float, t: int) -> float:
     return surplus_energy
   @staticmethod
   def _no_utility_grid_import(energy_demanded: float, t: int) -> None:
@@ -163,7 +158,7 @@ class Microgrid:
       self.utility_grid.initialize(self.hours, self.hours_per_interval, self.discount_rate)
 
   def generate_energy(self) -> None:
-    ''' Generates energy by generators. '''
+    r''' Generates energy by generators considering :math:`\Delta h = 1`. '''
 
     # Get the generated energy by photovoltaic panels
     if self.photovoltaic_panel:
@@ -174,16 +169,16 @@ class Microgrid:
       self.wind_turbine.generate_power(self.wind_velocity, self.wind_height)
       self.energy_generated += self.wind_turbine.output_power
 
-  def dispatch_energy_by_generators(self, energy_demanded_adjusted: npt.NDArray[np.floating], inverter_efficiency: int | float) -> None:
+  def dispatch_energy_by_generators(self, energy_demanded_adjusted: np.typing.NDArray[np.floating], inverter_efficiency: float) -> None:
     ''' Calculates the energy dispatched by generators that effectively met demand.
       
       Args:
-        energy_demanded_adjusted (:type:`npt.NDArray[np.floating]`): The energy demanded adjusted by the microgrid inverter in [kWh].
-        inverter_efficiency (:type:`int | float`): The efficiency of the inverter between 0 and 1.
+        energy_demanded_adjusted (:type:`np.typing.NDArray[np.floating]`): The energy demanded adjusted by the microgrid inverter in [kWh].
+        inverter_efficiency (:type:`float`): The efficiency of the inverter between 0 and 1.
     '''
 
     if self.photovoltaic_panel and self.wind_turbine:
-      # Calculate the energy from generators that will supply the demand equaly
+      # Calculate the energy supplied by the generators according to the equal-sharing allocation policy.
       self.photovoltaic_panel.meet_demand[:] = np.minimum(
         self.photovoltaic_panel.output_power,
         energy_demanded_adjusted - np.minimum(self.wind_turbine.output_power, energy_demanded_adjusted / 2)
@@ -209,7 +204,7 @@ class Microgrid:
 
     # Get the functions to charge and discharge the battery
     converter_efficiency = 1.0
-    if self.battery:
+    if self.battery and self.battery.installed:
       charge_battery = self.battery.charge
       discharge_battery = self.battery.discharge
       battery_replacement = self.battery.check_replacement
@@ -226,11 +221,8 @@ class Microgrid:
     else:
       inverter_efficiency = 1.0
     # Get the functions to export and import energy from the utility grid
-    if self.utility_grid and self.utility_grid.credit_rate > 0:
+    if self.utility_grid:
       export_energy = self.utility_grid.export_energy
-      import_energy = self.utility_grid.import_energy
-    elif self.utility_grid:
-      export_energy = self._no_utility_grid_export
       import_energy = self.utility_grid.import_energy
     else:
       export_energy = self._no_utility_grid_export
@@ -258,9 +250,9 @@ class Microgrid:
         remaining_deficit_energy_after_discharging_adjusted = discharge_battery(deficit_energy_adjusted, converter_efficiency, inverter_efficiency, t)
         # If there is still deficit, purchase energy from the utility grid (if the utility grid is connected)
         import_energy(remaining_deficit_energy_after_discharging_adjusted * inverter_efficiency, t)
-    # Disconsider the first time step for the battery state of charge
+    # Disconsider the first time step for the battery energy level
     if self.battery:
-      self.battery.state_of_charge = self.battery.state_of_charge[1:]
+      self.battery.energy_level = self.battery.energy_level[1:]
 
   def economic_analysis(self) -> None:
     ''' Performs the economic analysis of the microgrid and its components. '''
@@ -274,36 +266,40 @@ class Microgrid:
     project_lifetime_intervals = np.arange(self.lifetime + 1)
     # Get the rated power of the Distributed Energy Resources combined
     der_rated_power = 0.0
+    # Get the battery nominal capacity
+    converter_rated_power = 0.0
     # Perform economic analysis for photovoltaic panels
     if self.photovoltaic_panel:
-      self.lcoe += self.photovoltaic_panel.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
+      self.lcoe += self.photovoltaic_panel.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
       der_rated_power += self.photovoltaic_panel.rated_power
     # Perform economic analysis for wind turbines
     if self.wind_turbine:
-      self.lcoe += self.wind_turbine.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
+      self.lcoe += self.wind_turbine.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
       der_rated_power += self.wind_turbine.rated_power
     # Perform economic analysis for battery
-    if self.battery:
-      self.lcoe += self.battery.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
+    if self.battery and self.battery.installed:
+      self.lcoe += self.battery.economic_analysis(project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
+      converter_rated_power = self.battery.capacity * self.battery.depth_of_discharge
     # Perform economic analysis for utility grid
     if self.utility_grid:
       self.lcoe += self.utility_grid.economic_analysis()
     # Perform economic analysis for inverter
     if self.inverter:
-      self.lcoe += self.inverter.economic_analysis(der_rated_power * 1.2, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
+      inverter_rated_power = der_rated_power + converter_rated_power
+      self.lcoe += self.inverter.economic_analysis(inverter_rated_power, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
     # Perform economic analysis for converter
     if self.converter:
-      self.lcoe += self.converter.economic_analysis(der_rated_power * 1.2, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, self.resale_rate, CRF)
+      self.lcoe += self.converter.economic_analysis(converter_rated_power, project_lifetime_intervals, self.maintenance_cost_rate, self.discount_rate, CRF)
     # Calculate the Levelized Cost of Energy (LCOE) in $/kWh
-    if self.load_growth_rate == self.discount_rate:
-      load_adjustment = self.lifetime
+    if np.isclose(self.load_growth_rate, self.discount_rate):
+      load_adjustment = self.lifetime / (1 + self.discount_rate)
     else:
       d = self.discount_rate
       g = self.load_growth_rate
       load_adjustment = ((1 - ((1+g) / (1+d)) ** (self.lifetime)) / (d-g))
     self.lcoe /= (self.load[:self.hours_per_interval].sum() * load_adjustment)
 
-  def calculate_renewable_factor(self) -> None:
+  def calculate_renewable_factor(self, renewable_supply: float) -> None:
     r''' Calculates the Renewable Factor (RF) according to the following equation:
 
     .. math::
@@ -317,27 +313,18 @@ class Microgrid:
     - :math:`E_{load}(h)` is the energy demanded by the load at hour :math:`h` [kWh].
 
     The Renewable Factor represents the fraction of the total demand met by renewable sources and battery storage over the simulation period.
+
+    Args:
+      renewable_supply (:type:`float`): The total energy supplied by renewable sources and battery storage over the simulation period in [kWh].
     '''
 
-    if self.photovoltaic_panel:
-      pv_meet = self.photovoltaic_panel.meet_demand
-    else:
-      pv_meet = 0
-    if self.wind_turbine:
-      wt_meet = self.wind_turbine.meet_demand
-    else:
-      wt_meet = 0
-    if self.battery:
-      bat_meet = self.battery.meet_demand
-    else:
-      bat_meet = 0
-    self.rf = np.sum(pv_meet + wt_meet + bat_meet) / np.sum(self.load)
+    self.rf = renewable_supply / self.load.sum()
 
-  def calculate_renewable_self_consumption_ratio(self) -> None:
+  def calculate_renewable_self_consumption_ratio(self, renewable_supply: float) -> None:
     r''' Calculates the Renewable Self-Consumption Ratio (RSC) according to the following equation:
 
     .. math::
-      RSC = \frac{\sum^H_{h=1} E^{meet}_{pv}(h) + E^{meet}_{wt}(h) + E^{meet}_{bat}(h)}{\sum^H_{h=1} E^{gen}_{pv}(h) + E^{gen}_{wt}(h)},
+      RSC = \frac{\sum^{I \, H}_{h=1} \frac{E^{meet}_{pv}(h) + E^{meet}_{wt}(h) + E^{meet}_{bat}(h)}{\eta_{inv}}}{\sum^{I \, H}_{h=1} E^{gen}_{pv}(h) + E^{gen}_{wt}(h)},
 
     where:
 
@@ -347,9 +334,33 @@ class Microgrid:
     - :math:`E^{gen}_{pv}(h)` is the energy generated by the photovoltaic generator at hour :math:`h` [kWh];
     - :math:`E^{gen}_{wt}(h)` is the energy generated by the wind turbine at hour :math:`h` [kWh].
 
-    The Renewable Self-Consumption Ratio represents the fraction of renewable energy that is consumed directly by the load over the simulation period.
+    The Renewable Self-Consumption Ratio represents the fraction of renewable energy that is ultimately supplied to the load, either directly or after storage in the ESS.
+
+    Args:
+      renewable_supply (:type:`float`): The total energy supplied by renewable sources and battery storage over the simulation period in [kWh].
     '''
 
+    if self.inverter:
+      inverter_efficiency = self.inverter.efficiency
+    else:
+      inverter_efficiency = 1.0
+    energy_generated = self.energy_generated.sum()
+    if energy_generated <= 0:
+      self.rsc = 0.0
+    else:
+      self.rsc = renewable_supply / (energy_generated * inverter_efficiency)
+
+  def run(self) -> np.typing.NDArray[np.floating]:
+    ''' Runs the Microgrid simulation. '''
+
+    # Initialize the microgrid components
+    self.initialize()
+    # Generates energy by generators
+    self.generate_energy()
+    # Simulates the energy dispatch
+    self.dispatch_energy()
+
+    # Calculate renewable supply
     if self.photovoltaic_panel:
       pv_meet = self.photovoltaic_panel.meet_demand
     else:
@@ -362,24 +373,14 @@ class Microgrid:
       bat_meet = self.battery.meet_demand
     else:
       bat_meet = 0
-    self.rsc = np.sum(pv_meet + wt_meet + bat_meet) / np.sum(self.energy_generated)
-
-  def run(self) -> npt.NDArray[np.floating]:
-    ''' Runs the Microgrid simulation. '''
-
-    # Initialize the microgrid components
-    self.initialize()
-    # Generates energy by generators
-    self.generate_energy()
-    # Simulates the energy dispatch
-    self.dispatch_energy()
+    renewable_supply = np.sum(pv_meet + wt_meet + bat_meet)
 
     # Performs economic analysis
     self.economic_analysis()
     # Calculate the Renewable Factor
-    self.calculate_renewable_factor()
+    self.calculate_renewable_factor(renewable_supply)
     # Calculate the Renewable Self-Consumption Ratio
-    self.calculate_renewable_self_consumption_ratio()
+    self.calculate_renewable_self_consumption_ratio(renewable_supply)
     # Return the Levelized Cost of Energy (LCOE) in $/kWh, Renewable Factor (RF) and Renewable Self-Consumption Ratio (RSC)
     return np.array([self.lcoe, self.rf, self.rsc])
 
@@ -396,13 +397,14 @@ class Microgrid:
       'Wind Turbine Generation [kWh]': self.wind_turbine.output_power if self.wind_turbine else 0.0,
       'Photovoltaic Panel Supply [kWh]': self.photovoltaic_panel.meet_demand if self.photovoltaic_panel else 0.0,
       'Wind Turbine Supply [kWh]': self.wind_turbine.meet_demand if self.wind_turbine else 0.0,
-      'Battery State of Charge [kWh]': self.battery.state_of_charge if self.battery else 0.0,
+      'Battery Energy Level [kWh]': self.battery.energy_level if self.battery else 0.0,
       'Battery Charge [kWh]': self.battery.energy_charged if self.battery else 0.0,
       'Battery Discharge [kWh]': self.battery.energy_discharged if self.battery else 0.0,
       'Battery Supply [kWh]': self.battery.meet_demand if self.battery else 0.0,
-      'Energy Purchased [kWh]': self.utility_grid.energy_purchased if self.utility_grid else 0.0,
-      'Energy Credited [kWh]': self.utility_grid.energy_credited if self.utility_grid else 0.0,
-      'Energy Compensated [kWh]': self.utility_grid.energy_compensated if self.utility_grid else 0.0,
+      'Purchased Energy [kWh]': self.utility_grid.purchased_energy if self.utility_grid else 0.0,
+      'Exported Energy [kWh]': self.utility_grid.exported_energy if self.utility_grid else 0.0,
+      'Released Credit [kWh]': self.utility_grid.released_credit if self.utility_grid else 0.0,
+      'Compensated Energy [kWh]': self.utility_grid.compensated_energy if self.utility_grid else 0.0,
       'Energy Surplus [kWh]': self.surplus_energy
     })
 

@@ -1,30 +1,35 @@
+import random
+from collections.abc import Callable
+from types import MethodType
+
+import numpy as np
+from joblib import Parallel, delayed
+from numpy.typing import NDArray
+from pygmo import (
+    crowding_distance,  # type: ignore
+    fast_non_dominated_sorting,  # type: ignore
+    select_best_N_mo,  # type: ignore
+)
+from tqdm import tqdm
+
+from .auxiliar import PreAllocated, StoppingAlgorithm
 from .operations.differential_crossover import get_differential_crossover
 from .operations.differential_mutation import get_differential_mutation
 from .operations.differential_mutation_pool import get_differential_mutation_pool
 from .operations.global_guide_method import get_global_guide_method
-from .parameters import MeshParameters
-from .particles import Population, Memory
-from .auxiliar import PreAllocated, StoppingAlgorithm
-from .validations.python_validations import assert_type, is_greater_in_type, is_function
+from .parameters import AMESHParameters
+from .particles import Memory, Population
+from .validations.python_validations import assert_type, is_function, is_greater_in_type
 
-from joblib import Parallel, delayed
-from numpy.typing import NDArray
-from pygmo import fast_non_dominated_sorting, select_best_N_mo, crowding_distance # type: ignore
-from tqdm import tqdm
-from types import MethodType
-from typing import Callable, Optional
 
-import numpy as np
-import random
-
-class Mesh():
-    ''' MESH algorithm.
+class AMESH:
+    '''A-MESH algorithm.
     
     Args:
-        params (:class:`~mesh.parameters.MeshParameters`): MESH parameters.
+        params (:class:`~amesh.parameters.AMESHParameters`): A-MESH parameters.
         fitness_function (:type:`Callable[[NDArray[np.number]], NDArray[np.number]]`): A fitness function that returns a numpy vector with each objective value in the respective component.
-        log_memory (:type:`str | None`): A string to log the memory. If its value is ``None``, then the memory location and fitness will not be logged in a file.
-        num_proc (:type:`int | None`): Number of processes to execute the fitness function in parallel. If it is ``None``, so the fitness function will execute sequentially.
+        log_memory (:type:`str | None`): Path used to log the memory. If ``None``, memory positions and fitness values are not written to a file.
+        num_proc (:type:`int | None`): Number of processes used to evaluate the fitness function. If ``None``, evaluations are performed sequentially.
     
     Raises:
         TypeError: If the input is not the expected type.
@@ -35,17 +40,17 @@ class Mesh():
     '''
 
     def __init__(self,
-                params: MeshParameters,
+                params: AMESHParameters,
                 fitness_function: Callable[[NDArray[np.number]], NDArray[np.number]],
-                log_memory: Optional[str] = None,
-                num_proc: Optional[int] = None):
+                log_memory: str | None = None,
+                num_proc: int | None = None):
         
-        self.params: MeshParameters
-        ''' Mesh parameters. '''
+        self.params: AMESHParameters
+        '''A-MESH parameters.'''
         self.global_guide_method: Callable[[], None]
         ''' Function to find the global guides for the particles. '''
         self.differential_mutation_pool: Callable[[], tuple[NDArray[np.number], list[NDArray[np.intp]]]]
-        ''' Function to make the Differential Mutation pool where the solutions are samppled. '''
+        '''Function that builds the pool from which solutions are sampled for differential mutation.'''
         self.differential_mutation: Callable[[tuple[NDArray[np.number], list[NDArray[np.intp]]]], tuple[NDArray[np.number], NDArray[np.intp]]]
         ''' Function to do the Differential Mutation operation. '''
         self.differential_crossover: Callable[[NDArray[np.number], NDArray[np.number], NDArray[np.number]], NDArray[np.number]]
@@ -57,21 +62,21 @@ class Mesh():
         self.fitness_function: Callable[[NDArray[np.number]], NDArray[np.number]]
         ''' Fitness function. '''
         self.generation_counter: int
-        ''' Generation counter. Used to stop the algorithm if its value is greater than 0. '''
+        '''Number of generations initialized or completed during the current run.'''
         self.fitness_eval_counter: int
-        ''' Fitness evaluation counter. Used to stop the algorithm if its value is greater than 0. '''
+        '''Number of objective-function evaluations performed during the current run.'''
         self.pre_allocated: PreAllocated
         ''' Pre-allocated data for the algorithm. '''
-        self.log_memory: Optional[str]
-        ''' A string to log the memory. If its value is ``None``, then the memory location and fitness will not be logged in a file. '''
-        self.num_proc: Optional[int]
-        ''' Number of processes to execute the fitness function in parallel. If it is ``None``, so the fitness function will execute sequentially. '''
+        self.log_memory: str | None
+        '''Path used to log memory positions and fitness values, or ``None`` to disable logging.'''
+        self.num_proc: int | None
+        '''Number of processes used for fitness evaluations, or ``None`` for sequential execution.'''
         self.evaluation_way: Callable[[NDArray[np.number]], NDArray[np.number]]
-        ''' The way to evaluate the fitness function. It can be sequentially or parallelly. If :attr:`num_proc` is not None, so the fitness evaluations will be parallel with :attr:`num_proc` processes. '''
+        '''Fitness-evaluation strategy. Evaluations use :attr:`num_proc` processes when that attribute is not ``None``; otherwise, they are sequential.'''
         self.evaluate: Callable[[NDArray[np.number]], NDArray[np.number]]
-        ''' Function for fitness evaluations. If :attr:`~mesh.parameters.MeshParameters.max_fit_eval` is not None, so the fitness evaluations will be counted. '''
+        '''Fitness-evaluation function. Evaluations are counted when :attr:`~amesh.parameters.AMESHParameters.max_fit_eval` is not ``None``.'''
         self.count_generation: Callable[[], None]
-        ''' Function to count generations. Only used if :attr:`~mesh.parameters.MeshParameters.max_gen` is not None. '''
+        ''' Function to count generations. Only used if :attr:`~amesh.parameters.AMESHParameters.max_gen` is not None. '''
         self.algorithm_progress: int = 0
         ''' Current algorithm progress counter. '''
         self.max_algorithm_progress: int
@@ -80,7 +85,7 @@ class Mesh():
         ''' Function to update the algorithm progress. '''
 
         # Receive the algorithm parameters
-        assert_type(params, 'params', MeshParameters)
+        assert_type(params, 'params', AMESHParameters)
         self.params = params
         # Chosing the operations just one time
         self.global_guide_method = MethodType(get_global_guide_method(params.global_guide_method), self)
@@ -131,17 +136,17 @@ class Mesh():
             self.max_algorithm_progress = min(params.population_size*(2*params.max_gen+1), params.max_fit_eval)
 
     def initialize(self):
-        ''' Initializes the MESH with some initial operations. It initializes the population, memory and personal guide fitness, does initial fitness evaluations and calculates the domination fronts. '''
+        '''Initializes A-MESH by creating the population, memory, and personal-guide fitness values, evaluating the initial population, and calculating the non-dominated fronts.'''
 
         # Evaluate the initial population
         self.population.fitness[:] = self.evaluate(self.population.position)
-        # Update MESH memory
-        self.update_mesh_memory()
+        # Update A-MESH memory
+        self.update_amesh_memory()
         # Repeat the population fitness for all personal guide input
         self.population.personal_guide_fit[:, :, :] = np.repeat(self.population.fitness[:, np.newaxis, :], self.params.max_personal_guides, axis=1)
 
     def sequential_fitness_evaluation(self, X: NDArray[np.number]) -> NDArray[np.number]:
-        ''' Evaluates the fitness given a particle position matrix sequentially.
+        '''Evaluates the fitness of a particle-position matrix sequentially.
         
         Args:
             X (:type:`NDArray[np.number]`): A numpy matrix with the particle positions.
@@ -154,7 +159,7 @@ class Mesh():
         return np.array([self.fitness_function(x) for x in decision_varibles])
 
     def parallel_fitness_evaluation(self, X: NDArray[np.number]) -> NDArray[np.number]:
-        ''' Evaluates the fitness given a particle position matrix parallelly.
+        '''Evaluates the fitness of a particle-position matrix in parallel.
         
         Args:
             X (:type:`NDArray[np.number]`): A numpy matrix with the particle positions.
@@ -278,7 +283,7 @@ class Mesh():
         parameter[parameter > upper] = upper
 
     def differential_evolution(self) -> None:
-        r''' Generates solutions by Differential Evolution algorithm according to a differential mutation strategy decided by :attr:`~mesh.parameters.MeshParameters.dm_operation_type`, with solutions sampled in a pool decided by :attr:`~mesh.parameters.MeshParameters.dm_pool_type`. When new solutions are generated, an elitism is performed to update the position of the current population's less promising solutions.
+        r'''Generates solutions with Differential Evolution according to the mutation strategy selected by :attr:`~amesh.parameters.AMESHParameters.dm_operation_type`, using the sampling pool selected by :attr:`~amesh.parameters.AMESHParameters.dm_pool_type`. Elitist selection then replaces less promising members of the current population with successful generated solutions.
         
         Note:
             The criteria for the best elitism solutions are the same as those for the method :meth:`elitism`.
@@ -331,9 +336,9 @@ class Mesh():
 
         .. math::
                 
-            \tilde{x}_{gb} = x_{gb} + \tau_{mut} \cdot \vec{r},
+            \tilde{x}_{gb} = x_{gb} + \tau_{mut} \cdot \vec{r}, \quad \vec{r} \sim \mathcal{N}(\vec{0}, I),
             
-        where :math:`\vec{r}` is calculated as a decision variable.
+        where :math:`I` is the identity matrix.
         '''
         
         pop_size = self.params.population_size
@@ -347,8 +352,10 @@ class Mesh():
             (0., 1.)
         )
         # Mutate the global guides
+        bound_scale = self.params.decision_upper_bounds - self.params.decision_lower_bounds
+        random_noise = np.random.normal(0, 1, (pop_size, decision_dim))
         np.clip(
-            self.population.global_guide + np.random.normal(0, 1, (pop_size, decision_dim)) * self.params.SWARM_mutation_scale[:, np.newaxis],
+            self.population.global_guide + self.params.SWARM_mutation_scale[:, np.newaxis] * random_noise * bound_scale,
             self.params.decision_lower_bounds,
             self.params.decision_upper_bounds,
             out=self.pre_allocated.global_guide_mutated
@@ -358,7 +365,7 @@ class Mesh():
                             pop_promising_position: NDArray[np.number],
                             survival_position: NDArray[np.number],
                             pop_promising_idxs: NDArray[np.intp]) -> None:
-        r''' Updates the swarm historical means using successful offspring. The inetia, assimilation and communication weights, and mutation rate are updated using a weighted Lehmer mean, while the communcation probability is updated using a weighted arithmetic mean.
+        r'''Updates the swarm historical means using successful offspring. The inertia, assimilation, and communication weights and the mutation rate are updated using a weighted Lehmer mean, while the communication probability is updated using a weighted arithmetic mean.
         
         Args:
             pop_promising_position (:type:`NDArray[np.number]`): Matrix containing the original decision vectors associated with the successful offspring. Its shape must be ``(n_success, decision_dim)``.
@@ -392,7 +399,7 @@ class Mesh():
         self.params.SWARM_memory[k, 4] = mean_mutation_rate
 
     def move_population(self) -> None:
-        r''' Applies the equation of motion to the copy particles. The MESH equation of motion is given by:
+        r'''Applies the A-MESH equation of motion to the copied particles:
         
         .. math::
 
@@ -458,7 +465,7 @@ class Mesh():
         F_copy[:] = self.evaluate(X_copy)
     
     def elitism(self) -> NDArray[np.intp]:
-        ''' Selects the best particles from the previous (before applying the equation of motion) and current populations (after applying the equation of motion). The top :attr:`~mesh.parameters.MeshParameters.population_size` particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
+        ''' Selects the best particles from the previous (before applying the equation of motion) and current populations (after applying the equation of motion). The top :attr:`~amesh.parameters.AMESHParameters.population_size` particles, i.e., those with the lowest domination rank, are chosen. In case of a tie, particles with the largest crowding distance are selected.
         
         Note:
             The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with rank zero.
@@ -492,14 +499,18 @@ class Mesh():
         return best_copy_idxs
 
     def update_personal_guides(self) -> None:
-        ''' Updates the personal guides of the population particles.
+        ''' Updates the personal-guide memories of the population particles.
 
-        Note:
-            There is three cases to update the personal guides:
+            Notes:
+                Each particle maintains a fixed-size ordered memory of personal guides, where index 0 corresponds to the most recently accepted guide The memory is updated according to the following rules:
 
-            - When the current particle is dominated by any of its personal guide, the current particle is ignored;
-            - When the current particle dominates a personal guide, the current particle replaces the dominated personal guide. This replacement is done for all dominated personal guides, so the more the current particle dominates its personal guides, the more chance it has of being sampled in :meth:`move_population`;
-            - When the current particle don't dominate and is not dominated by any personal guide, the current particle is added to the personal guide matrix. The oldest personal guide is removed when the current particle is only added.
+                1. If the current particle is Pareto-dominated by at least one personal guide, the memory remains unchanged.
+
+                2. Otherwise, the current particle is inserted at the beginning of the memory. The existing guides are shifted one position toward the end of the list, and the oldest guide is discarded.
+
+                3. After insertion, every retained personal guide that is Pareto-dominated by the current particle is replaced by a copy of the current particle.
+
+                Therefore, a promising current particle may occupy multiple positions in the personal-guide memory. Since personal guides are sampled uniformly during the movement operation, these repeated entries implicitly reinforce particles that dominate previously stored guides without introducing an additional selection parameter.
         '''
 
         # Get the population fitness as a tensor
@@ -507,25 +518,24 @@ class Mesh():
         # Get the personal guide fitness
         pb_fitness = self.population.personal_guide_fit
         # Get the mask to update the personal guide
-        update_mask = ~np.all(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
+        update_mask = ~np.any(self.dominates(pb_fitness, fitness_tensor, axis=2), axis=1)
         update_idxs = np.flatnonzero(update_mask)
+        # Delete the last personal guide and include the current particle as a new personal guide
+        self.population.personal_guide_fit[update_idxs, 1:, :] = self.population.personal_guide_fit[update_idxs, :-1, :]
+        self.population.personal_guide_pos[update_idxs, 1:, :] = self.population.personal_guide_pos[update_idxs, :-1, :]
+        # Update the personal guide list by adding the current particle as a new personal guide
+        self.population.personal_guide_fit[update_idxs, 0, :] = self.population.fitness[update_idxs, :]
+        self.population.personal_guide_pos[update_idxs, 0, :] = self.population.position[update_idxs, :]
         # Get the mask to replace the personal guide dominated by the current particle
-        replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask], axis=2)
+        replace_mask = self.dominates(fitness_tensor[update_mask], pb_fitness[update_mask, 1:, :], axis=2)
         # Replace the dominated personal guide by the current particle
         replace_row, replace_col = np.nonzero(replace_mask)
         particle_to_replace_pb = update_idxs[replace_row]
-        self.population.personal_guide_fit[particle_to_replace_pb, replace_col, :] = self.population.fitness[particle_to_replace_pb, :]
-        self.population.personal_guide_pos[particle_to_replace_pb, replace_col, :] = self.population.position[particle_to_replace_pb, :]
-        # Get the mask to add the current to the personal guide list
-        add_idxs = update_idxs[~np.any(replace_mask, axis=1)]
-        # Delete the oldest personal guide and include the current particle as a new personal guide
-        self.population.personal_guide_fit[add_idxs, 1:, :] = self.population.personal_guide_fit[add_idxs, :-1, :]
-        self.population.personal_guide_pos[add_idxs, 1:, :] = self.population.personal_guide_pos[add_idxs, :-1, :]
-        # Update the personal guide list by adding the current particle as a new personal guide
-        self.population.personal_guide_fit[add_idxs, 0, :] = self.population.fitness[add_idxs, :]
-        self.population.personal_guide_pos[add_idxs, 0, :] = self.population.position[add_idxs, :]
+        pb_to_replace = replace_col + 1
+        self.population.personal_guide_fit[particle_to_replace_pb, pb_to_replace, :] = self.population.fitness[particle_to_replace_pb, :]
+        self.population.personal_guide_pos[particle_to_replace_pb, pb_to_replace, :] = self.population.position[particle_to_replace_pb, :]
 
-    def update_mesh_memory(self) -> None:
+    def update_amesh_memory(self) -> None:
         ''' Updates the memory position and fitness faster using position and fitness numpy matrices from population. '''
         
         # Get the unique positions from the population positions and the memory
@@ -550,7 +560,7 @@ class Mesh():
             self.memory.position = unique_pop_positions[memory_pareto_idxs[idxs]]
             self.memory.fitness = selected_fitness[idxs]
 
-    def generic_update_mesh_memory(self, position_matrix: NDArray[np.number], fitness_matrix: NDArray[np.number]) -> None:
+    def generic_update_amesh_memory(self, position_matrix: NDArray[np.number], fitness_matrix: NDArray[np.number]) -> None:
         ''' Updates the memory position and fitness using a position and fitness numpy matrices.
         
         Args:
@@ -582,7 +592,7 @@ class Mesh():
             self.memory.fitness = selected_fitness[idxs]
 
     def run(self):
-        ''' This method runs the MESH algorithm. It stops when the maximum number of generations and/or fitness evaluations is reached. '''
+        '''Runs A-MESH until the maximum number of generations or fitness evaluations is reached.'''
 
         # Start the progress bars
         with tqdm(total=self.max_algorithm_progress, leave=False) as pbar:
@@ -596,7 +606,7 @@ class Mesh():
                     # Calculate Xst for each particle
                     self.differential_evolution()
                     # Update the memory
-                    self.update_mesh_memory()
+                    self.update_amesh_memory()
                     # Update the personal guides
                     self.update_personal_guides()
                     # Update global guides
@@ -615,18 +625,18 @@ class Mesh():
                     self.update_swarm_memory(self.population.position[best_copy_idxs],
                                              self.pre_allocated.position_copy[best_copy_idxs],
                                              best_copy_idxs)
-                    # Update MESH memory
-                    self.update_mesh_memory()
+                    # Update A-MESH memory
+                    self.update_amesh_memory()
                     # Update the algorithm progress
                     self.algorithm_progress = self.update_algorithm_progress(pbar, self.algorithm_progress)
-                    # Upgrade hyperparameter last index
+                    # Update hyperparameter last index
                     self.params.hyperparameter_last_index += 1
                     if self.params.hyperparameter_last_index >= self.params.hyperparameter_memory_length:
                         self.params.hyperparameter_last_index = 0
             # The end of the algorithm
             except StoppingAlgorithm as stop:
-                # Updated the memory
-                self.generic_update_mesh_memory(stop.position, stop.fitness)
+                # Update the memory
+                self.generic_update_amesh_memory(stop.position, stop.fitness)
                 # Log the memory if it is necessary
                 self.logging()
 
@@ -662,7 +672,7 @@ class Mesh():
         ''' Counts generations if it is a stopping criterion.
         
         Raises:
-            :class:`~mesh.utils.auxiliar.StoppingAlgorithm`: If the number of generations is greater than the maximum number of generations.    
+            :class:`~amesh.utils.auxiliar.StoppingAlgorithm`: If the number of generations is greater than the maximum number of generations.    
         '''
 
         self.generation_counter += 1
@@ -680,7 +690,7 @@ class Mesh():
             :type:`NDArray[np.number]`: The fitness matrix.
         
         Raises:
-            :class:`~mesh.utils.auxiliar.StoppingAlgorithm`: If the number of fitness evaluations is greater than the maximum number of fitness evaluations.    
+            :class:`~amesh.utils.auxiliar.StoppingAlgorithm`: If the number of fitness evaluations is greater than the maximum number of fitness evaluations.    
         '''
 
         # Get the size of the position matrix
@@ -715,28 +725,26 @@ class Mesh():
 
         if self.log_memory is not None:
             # Log the fitness
-            file = open(self.log_memory+"-fit.txt","a+")
-            memory_fitness = ""
-            for fit in self.memory.fitness:
-                string = ""
-                for i in range(self.params.objective_dim):
-                    string += str(fit[i]) + " "
-                string = string[:-1]
-                memory_fitness += string + ", "
-            memory_fitness = memory_fitness[:-2]
-            memory_fitness += "\n"
-            file.write(memory_fitness)
-            file.close()
+            with open(self.log_memory+"-fit.txt","a+") as file:
+                memory_fitness = ""
+                for fit in self.memory.fitness:
+                    string = ""
+                    for i in range(self.params.objective_dim):
+                        string += str(fit[i]) + " "
+                    string = string[:-1]
+                    memory_fitness += string + ", "
+                memory_fitness = memory_fitness[:-2]
+                memory_fitness += "\n"
+                file.write(memory_fitness)
             # Log the position
-            file2 = open(self.log_memory + "-pos.txt", "a+")
-            memory_position = ""
-            for pos in self.memory.position:
-                string = ""
-                for i in range(self.params.decision_dim):
-                    string += str(pos[i])+" "
-                string = string[:-1]
-                memory_position += string + ", "
-            memory_position = memory_position[:-2]
-            memory_position += "\n"
-            file2.write(memory_position)
-            file2.close()
+            with open(self.log_memory + "-pos.txt", "a+") as file:
+                memory_position = ""
+                for pos in self.memory.position:
+                    string = ""
+                    for i in range(self.params.decision_dim):
+                        string += str(pos[i])+" "
+                    string = string[:-1]
+                    memory_position += string + ", "
+                memory_position = memory_position[:-2]
+                memory_position += "\n"
+                file.write(memory_position)

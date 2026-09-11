@@ -1,43 +1,48 @@
-from .operations.differential_mutation_pool import differential_mutation_pool_options
-from .operations.differential_mutation import differential_mutation_options
-from .operations.global_guide_method import global_guide_method_options
-from .validations.numpy_validations import assert_np_array_for_operations, assert_np_vectors_for_boundary
-from .validations.python_validations import assert_type, is_greater_in_type, is_in_options
-
-from numpy.typing import NDArray
-from typing import Optional
-
 import numpy as np
 
-class MeshParameters:
-    ''' MESH parameters.
+from .operations.differential_mutation import differential_mutation_options
+from .operations.differential_mutation_pool import differential_mutation_pool_options
+from .operations.global_guide_method import global_guide_method_options
+from .validations.numpy_validations import (
+    assert_np_array_for_operations,
+    assert_np_vectors_for_boundary,
+)
+from .validations.python_validations import (
+    assert_type,
+    is_greater_in_type,
+    is_in_options,
+)
+
+
+class AMESHParameters:
+    '''A-MESH parameters.
     
     Args:
         objective_dim (:type:`int`): Number of problem objectives. Must be a positive integer (> 0).
 
         decision_dim (:type:`int`): Number of problem variables. Must be a positive integer (> 0).
 
-        decision_lower_bounds (:type:`numpy.ndarray[np.floating]`): A array with each lower bounds of the decision variables. Must be a numpy array of numbers (without NaN values) and size equals to ``decision_dim``. Each element must be less than the respective element from ``decision_upper_bounds``.
+        decision_lower_bounds (:type:`numpy.typing.NDArray[numpy.floating]`): Array containing the lower bound of each decision variable. It must contain numeric values without NaNs, have length ``decision_dim``, and be component-wise smaller than ``decision_upper_bounds``.
 
-        decision_upper_bounds (:type:`numpy.ndarray[np.floating]`): A array with each upper bounds of the decision variables. Must be a numpy array of numbers (without NaN values) and size equals to ``decision_dim``. Each element must be greater than the respective element from ``decision_lower_bounds``.
+        decision_upper_bounds (:type:`numpy.typing.NDArray[numpy.floating]`): Array containing the upper bound of each decision variable. It must contain numeric values without NaNs, have length ``decision_dim``, and be component-wise greater than ``decision_lower_bounds``.
             
         population_size (:type:`int`): Population size. Must be a positive integer (> 0).
         
-        global_guide_method (:type:`int`): Method to select the global guide of the particles. See :attr:`~mesh.operations.global_guide_method.global_guide_method_options`.
+        global_guide_method (:type:`int`): Method to select the global guide of the particles. See :attr:`~amesh.operations.global_guide_method.global_guide_method_options`.
         
-        dm_pool_type (:type:`int`): Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
+        dm_pool_type (:type:`int`): Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~amesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
     
-        dm_operation_type (:type:`int`): Differential mutation operation type. See :attr:`~mesh.operations.differential_mutation.differential_mutation_options`.
+        dm_operation_type (:type:`int`): Differential mutation operation type. See :attr:`~amesh.operations.differential_mutation.differential_mutation_options`.
         
-        max_gen (:type:`typing.Optional[int]`): Maximum number of generations. Must be a positive integer (> 0) or ``None``.
+        max_gen (:type:`int | None`): Maximum number of generations. Must be a positive integer (> 0) or ``None``.
         
-        max_fit_eval (:type:`typing.Optional[int]`): Maximum number of fitness evaluations. Must be a positive integer (> 0) or ``None``.
+        max_fit_eval (:type:`int | None`): Maximum number of fitness evaluations. Must be a positive integer (> 0) or ``None``.
         
         max_personal_guides (:type:`int`): Maximum number of personal guides. Must be a positive integer (> 0).
 
-        initial_poinitial_pointsitions (:type:`typing.Optional[NDArray[np.number]]`): The initial particle points. If it is None, the initial points are sampled.
+        initial_points (:type:`numpy.typing.NDArray[numpy.number] | None`): Optional initial particle positions with shape ``(population_size, decision_dim)``. Every position must lie within the decision bounds. If ``None``, the positions are sampled automatically.
 
-        random_state (:type:`typing.Optional[int]`): Numpy random seed to generate random numbers. Default is None. Must be an integer (> 0) or ``None``.
+        random_state (:type:`int | None`): Optional NumPy random seed. The default is ``None``.
 
     Raises:
         TypeError: If the input is not the expected type.
@@ -47,34 +52,34 @@ class MeshParameters:
     def __init__(self,
                  objective_dim: int,
                  decision_dim: int,
-                 decision_lower_bounds: NDArray[np.floating],
-                 decision_upper_bounds: NDArray[np.floating],
+                 decision_lower_bounds: np.typing.NDArray[np.floating],
+                 decision_upper_bounds: np.typing.NDArray[np.floating],
                  population_size: int,
                  global_guide_method: int = 0,
                  dm_pool_type: int = 0,
                  dm_operation_type: int = 0,
-                 max_gen: Optional[int] = None,
-                 max_fit_eval: Optional[int] = None,
+                 max_gen: int | None = None,
+                 max_fit_eval: int | None = None,
                  max_personal_guides: int = 1,
-                 initial_points: Optional[NDArray[np.number]] = None,
-                 random_state: Optional[int] = None):
+                 initial_points: np.typing.NDArray[np.number] | None = None,
+                 random_state: int | None = None):
         
         self.objective_dim: int
         ''' Number of problem objectives. '''
         self.decision_dim: int
         ''' Number of problem variables. '''
-        self.decision_lower_bounds: NDArray[np.floating]
+        self.decision_lower_bounds: np.typing.NDArray[np.floating]
         ''' Numpy array with the lower bounds of the problem for each decision variable. '''
-        self.decision_upper_bounds: NDArray[np.floating]
+        self.decision_upper_bounds: np.typing.NDArray[np.floating]
         ''' Numpy array with the upper bounds of the problem for each decision variable. '''
-        self.velocity_upper_bounds: NDArray[np.floating]
-        ''' Numpy array with the upper bounds of the velocity calculated by:
+        self.velocity_upper_bounds: np.typing.NDArray[np.floating]
+        '''NumPy array containing the upper velocity bounds, calculated as:
 
         .. math::
             V_{max} = X_{max} - X_{min}.
-        s'''
-        self.velocity_lower_bounds: NDArray[np.floating]
-        ''' Numpy array with the upper bounds of the velocity calculated by:
+        '''
+        self.velocity_lower_bounds: np.typing.NDArray[np.floating]
+        '''NumPy array containing the lower velocity bounds, calculated as:
 
         .. math::
             V_{min} = X_{min} - X_{max}.
@@ -82,41 +87,41 @@ class MeshParameters:
         self.population_size: int
         ''' Number of particles. '''
         self.global_guide_method: int
-        ''' Global best selection method. See :attr:`~mesh.operations.global_guide_method.global_guide_method_options` '''
+        ''' Global best selection method. See :attr:`~amesh.operations.global_guide_method.global_guide_method_options` '''
         self.dm_pool_type: int
-        ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options` '''
+        ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~amesh.operations.differential_mutation_pool.differential_mutation_pool_options` '''
         self.dm_operation_type: int
-        ''' Differential mutation operation. See :attr:`~mesh.operations.differential_mutation.differential_mutation_options`. '''
+        ''' Differential mutation operation. See :attr:`~amesh.operations.differential_mutation.differential_mutation_options`. '''
         self.max_gen: int
         ''' Maximum number of generations. It won't be used if it's ``None``. '''
         self.max_fit_eval: int
         ''' Maximum number of fitness evaluations. It won't be used if it's ``None``. '''
         self.max_personal_guides: int
         ''' Maximum number of personal guides. '''
-        self.initial_points: Optional[NDArray[np.number]]
+        self.initial_points: np.typing.NDArray[np.number] | None
         ''' The initial points of the particles. '''
         self.random_state: int | None
         ''' Seed to generate random numbers. '''
         
         self.shade_scale: float = 0.316227766
         ''' SHADE scale for hyperparameters. '''
-        self.DE_F: NDArray[np.floating]
+        self.DE_F: np.typing.NDArray[np.floating]
         ''' DE scaling factor. '''
-        self.DE_CR: NDArray[np.floating]
+        self.DE_CR: np.typing.NDArray[np.floating]
         ''' DE crossover rate. '''
-        self.SWARM_W: NDArray[np.floating]
+        self.SWARM_W: np.typing.NDArray[np.floating]
         ''' Swarm weights. '''
-        self.SWARM_Pcom: NDArray[np.floating]
+        self.SWARM_Pcom: np.typing.NDArray[np.floating]
         ''' Swarm probability communication '''
-        self.SWARM_mutation_scale: NDArray[np.floating]
+        self.SWARM_mutation_scale: np.typing.NDArray[np.floating]
         ''' Swarm mutation rate. '''
         self.hyperparameter_last_index: int = 0
         ''' Index for the last position of hyperparameter memories. '''
         self.hyperparameter_memory_length: int = 5
         ''' Length of the success-history memories used by the DE and swarm adaptive parameters. '''
-        self.DE_memory: NDArray[np.floating] = np.full((self.hyperparameter_memory_length, 2), 0.5)
+        self.DE_memory: np.typing.NDArray[np.floating] = np.full((self.hyperparameter_memory_length, 2), 0.5)
         ''' DE historical mean of hyperparameters. Stores F first and then CR historical means. '''
-        self.SWARM_memory: NDArray[np.floating] = np.full((self.hyperparameter_memory_length, 5), 0.5)
+        self.SWARM_memory: np.typing.NDArray[np.floating] = np.full((self.hyperparameter_memory_length, 5), 0.5)
         ''' Success-history memory of the swarm adaptive hyperparameters. The columns store, respectively: inertia weight, assimilation weight, communication weight, communication probability, and global-guide mutation scale. '''
 
         # Set the number of objectives

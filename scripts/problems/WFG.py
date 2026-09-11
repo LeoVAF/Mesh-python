@@ -1,24 +1,26 @@
-from pygmo import fast_non_dominated_sorting # type: ignore
+import numpy as np
+from joblib import Parallel, delayed
+from pygmo import (
+  fast_non_dominated_sorting,  # type: ignore
+  problem,  # type: ignore
+  wfg,  # type: ignore
+)
 from pymoo.algorithms.moo.ctaea import CTAEA
 from pymoo.algorithms.moo.moead import MOEAD
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.algorithms.moo.nsga3 import NSGA3
 from pymoo.algorithms.moo.sms import SMSEMOA
+from pymoo.optimize import minimize
 from pymoo.problems.many.wfg import WFG1, WFG2, WFG3, WFG4, WFG5, WFG6, WFG7, WFG8, WFG9
 from pymoo.util.ref_dirs import get_reference_directions
-from pymoo.optimize import minimize
 
-from joblib import Parallel, delayed
-from pygmo import problem, wfg # type: ignore
-
-import numpy as np
 
 ################################ Auxiliar Functions ################################
 def normalize(z, n_var):
   return z / (np.arange(1, n_var + 1) * 2)
 
 def calculate_x(t, A):
-  x = np.empty((t.shape[0]))
+  x = np.empty(t.shape[0])
   x[:-1] = np.maximum(t[-1], A) * (t[:-1] - 0.5) + 0.5
   x[-1] = t[-1]
   return x
@@ -52,7 +54,7 @@ def wfg4(z, n_obj, k):
   t1 = s_multi(z_normalized, 30, 10, 0.35)
   var_step = k // (n_obj-1)
   w = np.ones(var_step)
-  t2 = np.empty((n_obj))
+  t2 = np.empty(n_obj)
   for i in range(n_obj-1):
     t2[i] = r_sum(t1[i*var_step:(i+1)*var_step], w)
   t2[-1] = r_sum(t1[k:], np.ones(n_var-k))

@@ -1,8 +1,8 @@
-from mesh import Mesh
-from mesh.operations import differential_mutation_pool as dmp
-from mesh.parameters import MeshParameters
-
 import numpy as np
+
+from amesh import AMESH
+from amesh.operations import differential_mutation_pool as dmp
+from amesh.parameters import AMESHParameters
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
@@ -21,43 +21,43 @@ def toy_function(x):
   return np.random.rand(objective_dim)
 
 def test_pool_from_population():
-  # Initialize a random Mesh instance
-  test_params = MeshParameters(objective_dim=objective_dim,
+  # Initialize a random AMESH instance
+  test_params = AMESHParameters(objective_dim=objective_dim,
                           decision_dim=decision_dim, decision_lower_bounds=lower_bound, decision_upper_bounds=upper_bound, 
                           population_size=population_size,
                           dm_pool_type=1,
                           max_gen=max_gen, max_fit_eval=max_fit_eval,
                           max_personal_guides=max_personal_guides,
                           random_state=random_state)
-  mesh = Mesh(test_params, toy_function, log_memory=None)
+  amesh = AMESH(test_params, toy_function, log_memory=None)
 
   # Initialize the algorithm
-  mesh.initialize()
+  amesh.initialize()
 
   # Get the pool list
-  pool, pool_idxs = dmp.pool_from_population(mesh)
+  pool, pool_idxs = dmp.pool_from_population(amesh)
 
   # Check if each particle or personal best position in the respective particle pool is not in the pool
   for i, idxs in enumerate(pool_idxs):
-    assert all([not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs])
+    assert all(not np.array_equal(amesh.population.position[i], pool[idx]) for idx in idxs)
 
 def test_pool_from_memory():
-  # Initialize a random Mesh instance
-  test_params = MeshParameters(objective_dim=objective_dim,
+  # Initialize a random AMESH instance
+  test_params = AMESHParameters(objective_dim=objective_dim,
                           decision_dim=decision_dim, decision_lower_bounds=lower_bound, decision_upper_bounds=upper_bound, 
                           population_size=population_size,
                           dm_pool_type=0,
                           max_gen=max_gen, max_fit_eval=max_fit_eval,
                           max_personal_guides=max_personal_guides,
                           random_state=random_state)
-  mesh = Mesh(test_params, toy_function, log_memory=None)
+  amesh = AMESH(test_params, toy_function, log_memory=None)
 
   # Initialize the algorithm
-  mesh.initialize()
+  amesh.initialize()
 
   # Get the pool list
-  pool, pool_idxs = dmp.pool_from_memory(mesh)
+  pool, pool_idxs = dmp.pool_from_memory(amesh)
 
   # Check if each particle or personal best position in the respective particle pool is not in the pool
   for i, idxs in enumerate(pool_idxs):
-    assert all([not np.array_equal(mesh.population.position[i], pool[idx]) for idx in idxs])
+    assert all(not np.array_equal(amesh.population.position[i], pool[idx]) for idx in idxs)

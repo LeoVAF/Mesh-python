@@ -1,8 +1,8 @@
-from mesh import Mesh
-from mesh.operations import global_guide_method as gba
-from mesh.parameters import MeshParameters
-
 import numpy as np
+
+from amesh import AMESH
+from amesh.operations import global_guide_method as gba
+from amesh.parameters import AMESHParameters
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = np.random.randint(2, 101) # Randomly choose objective dimension
@@ -26,8 +26,8 @@ def rank_function(x):
 
 
 def test_sigma_evaluation():
-  # Create a Mesh instance with a toy function
-  test_params = MeshParameters(
+  # Create an AMESH instance with a toy function
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -38,41 +38,41 @@ def test_sigma_evaluation():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(test_params, toy_function)
+  amesh = AMESH(test_params, toy_function)
   
   # Initialize the algorithm
-  mesh.initialize()
+  amesh.initialize()
 
   # Run the global guide search method
-  sigma_arrays = gba.sigma_evaluation(mesh, mesh.population.fitness)
+  sigma_arrays = gba.sigma_evaluation(amesh, amesh.population.fitness)
 
   # Check if the operation is correctly applied
-  for idx, fitness in enumerate(mesh.population.fitness):
+  for idx, fitness in enumerate(amesh.population.fitness):
     fitness_squared_sum = np.sum(fitness ** 2)
     sigma_array = []
     for i in range(1, objective_dim):
-      for j in range(0, i):
+      for j in range(i):
         sigma_array.append(fitness[i] ** 2 - fitness[j] ** 2)
     sigma_array = np.array(sigma_array) / fitness_squared_sum
     # Treating numeric errors
     assert np.linalg.norm(sigma_arrays[idx] - sigma_array) < equal_tolerance_for_array
   
   # Check the case with fitnesses equal to zero
-  sigma_arrays = gba.sigma_evaluation(mesh, np.zeros((population_size, objective_dim)))
+  sigma_arrays = gba.sigma_evaluation(amesh, np.zeros((population_size, objective_dim)))
   for idx in range(population_size):
     sigma_array = []
     for i in range(1, objective_dim):
-      for j in range(0, i):
+      for j in range(i):
         sigma_array.append(0)
     # Treating numeric errors
     assert np.array_equal(sigma_arrays[idx], sigma_array)
 
 
 def test_sigma_method_in_memory():
-  # Create a Mesh instance with a toy function
+  # Create an AMESH instance with a toy function
   steps = np.linspace(0, 1, population_size)
   initial_points = np.hstack((np.array([[steps[i]] for i in range(population_size)]), np.random.rand(population_size, decision_dim-1)))
-  test_params = MeshParameters(
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -85,34 +85,34 @@ def test_sigma_method_in_memory():
     initial_points=initial_points,
     random_state=random_state
   )
-  mesh = Mesh(test_params, toy_function)
+  amesh = AMESH(test_params, toy_function)
   
   # Initialize the algorithm
-  mesh.initialize()
+  amesh.initialize()
 
   # Find the global guide for each particle
-  mesh.global_guide_method()
+  amesh.global_guide_method()
 
   # Check the global guide search
   for idx in range(population_size):
     min_dist = np.inf
-    particle_sigma = mesh.population.sigma[idx]
+    particle_sigma = amesh.population.sigma[idx]
     nearest_idx = None
-    for mem_idx, memory_sigma in enumerate(mesh.memory.sigma):
+    for mem_idx, memory_sigma in enumerate(amesh.memory.sigma):
       dist = np.linalg.norm(particle_sigma - memory_sigma)
       if dist < min_dist and dist != 0:
         nearest_idx = mem_idx
         min_dist = dist
-    assert np.array_equal(mesh.population.global_guide[idx], mesh.memory.position[nearest_idx])
+    assert np.array_equal(amesh.population.global_guide[idx], amesh.memory.position[nearest_idx])
 
 def test_sigma_method_in_fronts():
-  # Create a Mesh instance with a rank function
+  # Create an AMESH instance with a rank function
   steps = np.linspace(0, 1, population_size)
   ranks = [0, 4]
   initial_points = np.hstack((np.array([[ranks[i % len(ranks)]] for i in range(population_size - 1)] + [[2]]),
                               np.array([[steps[i]] for i in range(population_size)]),
                               np.random.rand(population_size, decision_dim-2)))
-  test_params = MeshParameters(
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -125,37 +125,37 @@ def test_sigma_method_in_fronts():
     initial_points=initial_points,
     random_state=random_state
   )
-  mesh = Mesh(test_params, rank_function)
+  amesh = AMESH(test_params, rank_function)
   
   # Initialize the algorithm
-  mesh.initialize()
+  amesh.initialize()
 
   # Find the global guide for each particle
-  mesh.global_guide_method()
+  amesh.global_guide_method()
 
   # Check the global guide from memory
-  mesh_fronts = mesh.get_non_domination_fronts(mesh.population.fitness)
-  for idx in mesh_fronts[0]:
+  amesh_fronts = amesh.get_non_domination_fronts(amesh.population.fitness)
+  for idx in amesh_fronts[0]:
     min_dist = np.inf
-    particle_sigma = mesh.population.sigma[idx]
+    particle_sigma = amesh.population.sigma[idx]
     nearest_idx = None
-    for mem_idx, memory_sigma in enumerate(mesh.memory.sigma):
+    for mem_idx, memory_sigma in enumerate(amesh.memory.sigma):
       dist = np.linalg.norm(particle_sigma - memory_sigma)
       if dist < min_dist and dist != 0:
         nearest_idx = mem_idx
         min_dist = dist
-    assert np.array_equal(mesh.population.global_guide[idx], mesh.memory.position[nearest_idx])
+    assert np.array_equal(amesh.population.global_guide[idx], amesh.memory.position[nearest_idx])
 
   # Check the global guide from fronts
-  for rank in range(1, len(mesh_fronts)):
-    for idx in mesh_fronts[rank]:
+  for rank in range(1, len(amesh_fronts)):
+    for idx in amesh_fronts[rank]:
       min_dist = np.inf
-      particle_sigma = mesh.population.sigma[idx]
+      particle_sigma = amesh.population.sigma[idx]
       nearest_idx = None
-      search_front = mesh_fronts[rank-1]
-      for search_idx, search_sigma in enumerate(mesh.population.sigma[search_front]):
+      search_front = amesh_fronts[rank-1]
+      for search_idx, search_sigma in enumerate(amesh.population.sigma[search_front]):
         dist = np.linalg.norm(particle_sigma - search_sigma)
         if dist < min_dist and dist != 0:
           nearest_idx = search_front[search_idx]
           min_dist = dist
-      assert np.array_equal(mesh.population.global_guide[idx], mesh.population.position[nearest_idx])
+      assert np.array_equal(amesh.population.global_guide[idx], amesh.population.position[nearest_idx])

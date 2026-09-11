@@ -1,4 +1,4 @@
-# Contributing
+# Contributing to A-MESH
 
 Contributions are welcome, and they are greatly appreciated! Every little bit
 helps, and credit will always be given.
@@ -40,30 +40,44 @@ If you are proposing a feature:
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `mesh` for local development.
+Ready to contribute? Follow these steps to set up A-MESH for local development.
 
-1. Download a copy of `mesh` locally.
-
-2. Create and activate a conda environment for `mesh`:
+1. Clone the repository and enter its directory:
 
     ```console
-    $ conda create -n mesh python=3.13
-    $ conda activate mesh
+    git clone https://github.com/LeoVAF/AMesh-python.git AMesh-python
+    cd AMesh-python
     ```
 
-3. Install `mesh` using `poetry`:
+2. Create and activate the complete Conda environment:
 
     ```console
-    $ poetry install
+    conda env create --file environment.yml
+    conda activate amesh
     ```
 
-4. Use `git` (or similar) to create a branch for local development and make your changes:
+   This installs Python 3.11, the runtime dependencies, development tools, and
+   the `amesh` package in editable mode.
+
+3. Create a branch for your changes:
 
     ```console
-    $ git checkout -b name-of-your-bugfix-or-feature
+    git checkout -b name-of-your-bugfix-or-feature
     ```
 
-5. When you're done making changes, check that your changes conform to any code formatting requirements and pass any tests.
+4. Run the test suite:
+
+    ```console
+    pytest
+    ```
+
+5. If documentation changed, build the HTML site and check the generated pages:
+
+    ```console
+    make -C docs html
+    ```
+
+   The entry point is `docs/_build/html/index.html`.
 
 6. Commit your changes and open a pull request.
 
@@ -73,9 +87,11 @@ Before you submit a pull request, check that it meets these guidelines:
 
 1. The pull request should include additional tests if appropriate.
 2. If the pull request adds functionality, the docs should be updated.
-3. The pull request should work for all currently supported operating systems and versions of Python.
+3. The test suite should pass under the supported Python 3.11 environment.
+4. Public-facing prose should use **A-MESH**. Literal Python identifiers, such
+   as `amesh`, `AMESH`, and `AMESHParameters`, must match the implemented API.
 
 ## Code of Conduct
 
-Please note that the `mesh` project is released with a
+Please note that the A-MESH project is released with a
 Code of Conduct. By contributing to this project you agree to abide by its terms.

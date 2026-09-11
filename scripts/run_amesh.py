@@ -1,18 +1,19 @@
-from mesh import Mesh, MeshParameters
-from problems.microgrid_function import microgrid_function
-from problems.benchmark_problems import get_problem
-
 from pathlib import Path
-from tqdm import tqdm
-from pygmo import fast_non_dominated_sorting, select_best_N_mo # type: ignore
 from pickle import dump
 
 import numpy as np
+from problems.benchmark_problems import get_problem
+from problems.microgrid_function import microgrid_function
+from pygmo import fast_non_dominated_sorting, select_best_N_mo  # type: ignore
+from tqdm import tqdm
+
+from amesh import AMESH, AMESHParameters
+
 
 def main():
     Path("./scripts/results/").mkdir(parents=False, exist_ok=True)
 
-    num_runs = 30 # Number of runs
+    num_runs = 5 # Number of runs
     num_proc = None # Number of processes to execute the fitness function in parallel
 
     objective_dim = 3 # Number of objectives
@@ -48,14 +49,14 @@ def main():
     dm_pool_type = 0 # 0 -> Sampling from population (S1) | 1 -> Sampling from memory (S2)
     dm_operation_type = 0 # 0 -> DE\rand\1\Bin (D1) | 1 -> DE\rand\2\Bin (D2) | 2 -> DE/Best/1/Bin (D3) | 3 -> DE/Current-to-best/1/Bin (D4) | 4 -> DE/Current-to-rand/1/Bin (D5)
 
-    config = f"MESH_{experiment_name}_{objective_dim}_{decision_dim}"
-    print(f"Running MESH G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
+    config = f"AMESH_{experiment_name}_{objective_dim}_{decision_dim}"
+    print(f"Running A-MESH G{global_guide_method+1}S{dm_pool_type+1}D{dm_operation_type+1}-{experiment_name}")
     result = {}
     combined_F = np.empty((0, objective_dim))
     combined_P = np.empty((0, decision_dim))
     for i in tqdm(range(num_runs)):
-        params = MeshParameters(objective_dim,
-                                decision_dim, position_min_value, position_max_value,
+        params = AMESHParameters(objective_dim, decision_dim,
+                                position_min_value, position_max_value,
                                 population_size,
                                 global_guide_method=global_guide_method,
                                 dm_pool_type=dm_pool_type,
@@ -65,9 +66,9 @@ def main():
                                 random_state=random_state)
         
         log = None # f"./scripts/results/{config}_run{i+1}"
-        mesh = Mesh(params, func, log_memory=log, num_proc=num_proc)
-        mesh.run()
-        Pos, Fit = mesh.get_results()
+        amesh = AMESH(params, func, log_memory=log, num_proc=num_proc)
+        amesh.run()
+        Pos, Fit = amesh.get_results()
         result[i+1] = {"F":Fit, "P":Pos}
         # Accumulates the results of all executions
         combined_P = np.vstack((combined_P, Pos))

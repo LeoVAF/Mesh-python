@@ -1,8 +1,7 @@
+import numpy as np
+
 from .python_validations import assert_type, is_greater_in_type
 
-from numpy.typing import NDArray
-
-import numpy as np
 
 def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> None:
   ''' Checks if the ``arr`` is a numpy array with the expected subtype.
@@ -25,11 +24,11 @@ def assert_np_array_subtype(arr: np.ndarray, arr_name: str, subtype: type) -> No
   if not np.issubdtype(arr.dtype, subtype):
       raise TypeError(f'The input "{arr_name}" has dtype {arr.dtype}, but expected {subtype}.')
 
-def assert_no_nan_in_np_array(arr: NDArray[np.number], arr_name: str) -> None:
+def assert_no_nan_in_np_array(arr: np.typing.NDArray[np.number], arr_name: str) -> None:
   ''' Checks if the n-dimensional numpy array of numbers ``arr`` does not have NaN values.
   
   Args:
-    arr (:type:`NDArray[np.number]`): The input to be checked.
+    arr (:type:`np.typing.NDArray[np.number]`): The input to be checked.
     arr_name (:type:`str`): The name of the input.
 
   Raises:
@@ -46,11 +45,11 @@ def assert_no_nan_in_np_array(arr: NDArray[np.number], arr_name: str) -> None:
   if np.any(np.isnan(arr)):
     raise ValueError(f'The input "{arr_name}" has NaN values.')
 
-def assert_np_array_for_operations(arr: NDArray[np.number], arr_name: str, shape: tuple) -> None:
+def assert_np_array_for_operations(arr: np.typing.NDArray[np.number], arr_name: str, shape: tuple) -> None:
   ''' Checks if the ``vec`` is a numpy array with the expected subtype for operations.
   
   Args:
-    vec (:type:`NDArray[np.number]`): The input to be checked.
+    vec (:type:`np.typing.NDArray[np.number]`): The input to be checked.
     vec_name (:type:`str`): The name of the input.
     size (:type:`tuple`): The expected shape of the numpy array.
 
@@ -73,13 +72,16 @@ def assert_np_array_for_operations(arr: NDArray[np.number], arr_name: str, shape
     if arr.shape[i] != shape[i]:
       raise ValueError(f'The input "{arr_name}" has {arr.shape[i]} element(s) in the axis {i}, but expected {shape[i]} element(s).')
 
-def assert_np_vectors_for_boundary(lower: NDArray[np.number], lower_name: str, upper: NDArray[np.number], upper_name: str, size: int) -> None:
+def assert_np_vectors_for_boundary(lower: np.typing.NDArray[np.number],
+                                   lower_name: str,
+                                   upper: np.typing.NDArray[np.number],
+                                   upper_name: str, size: int) -> None:
   ''' Checks if the ``lower`` and ``upper`` are boundary numpy vectors.
   
   Args:
-    lower (:type:`NDArray[np.number]`): The lower boundary numpy vector.
+    lower (:type:`np.typing.NDArray[np.number]`): The lower boundary numpy vector.
     lower_name (:type:`str`): The name of the lower boundary numpy vector.
-    upper (:type:`NDArray[np.number]`): The upper boundary numpyvector.
+    upper (:type:`np.typing.NDArray[np.number]`): The upper boundary numpyvector.
     upper_name (:type:`str`): The name of the upper boundary numpyvector.
     size (:type:`int | np.integer`): The expected size of the boundary numpy vectors.
 

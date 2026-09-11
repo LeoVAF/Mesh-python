@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def zdt1(x):
   f1 = x[0]
   g = 1 + 9 * np.sum(x[1:]) / (len(x) - 1)

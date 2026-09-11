@@ -1,11 +1,11 @@
-from mesh import Mesh
-from mesh.operations import differential_mutation as dm
-from mesh.parameters import MeshParameters
-
 from random import sample
 from unittest.mock import patch
 
 import numpy as np
+
+from amesh import AMESH
+from amesh.operations import differential_mutation as dm
+from amesh.parameters import AMESHParameters
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
@@ -26,8 +26,8 @@ def toy_function(x):
 equal_tolerance_for_array = 1e-15
 
 def test_rand_1():
-  # Create a Mesh instance with a toy function
-  test_params = MeshParameters(
+  # Create an AMESH instance with a toy function
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -39,10 +39,10 @@ def test_rand_1():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(test_params, toy_function)
+  amesh = AMESH(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.decision_dim)
+  pool = np.random.rand(population_size, amesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -52,14 +52,14 @@ def test_rand_1():
   # Mock the random functions to return predetermined values
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("amesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
-    mesh.initialize()
+    amesh.initialize()
 
-    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
+    operation_weight = amesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
-    Xst, _ = dm.rand_1(mesh, (pool, pool_idxs))
+    Xst, _ = dm.rand_1(amesh, (pool, pool_idxs))
 
     # Check the output
     for i, r_idxs in enumerate(random_idxs):
@@ -72,12 +72,12 @@ def test_rand_1():
 
     # Testing the case that the pool has less than minimum number of elements
     pool_idxs = [np.arange(np.random.randint(valid_size)) for _ in range(population_size)]
-    Xst, idxs = dm.rand_1(mesh, (pool, pool_idxs))
+    Xst, idxs = dm.rand_1(amesh, (pool, pool_idxs))
     assert np.array_equal(Xst, np.array([])) and np.array_equal(idxs, np.array([]))
 
 def test_rand_2():
-  # Create a Mesh instance with a toy function
-  test_params = MeshParameters(
+  # Create an AMESH instance with a toy function
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -89,10 +89,10 @@ def test_rand_2():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(test_params, toy_function)
+  amesh = AMESH(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.decision_dim)
+  pool = np.random.rand(population_size, amesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -102,14 +102,14 @@ def test_rand_2():
   # Mock the random functions to return predetermined values
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("amesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
-    mesh.initialize()
+    amesh.initialize()
 
-    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
+    operation_weight = amesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
-    Xst, _ = dm.rand_2(mesh, (pool, pool_idxs))
+    Xst, _ = dm.rand_2(amesh, (pool, pool_idxs))
 
     # Check the output
     for i, r_idxs in enumerate(random_idxs):
@@ -124,12 +124,12 @@ def test_rand_2():
 
     # Testing the case that the pool has less than minimum number of elements
     pool_idxs = [np.arange(np.random.randint(valid_size)) for _ in range(population_size)]
-    Xst, idxs = dm.rand_2(mesh, (pool, pool_idxs))
+    Xst, idxs = dm.rand_2(amesh, (pool, pool_idxs))
     assert np.array_equal(Xst, np.array([])) and np.array_equal(idxs, np.array([]))
 
 def test_best_1():
-  # Create a Mesh instance with a toy function
-  test_params = MeshParameters(
+  # Create an AMESH instance with a toy function
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -141,10 +141,10 @@ def test_best_1():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(test_params, toy_function)
+  amesh = AMESH(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.decision_dim)
+  pool = np.random.rand(population_size, amesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -155,32 +155,32 @@ def test_best_1():
   operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("amesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
-    mesh.initialize()
+    amesh.initialize()
 
-    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
+    operation_weight = amesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
-    Xst, idxs = dm.best_1(mesh, (pool, pool_idxs))
+    Xst, idxs = dm.best_1(amesh, (pool, pool_idxs))
 
     # Check the output
     for i, r_idxs in enumerate(random_idxs):
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
-      xgb = mesh.population.global_guide[idxs[i]]
+      xgb = amesh.population.global_guide[idxs[i]]
       xst = np.clip(xgb + operation_weight[i] * (x0 - x1), test_params.decision_lower_bounds, test_params.decision_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
     # Testing the case that the pool has less than minimum number of elements
     pool_idxs = [np.arange(np.random.randint(valid_size)) for _ in range(population_size)]
-    Xst, idxs = dm.best_1(mesh, (pool, pool_idxs))
+    Xst, idxs = dm.best_1(amesh, (pool, pool_idxs))
     assert np.array_equal(Xst, np.array([])) and np.array_equal(idxs, np.array([]))
 
 def test_current_to_best_1():
-  # Create a Mesh instance with a toy function
-  test_params = MeshParameters(
+  # Create an AMESH instance with a toy function
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -192,10 +192,10 @@ def test_current_to_best_1():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(test_params, toy_function)
+  amesh = AMESH(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.decision_dim)
+  pool = np.random.rand(population_size, amesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -206,33 +206,33 @@ def test_current_to_best_1():
   operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("amesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
-    mesh.initialize()
+    amesh.initialize()
 
-    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
+    operation_weight = amesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
-    Xst, idxs = dm.current_to_best_1(mesh, (pool, pool_idxs))
+    Xst, idxs = dm.current_to_best_1(amesh, (pool, pool_idxs))
 
     # Check the output
     for i, r_idxs in enumerate(random_idxs):
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
-      x = mesh.population.position[idxs[i]]
-      xgb = mesh.population.global_guide[idxs[i]]
+      x = amesh.population.position[idxs[i]]
+      xgb = amesh.population.global_guide[idxs[i]]
       xst = np.clip(x + operation_weight[i] * (xgb - x + x0 - x1), test_params.decision_lower_bounds, test_params.decision_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
     # Testing the case that the pool has less than minimum number of elements
     pool_idxs = [np.arange(np.random.randint(valid_size)) for _ in range(population_size)]
-    Xst, idxs = dm.current_to_best_1(mesh, (pool, pool_idxs))
+    Xst, idxs = dm.current_to_best_1(amesh, (pool, pool_idxs))
     assert np.array_equal(Xst, np.array([])) and np.array_equal(idxs, np.array([]))
 
 def test_current_to_rand_1():
-  # Create a Mesh instance with a toy function
-  test_params = MeshParameters(
+  # Create an AMESH instance with a toy function
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -244,10 +244,10 @@ def test_current_to_rand_1():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh = Mesh(test_params, toy_function)
+  amesh = AMESH(test_params, toy_function)
   
   # Create a list of arrays to sample from
-  pool = np.random.rand(population_size, mesh.params.decision_dim)
+  pool = np.random.rand(population_size, amesh.params.decision_dim)
   pool_idxs = [np.arange(np.random.randint(len(pool) + 1)) for _ in range(population_size)]
 
   # Get the valid indices where the arrays have at least the minimum number of elements
@@ -258,26 +258,26 @@ def test_current_to_rand_1():
   operation_weight = np.random.beta(2.0, 2.0, size=(len(valid_idxs), 1))
   random_idxs = [sample(pool_idxs[i].tolist(), k=valid_size) for i in valid_idxs]
   # The name sample is copied directly into the module's local namespace. The patch in "random.sample" does not override this.
-  with patch("mesh.operations.differential_mutation.sample", side_effect=random_idxs):
+  with patch("amesh.operations.differential_mutation.sample", side_effect=random_idxs):
     # Initialize the algorithm
-    mesh.initialize()
+    amesh.initialize()
 
-    operation_weight = mesh.params.DE_F[valid_idxs, np.newaxis]
+    operation_weight = amesh.params.DE_F[valid_idxs, np.newaxis]
 
     # Call the operation function
-    Xst, idxs = dm.current_to_rand_1(mesh, (pool, pool_idxs))
+    Xst, idxs = dm.current_to_rand_1(amesh, (pool, pool_idxs))
 
     # Check the output
     for i, r_idxs in enumerate(random_idxs):
       x0 = pool[r_idxs[0]]
       x1 = pool[r_idxs[1]]
       x2 = pool[r_idxs[2]]
-      x = mesh.population.position[idxs[i]]
+      x = amesh.population.position[idxs[i]]
       xst = np.clip(x + operation_weight[i] * (x0 - x + x1 - x2), test_params.decision_lower_bounds, test_params.decision_upper_bounds)
       # Treating numeric errors
       assert np.linalg.norm(Xst[i] - xst) < equal_tolerance_for_array
 
     # Testing the case that the pool has less than minimum number of elements
     pool_idxs = [np.arange(np.random.randint(valid_size)) for _ in range(population_size)]
-    Xst, idxs = dm.current_to_rand_1(mesh, (pool, pool_idxs))
+    Xst, idxs = dm.current_to_rand_1(amesh, (pool, pool_idxs))
     assert np.array_equal(Xst, np.array([])) and np.array_equal(idxs, np.array([]))

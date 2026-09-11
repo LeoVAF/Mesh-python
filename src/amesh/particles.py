@@ -1,24 +1,25 @@
-from .parameters import MeshParameters
-from .validations.python_validations import assert_type
-
 from math import comb
+
+import numpy as np
 from numpy.typing import NDArray
 from scipy.stats import qmc
 
-import numpy as np
+from .parameters import AMESHParameters
+from .validations.python_validations import assert_type
+
 
 class Population:
-    """ Represents the MESH population.
+    """Represents the A-MESH population.
 
     Args:
-        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.decision_dim`, :attr:`~mesh.parameters.MeshParameters.lower_bound_array`, :attr:`~mesh.parameters.MeshParameters.upper_bound_array`, :attr:`~mesh.parameters.MeshParameters.velocity_min_value`, :attr:`~mesh.parameters.MeshParameters.velocity_max_value`, :attr:`~mesh.parameters.MeshParameters.population_size`, :attr:`~mesh.parameters.MeshParameters.global_guide_method` and :attr:`~mesh.parameters.MeshParameters.max_personal_guides` are used to initialize the population.
+        params (:class:`~amesh.parameters.AMESHParameters`): Parameters defining the objective and decision dimensions, decision and velocity bounds, population size, guide strategy, maximum number of personal guides, and optional initial positions.
     
     Raises:
-        TypeError: If the input is not an instance of :class:`~mesh.parameters.MeshParameters`.
+        TypeError: If the input is not an instance of :class:`~amesh.parameters.AMESHParameters`.
     """
 
-    def __init__(self, params: MeshParameters):
-        assert_type(params, 'params', MeshParameters)
+    def __init__(self, params: AMESHParameters):
+        assert_type(params, 'params', AMESHParameters)
 
         self.position: NDArray[np.number]
         ''' Numpy matrix with the particle's positions initialized randomly under Uniform Distribution. '''
@@ -31,9 +32,9 @@ class Population:
         self.global_guide: NDArray[np.number]
         ''' Numpy matrix with the global guide position for each particle. '''
         self.personal_guide_pos: NDArray[np.number]
-        ''' 3-dimensional numpy array with a matrix of personal guide positions for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` positions. Initialized with the respective particle's position repeated for all matrix entries. '''
+        ''' 3-dimensional numpy array with a matrix of personal guide positions for each particle. Each matrix has :attr:`~amesh.parameters.AMESHParameters.max_personal_guides` positions. Initialized with the respective particle's position repeated for all matrix entries. '''
         self.personal_guide_fit: NDArray[np.number]
-        ''' 3-dimensional numpy array with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~mesh.parameters.MeshParameters.max_personal_guides` fitnesses. '''
+        ''' 3-dimensional numpy array with a matrix of personal guide fitnesses for each particle. Each matrix has :attr:`~amesh.parameters.AMESHParameters.max_personal_guides` fitnesses. '''
 
         if params.initial_points is None:
             sampler = qmc.LatinHypercube(d=params.decision_dim, scramble=True)
@@ -52,19 +53,17 @@ class Population:
         self.personal_guide_fit = np.full((params.population_size, params.max_personal_guides, params.objective_dim), np.inf)
 
 class Memory:
-    """ Represents the MESH memory.
+    """Represents the A-MESH external memory.
 
     Args:
-        population (:class:`Population`): The attributes :attr:`~Population.position` and :attr:`~Population.fitness` are used to set the memory position and fitness.
-        pareto_front (:type:`NDArray[np.integer]`): A numpy array of the particle indices for the population position and fitness matrices.
-        params (:class:`~mesh.parameters.MeshParameters`): The attribute :attr:`~mesh.parameters.MeshParameters.objective_dim` is used to set the memory fitness matrix number of columns. The attribute :attr:`~mesh.parameters.MeshParameters.decision_dim` is used to set the memory position matrix number of columns.
+        params (:class:`~amesh.parameters.AMESHParameters`): Parameters that define the objective and decision dimensions of the empty memory arrays.
 
     Raises:
         TypeError: If the input is not of the expected type.
     """
     
-    def __init__(self, params: MeshParameters) -> None:
-        assert_type(params, 'params', MeshParameters)
+    def __init__(self, params: AMESHParameters) -> None:
+        assert_type(params, 'params', AMESHParameters)
 
         # Set the class attributes
         self.position: NDArray[np.number] = np.empty((0, params.decision_dim))

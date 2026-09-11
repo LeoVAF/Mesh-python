@@ -1,6 +1,11 @@
-from mesh.core import Mesh, MeshParameters
-
+import statistics
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
+
+import numpy as np
+import optuna
+import pygmo as pg
 from pymoo.algorithms.moo.mopso_cd import MOPSO_CD
 from pymoo.algorithms.moo.spea2 import SPEA2
 from pymoo.core.problem import Problem
@@ -8,12 +13,8 @@ from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PM
 from pymoo.operators.sampling.lhs import LHS
 from pymoo.optimize import minimize
-from typing import Any, Callable
 
-import numpy as np
-import optuna
-import pygmo as pg
-import statistics
+from amesh.core import AMESH, AMESHParameters
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)  # Suppress Optuna logs
 
@@ -29,8 +30,7 @@ def dump_results(file_name: str, file_folder: str, results: dict) -> None:
     file_path = f"{file_folder}/{file_name}.txt"
     # Open the file in text mode and write the results
     with open(file_path, 'w', encoding='utf-8') as file:
-        for key, value in results.items():
-            file.write(f"{key}: {value} ({type(value).__name__})\n")
+        file.writelines(f"{key}: {value} ({type(value).__name__})\n" for key, value in results.items())
 
 
 def fine_tune_maco(experiment: dict[str, Any],
@@ -98,7 +98,7 @@ def fine_tune_maco(experiment: dict[str, Any],
 	return f'{experiment_name} was successfully executed!'
 
 
-def fine_tune_mesh(experiment: dict[str, Any],
+def fine_tune_amesh(experiment: dict[str, Any],
 				   problem: dict[str, Any],
                    tuning_configuration: dict[str, Any],
                    fixed_parameters: dict[str, Any],
@@ -125,10 +125,10 @@ def fine_tune_mesh(experiment: dict[str, Any],
 		dm_pool_type = trial.suggest_categorical('differential_mutation_pool_type', [0, 1])
 		dm_operation_type = trial.suggest_categorical('differential_mutation_type', [0, 1, 2, 3, 4])
 		personal_guide_array_size = trial.suggest_int('personal_guide_array_size', 1, 3)
-		# Execute MESH
+		# Execute A-MESH
 		loss_values = []
 		for step in range(n_steps):
-			params = MeshParameters(objective_dim = objective_dim,
+			params = AMESHParameters(objective_dim = objective_dim,
 									decision_dim = decision_dim,
 									decision_lower_bounds = lower_bound_array,
 									decision_upper_bounds = upper_bound_array, 
@@ -140,10 +140,10 @@ def fine_tune_mesh(experiment: dict[str, Any],
 									max_fit_eval = max_fitness_eval,
 									max_personal_guides = personal_guide_array_size,
 									random_state = random_state)
-			mesh = Mesh(params = params, fitness_function = fitness)
-			mesh.run()
+			amesh = AMESH(params = params, fitness_function = fitness)
+			amesh.run()
 			# Get the result and calculate the loss value
-			_, Fit = mesh.get_results()
+			_, Fit = amesh.get_results()
 			loss = performance_indicator(Fit)
 			trial.report(loss, step)
 			# If the prune criterion is satisfied, so prune this trial

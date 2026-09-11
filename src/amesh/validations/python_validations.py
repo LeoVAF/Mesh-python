@@ -1,4 +1,6 @@
-from typing import Any, Iterable, Iterator, Callable
+from collections.abc import Callable, Iterable, Iterator
+from typing import Any
+
 
 def assert_type(var: Any,
                 var_name: str,
@@ -33,18 +35,18 @@ def assert_type(var: Any,
   if not isinstance(var, expected_types):
     raise TypeError(f'The input "{var_name}" has type {type(var)}, but expected {expected_types}.')
 
-def is_greater_in_type(number: int | float | None,
+def is_greater_in_type(number: float | None,
                        number_name: str,
                        number_type: type[int] | type[float] | tuple[type, ...],
-                       value: int | float,
+                       value: float,
                        is_optional: bool = False) -> None:
   ''' Checks if the ``number`` is of a respective type and if it is greater than ``value``.
   
   Args:
-    number (:type:`int | float | None`): The input to be checked.
+    number (:type:`float | None`): The input to be checked.
     number_name (:type:`str`): The name of the input.
     number_type (:type:`type[int] | type[float] | tuple[type, ...]`): The type to be checked.
-    value (:type:`int | float`): The value to be compared with.
+    value (:type:`float`): The value to be compared with.
     is_optional (:type:`bool`): If the ``number`` is optional.
 
   Raises:
@@ -64,18 +66,18 @@ def is_greater_in_type(number: int | float | None,
   if number and number <= value:
     raise ValueError(f'The input "{number_name}" has value {number}, but it must be greater than {value}.')
 
-def is_between_inclusive(number: int | float | None,
+def is_between_inclusive(number: float | None,
                          number_name: str,
-                         lower_bound: int | float,
-                         upper_bound: int | float,
+                         lower_bound: float,
+                         upper_bound: float,
                          is_optional: bool = False) -> None:
   ''' Checks if the ``number`` is between ``lower_bound`` and ``upper_bound``, inclusive.
   
   Args:
-    number (:type:`int | float | None`): The input to be checked.
+    number (:type:`float | None`): The input to be checked.
     number_name (:type:`str`): The name of the input.
-    lower_bound (:type:`int | float`): The lower bound.
-    upper_bound (:type:`int | float`): The upper_bound bound.
+    lower_bound (:type:`float`): The lower bound.
+    upper_bound (:type:`float`): The upper_bound bound.
     is_optional (:type:`bool`): If the ``number`` is optional.
 
   Raises:
@@ -121,7 +123,7 @@ def is_in_options(option: Any,
   # Check if the option is in the options
   try:
     valid_iter = option not in options
-  except Exception:
+  except TypeError:
     raise ValueError('The parameter "options" must be a valid iterable/iterator for "option".')
   if valid_iter:
     raise ValueError(f'The input "{option_name}" must be one of the following options: {options}.')

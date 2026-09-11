@@ -1,9 +1,10 @@
-from mesh.validations import numpy_validations as npv
-
 from typing import cast
 
 import numpy as np
 import pytest
+
+from amesh.validations import numpy_validations as npv
+
 
 def test_assert_np_array_subtype_success():
   assert npv.assert_np_array_subtype(np.array([1, 2, 3]), 'array_value', np.int64) is None
