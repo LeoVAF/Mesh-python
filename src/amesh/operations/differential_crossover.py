@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from mesh import Mesh
+    from amesh import AMESH
 
-def binomial_crossover(self: Mesh,
+def binomial_crossover(self: AMESH,
                        X1: np.typing.NDArray[np.number],
                        X2: np.typing.NDArray[np.number],
                        crossover_probability: np.typing.NDArray[np.number]) -> np.typing.NDArray[np.number]:
@@ -26,7 +26,7 @@ def binomial_crossover(self: Mesh,
     The crossover probability is calculated as a decision variable.
   
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
     X1 (:type:`np.typing.NDArray[np.number]`): The numpy matrix to apply the crossover.
     X2 (:type:`np.typing.NDArray[np.number]`): The second numpy matrix that will share information in the crossover.
     crossover_probability (:type:`np.typing.NDArray[np.number]`): The crossover probability for each point.
@@ -50,7 +50,7 @@ def binomial_crossover(self: Mesh,
   return X1
 
 # The options of Differential Crossover operation
-differential_crossover_options: dict[str, Callable[[Mesh,
+differential_crossover_options: dict[str, Callable[[AMESH,
                                                     np.typing.NDArray[np.number],
                                                     np.typing.NDArray[np.number],
                                                     np.typing.NDArray[np.number]],
@@ -62,18 +62,18 @@ differential_crossover_options: dict[str, Callable[[Mesh,
   - :type:`binomial`: Applies the Binomial Crossover from Differential Evolution.
 '''
 
-def get_differential_crossover(option: str) -> Callable[[Mesh,
+def get_differential_crossover(option: str) -> Callable[[AMESH,
                                                          np.typing.NDArray[np.number],
                                                          np.typing.NDArray[np.number],
                                                          np.typing.NDArray[np.number]],
                                                          np.typing.NDArray[np.number]]:
-  ''' Sets the Differential Crossover from Differential Evolution according to :attr:`~mesh.operations.differential_crossover.differential_crossover_options`. 
+  ''' Sets the Differential Crossover from Differential Evolution according to :attr:`~amesh.operations.differential_crossover.differential_crossover_options`. 
   
   Args:
     option (:type:`str`): Differential Crossover option.
 
   Returns:
-    :type:`Callable[[`~mesh.core.Mesh`, NDArray[np.number], NDArray[np.number], NDArray[np.number]], NDArray[np.number]]`: The Differential Crossover function.
+    :type:`Callable[[`~amesh.core.AMESH`, NDArray[np.number], NDArray[np.number], NDArray[np.number]], NDArray[np.number]]`: The Differential Crossover function.
   '''
 
   return differential_crossover_options[option]

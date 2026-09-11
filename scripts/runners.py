@@ -15,7 +15,7 @@ from pymoo.operators.mutation.pm import PM
 from pymoo.operators.sampling.lhs import LHS
 from pymoo.optimize import minimize
 
-from mesh import Mesh, MeshParameters
+from amesh import AMESH, AMESHParameters
 
 
 def get_tuned_parameters(file_name: str, file_folder: str) -> dict:
@@ -133,7 +133,7 @@ def run_maco(experiment: dict[str, Any],
 	return f'{experiment_name} with tunable parameters ({ker}, {q}, {threshold}, {n_gen_mark}, {focus}) was successfully executed!'
 
 
-def run_mesh(experiment: dict[str, Any],
+def run_amesh(experiment: dict[str, Any],
 			 problem: dict[str, Any],
 			 parameters: dict[str, Any]) -> str:
 	# Get the experiment configuration
@@ -158,12 +158,12 @@ def run_mesh(experiment: dict[str, Any],
 	dm_operation_type = tuned_parameters['differential_mutation_type'] if ('differential_mutation_type' in tuned_parameters) else parameters['differential_mutation_type']
 	personal_guide_array_size = tuned_parameters['personal_guide_array_size'] if ('personal_guide_array_size' in tuned_parameters) else parameters['personal_guide_array_size']
 
-	# Execute MESH
+	# Execute A-MESH
 	results = {}
 	combined_F = np.empty((0, objective_dim))
 	combined_P = np.empty((0, decision_dim))
 	for i in range(num_runs):
-		params = MeshParameters(objective_dim = objective_dim,
+		params = AMESHParameters(objective_dim = objective_dim,
 								decision_dim = decision_dim,
 								decision_lower_bounds = lower_bound_array,
 								decision_upper_bounds = upper_bound_array, 
@@ -175,11 +175,11 @@ def run_mesh(experiment: dict[str, Any],
 								max_fit_eval = max_fitness_eval,
 								max_personal_guides = personal_guide_array_size,
 								random_state = random_state)
-		mesh = Mesh(params = params, fitness_function = fitness)
-		mesh.run()
+		amesh = AMESH(params = params, fitness_function = fitness)
+		amesh.run()
 
 		# Accumulate the results at each step
-		Pos, Fit = mesh.get_results()
+		Pos, Fit = amesh.get_results()
 		results[i+1] = {"P":Pos, "F":Fit,}
 		combined_P = np.vstack((combined_P, Pos))
 		combined_F = np.vstack((combined_F, Fit))

@@ -8,9 +8,9 @@ from numpy.typing import NDArray
 from sklearn.neighbors import KDTree
 
 if TYPE_CHECKING:
-    from mesh import Mesh
+    from amesh import AMESH
 
-def sigma_evaluation(self: Mesh, fitness_matrix: NDArray[np.number]) -> NDArray[np.number]:
+def sigma_evaluation(self: AMESH, fitness_matrix: NDArray[np.number]) -> NDArray[np.number]:
   r''' Calculates the sigma value for each particle in the population. The sigma value is the fitness difference of all the dimensions. The sigma value is a :math:`C^{n_{obj}}_2`-dimensional vector calculated as follows:
 
   .. math::
@@ -22,7 +22,7 @@ def sigma_evaluation(self: Mesh, fitness_matrix: NDArray[np.number]) -> NDArray[
     :math:`C^{n_{obj}}_2` is the combination of :math:`n_{obj}` elements taken 2 by 2.
 
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
     fitness_matrix (:type:`NDArray[np.number]`): The fitness matrix of the population.
 
   Returns:
@@ -41,14 +41,14 @@ def sigma_evaluation(self: Mesh, fitness_matrix: NDArray[np.number]) -> NDArray[
   # Calculate the sigma values for each particle
   return differences / sum_squared_fitnesses
 
-def nearest_sigma_in_memory(self: Mesh, particle_idxs: NDArray[np.intp]) -> NDArray[np.intp]:
+def nearest_sigma_in_memory(self: AMESH, particle_idxs: NDArray[np.intp]) -> NDArray[np.intp]:
   ''' Finds the index of the nearest particle on the memory by the sigma value for each index particle from population. The nearest particle will be different from itself (some particles in population can be in memory).
 
   Note:
     Because the nearest particle in Sigma space will be different from itself, the memory must have two or more particles when calling this function.
   
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
     particle_idxs (:type:`NDArray[np.intp]`): The indices of the population particles to find the nearest particle.
 
   Returns:
@@ -63,11 +63,11 @@ def nearest_sigma_in_memory(self: Mesh, particle_idxs: NDArray[np.intp]) -> NDAr
   # Return the nearest indices
   return indices[np.arange(len(particle_idxs)), first_valid_idxs]
 
-def nearest_sigma_in_fronts(self: Mesh, particle_idxs: NDArray[np.intp], search_idxs: NDArray[np.intp]) -> NDArray[np.intp]:
+def nearest_sigma_in_fronts(self: AMESH, particle_idxs: NDArray[np.intp], search_idxs: NDArray[np.intp]) -> NDArray[np.intp]:
   ''' Finds the index of the nearest particle on the search front by the sigma value for each index particle from population. Each row has the index of the nearest particle for the respective particle in the input.
 
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
     particle_idxs (:type:`NDArray[np.intp]`): The indices of the population particles to find the nearest particle.
     search_idxs (:type:`NDArray[np.intp]`): The indices of the particles to search for the nearest neighbors.
 
@@ -85,11 +85,11 @@ def nearest_sigma_in_fronts(self: Mesh, particle_idxs: NDArray[np.intp], search_
     _, indices = KDTree(population_sigma[search_idxs]).query(population_sigma[particle_idxs], k=1)
     return search_idxs[indices[np.arange(num_particles), 0]]
 
-def sigma_method_in_memory(self: Mesh) -> None:
+def sigma_method_in_memory(self: AMESH) -> None:
   ''' Global guide attribution by sigma method in memory. The global guide for each particle in the population will be the nearest particle different from itself in memory, by sigma value.
   
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
   '''
 
   if len(self.memory.position) == 1:
@@ -102,14 +102,14 @@ def sigma_method_in_memory(self: Mesh) -> None:
     nearest_idxs = nearest_sigma_in_memory(self, np.arange(self.params.population_size))
     self.population.global_guide[:, :] = self.memory.position[nearest_idxs]
 
-def sigma_method_in_fronts(self: Mesh) -> None:
+def sigma_method_in_fronts(self: AMESH) -> None:
   ''' Global guide search by sigma method in fronts. The global guide for each particle in the population will be the nearest particle different from itself in the previous front, by the sigma value. Particles in the Pareto front will choose the global guide from memory.
   
   Note:
     The previous front is the front with domination rank immediately lower than the domination rank of the current front. The domination ranks are ordered from the lowest to the highest, starting at the Pareto front with zero.
 
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
   '''
 
   # Get the fronts and its length
@@ -147,14 +147,14 @@ global_guide_method_options = {
   - :type:`3`: Chooses randomly under Uniform Distribution a particle from fronts. Each particle will select its global guide from the next front. Particles in Pareto front will select the global guide from memory.
 '''
 
-def get_global_guide_method(option: int) -> Callable[[Mesh], None]:
-  ''' Sets the global guide method according to :attr:`~mesh.operations.global_guide_method.global_guide_method_options`.
+def get_global_guide_method(option: int) -> Callable[[AMESH], None]:
+  ''' Sets the global guide method according to :attr:`~amesh.operations.global_guide_method.global_guide_method_options`.
   
   Args:
     option (:type:`int`): Defines the global guide method.
 
   Returns:
-    :type:`Callable[[Mesh], None]`: The respective function to select the global guide.
+    :type:`Callable[[AMESH], None]`: The respective function to select the global guide.
   '''
 
   return global_guide_method_options[option]

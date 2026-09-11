@@ -1,6 +1,6 @@
 import numpy as np
 
-from .parameters import MeshParameters
+from .parameters import AMESHParameters
 from .validations.python_validations import assert_type
 
 
@@ -23,27 +23,27 @@ class PreAllocated:
     ''' Used for data allocation. It stores some data structures to avoid new allocations.
     
     Args:
-        params (:class:`~mesh.parameters.MeshParameters`): The attributes :attr:`~mesh.parameters.MeshParameters.objective_dim`, :attr:`~mesh.parameters.MeshParameters.position_dim`, :attr:`~mesh.parameters.MeshParameters.population_size` and :attr:`~mesh.parameters.MeshParameters.global_guide_method` are used to initialize the pre-allocations.
+        params (:class:`~amesh.parameters.AMESHParameters`): The attributes :attr:`~amesh.parameters.AMESHParameters.objective_dim`, :attr:`~amesh.parameters.AMESHParameters.position_dim`, :attr:`~amesh.parameters.AMESHParameters.population_size` and :attr:`~amesh.parameters.AMESHParameters.global_guide_method` are used to initialize the pre-allocations.
 
     Raises:
-        TypeError: If the ``params`` is not an instance of :class:`~mesh.parameters.MeshParameters`.
+        TypeError: If the ``params`` is not an instance of :class:`~amesh.parameters.AMESHParameters`.
     '''
 
-    def __init__(self, params: MeshParameters):
-        assert_type(params, 'params', MeshParameters)
+    def __init__(self, params: AMESHParameters):
+        assert_type(params, 'params', AMESHParameters)
 
         self.np_tril_indices: tuple[np.typing.NDArray[np.intp], np.typing.NDArray[np.intp]]
         ''' The row and column indices for the lower-triangle of a matrix, respectively. The row indices are sorted in non-decreasing order, and the correspdonding column indices are strictly increasing for each row. Used only if the Sigma method is used. '''
         self.global_guide_mutated: np.typing.NDArray[np.number]
         ''' Numpy matrix for store the global guides after the mutation operation. '''
         self.fitness_elitism: np.typing.NDArray[np.number]
-        ''' Numpy matrix used in :meth:`~mesh.core.Mesh.elitism` to store the fitness of the population before and after the particle moviment. '''
+        '''NumPy matrix used in :meth:`~amesh.core.AMESH.elitism` to store population fitness before and after particle movement.'''
         self.position_copy: np.typing.NDArray[np.number]
-        ''' Numpy matrix to store the position of the particles before the particle moviment. '''
+        '''NumPy matrix that stores particle positions before particle movement.'''
         self.velocity_copy: np.typing.NDArray[np.number]
-        ''' Numpy matrix to store the velocity of the particles before the particle moviment. '''
+        '''NumPy matrix that stores particle velocities before particle movement.'''
         self.fitness_copy: np.typing.NDArray[np.number]
-        ''' Numpy matrix to store the fitness of the particles before the particle moviment. '''
+        '''NumPy matrix that stores particle fitness before particle movement.'''
 
         # Used to calculate the sigma
         if params.global_guide_method in {0, 1}:

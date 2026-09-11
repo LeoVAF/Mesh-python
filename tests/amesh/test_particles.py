@@ -1,7 +1,7 @@
 import numpy as np
 
-from mesh import MeshParameters
-from mesh.particles import Memory, Population
+from amesh import AMESHParameters
+from amesh.particles import Memory, Population
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
@@ -19,7 +19,7 @@ random_state = None
 def test_Population():
   # Create a Population instance with initial positions
   initial_points = np.random.rand(population_size, decision_dim)
-  test_params = MeshParameters(
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -31,31 +31,31 @@ def test_Population():
     initial_points=initial_points,
     random_state=random_state
   )
-  mesh_population = Population(test_params)
+  amesh_population = Population(test_params)
   
   # Check if the class has the correct attributes
-  assert hasattr(mesh_population, 'position')
-  assert hasattr(mesh_population, 'velocity')
-  assert hasattr(mesh_population, 'fitness')
-  assert hasattr(mesh_population, 'sigma')
-  assert hasattr(mesh_population, 'global_guide')
-  assert hasattr(mesh_population, 'personal_guide_pos')
-  assert hasattr(mesh_population, 'personal_guide_fit')
+  assert hasattr(amesh_population, 'position')
+  assert hasattr(amesh_population, 'velocity')
+  assert hasattr(amesh_population, 'fitness')
+  assert hasattr(amesh_population, 'sigma')
+  assert hasattr(amesh_population, 'global_guide')
+  assert hasattr(amesh_population, 'personal_guide_pos')
+  assert hasattr(amesh_population, 'personal_guide_fit')
 
   # Check if the initial positions was initialized correctly
-  assert np.all(initial_points == mesh_population.position[:, :decision_dim])
+  assert np.all(initial_points == amesh_population.position[:, :decision_dim])
 
   # Check if the positions and velocities were initialized correctly
-  for p in mesh_population.position:
+  for p in amesh_population.position:
     assert np.all(p <= test_params.decision_upper_bounds)
     assert np.all(p >= test_params.decision_lower_bounds)
-  for v in mesh_population.velocity:
+  for v in amesh_population.velocity:
     assert np.all(v <= test_params.velocity_upper_bounds)
     assert np.all(v >= test_params.velocity_lower_bounds)
 
 def test_Memory():
   # Create a Memory instance
-  test_params = MeshParameters(
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -66,9 +66,9 @@ def test_Memory():
     max_personal_guides=max_personal_guides,
     random_state=random_state
   )
-  mesh_memory = Memory(test_params)
+  amesh_memory = Memory(test_params)
 
   # Check if the class has the correct attributes
-  assert hasattr(mesh_memory, 'position')
-  assert hasattr(mesh_memory, 'fitness')
-  assert hasattr(mesh_memory, 'sigma')
+  assert hasattr(amesh_memory, 'position')
+  assert hasattr(amesh_memory, 'fitness')
+  assert hasattr(amesh_memory, 'sigma')

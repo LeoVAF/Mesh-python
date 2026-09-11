@@ -14,25 +14,25 @@ from .validations.python_validations import (
 )
 
 
-class MeshParameters:
-    ''' MESH parameters.
+class AMESHParameters:
+    '''A-MESH parameters.
     
     Args:
         objective_dim (:type:`int`): Number of problem objectives. Must be a positive integer (> 0).
 
         decision_dim (:type:`int`): Number of problem variables. Must be a positive integer (> 0).
 
-        decision_lower_bounds (:type:`numpy.np.typing.NDArray[np.floating]`): A array with each lower bounds of the decision variables. Must be a numpy array of numbers (without NaN values) and size equals to ``decision_dim``. Each element must be less than the respective element from ``decision_upper_bounds``.
+        decision_lower_bounds (:type:`numpy.typing.NDArray[numpy.floating]`): Array containing the lower bound of each decision variable. It must contain numeric values without NaNs, have length ``decision_dim``, and be component-wise smaller than ``decision_upper_bounds``.
 
-        decision_upper_bounds (:type:`numpy.np.typing.NDArray[np.floating]`): A array with each upper bounds of the decision variables. Must be a numpy array of numbers (without NaN values) and size equals to ``decision_dim``. Each element must be greater than the respective element from ``decision_lower_bounds``.
+        decision_upper_bounds (:type:`numpy.typing.NDArray[numpy.floating]`): Array containing the upper bound of each decision variable. It must contain numeric values without NaNs, have length ``decision_dim``, and be component-wise greater than ``decision_lower_bounds``.
             
         population_size (:type:`int`): Population size. Must be a positive integer (> 0).
         
-        global_guide_method (:type:`int`): Method to select the global guide of the particles. See :attr:`~mesh.operations.global_guide_method.global_guide_method_options`.
+        global_guide_method (:type:`int`): Method to select the global guide of the particles. See :attr:`~amesh.operations.global_guide_method.global_guide_method_options`.
         
-        dm_pool_type (:type:`int`): Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
+        dm_pool_type (:type:`int`): Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~amesh.operations.differential_mutation_pool.differential_mutation_pool_options`.
     
-        dm_operation_type (:type:`int`): Differential mutation operation type. See :attr:`~mesh.operations.differential_mutation.differential_mutation_options`.
+        dm_operation_type (:type:`int`): Differential mutation operation type. See :attr:`~amesh.operations.differential_mutation.differential_mutation_options`.
         
         max_gen (:type:`int | None`): Maximum number of generations. Must be a positive integer (> 0) or ``None``.
         
@@ -40,9 +40,9 @@ class MeshParameters:
         
         max_personal_guides (:type:`int`): Maximum number of personal guides. Must be a positive integer (> 0).
 
-        initial_poinitial_pointsitions (:type:`np.typing.NDArray[np.number] | None`): The initial particle points. If it is None, the initial points are sampled.
+        initial_points (:type:`numpy.typing.NDArray[numpy.number] | None`): Optional initial particle positions with shape ``(population_size, decision_dim)``. Every position must lie within the decision bounds. If ``None``, the positions are sampled automatically.
 
-        random_state (:type:`int | None`): Numpy random seed to generate random numbers. Default is None. Must be an integer (> 0) or ``None``.
+        random_state (:type:`int | None`): Optional NumPy random seed. The default is ``None``.
 
     Raises:
         TypeError: If the input is not the expected type.
@@ -73,13 +73,13 @@ class MeshParameters:
         self.decision_upper_bounds: np.typing.NDArray[np.floating]
         ''' Numpy array with the upper bounds of the problem for each decision variable. '''
         self.velocity_upper_bounds: np.typing.NDArray[np.floating]
-        ''' Numpy array with the upper bounds of the velocity calculated by:
+        '''NumPy array containing the upper velocity bounds, calculated as:
 
         .. math::
             V_{max} = X_{max} - X_{min}.
-        s'''
+        '''
         self.velocity_lower_bounds: np.typing.NDArray[np.floating]
-        ''' Numpy array with the upper bounds of the velocity calculated by:
+        '''NumPy array containing the lower velocity bounds, calculated as:
 
         .. math::
             V_{min} = X_{min} - X_{max}.
@@ -87,11 +87,11 @@ class MeshParameters:
         self.population_size: int
         ''' Number of particles. '''
         self.global_guide_method: int
-        ''' Global best selection method. See :attr:`~mesh.operations.global_guide_method.global_guide_method_options` '''
+        ''' Global best selection method. See :attr:`~amesh.operations.global_guide_method.global_guide_method_options` '''
         self.dm_pool_type: int
-        ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~mesh.operations.differential_mutation_pool.differential_mutation_pool_options` '''
+        ''' Differential mutation pool where the particles will be sampled for the differential mutation operation. See :attr:`~amesh.operations.differential_mutation_pool.differential_mutation_pool_options` '''
         self.dm_operation_type: int
-        ''' Differential mutation operation. See :attr:`~mesh.operations.differential_mutation.differential_mutation_options`. '''
+        ''' Differential mutation operation. See :attr:`~amesh.operations.differential_mutation.differential_mutation_options`. '''
         self.max_gen: int
         ''' Maximum number of generations. It won't be used if it's ``None``. '''
         self.max_fit_eval: int

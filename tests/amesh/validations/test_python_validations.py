@@ -3,7 +3,7 @@ from typing import cast
 
 import pytest
 
-from mesh.validations import python_validations as pv
+from amesh.validations import python_validations as pv
 
 
 def test_assert_type_success():

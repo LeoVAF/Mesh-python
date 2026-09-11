@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from mesh import Mesh
+    from amesh import AMESH
 
-def rand_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
+def rand_1(self: AMESH, pool_tuple: tuple[np.typing.NDArray[np.number],
                                          list[np.typing.NDArray[np.intp]]]) -> tuple[np.typing.NDArray[np.number], np.typing.NDArray[np.intp]]:
   r''' Applies the DE/rand/1 strategy. The strategy is defined as follows:
   
@@ -25,7 +25,7 @@ def rand_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
     In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
     pool_tuple (:type:`tuple[np.typing.NDArray[np.number], list[np.typing.NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
     
   Returns:
@@ -52,7 +52,7 @@ def rand_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
   else:
     return np.array([]), np.array([])
 
-def rand_2(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
+def rand_2(self: AMESH, pool_tuple: tuple[np.typing.NDArray[np.number],
                                          list[np.typing.NDArray[np.intp]]]) -> tuple[np.typing.NDArray[np.number], np.typing.NDArray[np.intp]]:
   r''' Applies the DE/rand/2 strategy. The strategy is defined as follows:
 
@@ -68,7 +68,7 @@ def rand_2(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
     In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
     pool_tuple (:type:`tuple[np.typing.NDArray[np.number], list[np.typing.NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
@@ -95,7 +95,7 @@ def rand_2(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
   else:
     return np.array([]), np.array([])
 
-def best_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
+def best_1(self: AMESH, pool_tuple: tuple[np.typing.NDArray[np.number],
                                          list[np.typing.NDArray[np.intp]]]) -> tuple[np.typing.NDArray[np.number], np.typing.NDArray[np.intp]]:
   r''' Applies the DE/best/1. The strategy is defined as follows:
   
@@ -112,7 +112,7 @@ def best_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
     In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
     pool_tuple (:type:`tuple[np.typing.NDArray[np.number], list[np.typing.NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
@@ -141,7 +141,7 @@ def best_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
   else:
     return np.array([]), np.array([])
 
-def current_to_best_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
+def current_to_best_1(self: AMESH, pool_tuple: tuple[np.typing.NDArray[np.number],
                                               list[np.typing.NDArray[np.intp]]]) -> tuple[np.typing.NDArray[np.number], np.typing.NDArray[np.intp]]:
   r''' Applies the DE/current-to-best/1. The strategy is defined as follows:
   
@@ -159,7 +159,7 @@ def current_to_best_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number]
     In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
     pool_tuple (:type:`tuple[np.typing.NDArray[np.number], list[np.typing.NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
@@ -189,7 +189,7 @@ def current_to_best_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number]
   else:
     return np.array([]), np.array([])
 
-def current_to_rand_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number],
+def current_to_rand_1(self: AMESH, pool_tuple: tuple[np.typing.NDArray[np.number],
                                               list[np.typing.NDArray[np.intp]]]) -> tuple[np.typing.NDArray[np.number], np.typing.NDArray[np.intp]]:
   r''' Applies the DE/current-to-rand/1. The strategy is defined as follows:
 
@@ -207,7 +207,7 @@ def current_to_rand_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number]
     In this implementation, the scaling factor :math:`\alpha` is calculated as a decision variable.
 
   Args:
-    self (:class:`~mesh.core.Mesh`): An instance of :class:`~mesh.core.Mesh`.
+    self (:class:`~amesh.core.AMESH`): An instance of :class:`~amesh.core.AMESH`.
     pool_tuple (:type:`tuple[np.typing.NDArray[np.number], list[np.typing.NDArray[np.intp]]]`): A particle position pool (first item) and a list of indices for the allowed positions for each particle (second item).
 
   Returns:
@@ -236,7 +236,7 @@ def current_to_rand_1(self: Mesh, pool_tuple: tuple[np.typing.NDArray[np.number]
     return np.array([]), np.array([])
 
 # The options of Differential Mutation operation
-differential_mutation_options: dict[int, Callable[[Mesh, tuple[np.typing.NDArray[np.number], list[np.typing.NDArray[np.intp]]]], tuple[np.typing.NDArray[np.number], np.typing.NDArray[np.intp]]]] = {
+differential_mutation_options: dict[int, Callable[[AMESH, tuple[np.typing.NDArray[np.number], list[np.typing.NDArray[np.intp]]]], tuple[np.typing.NDArray[np.number], np.typing.NDArray[np.intp]]]] = {
   0: rand_1,
   1: rand_2,
   2: best_1,
@@ -252,18 +252,18 @@ differential_mutation_options: dict[int, Callable[[Mesh, tuple[np.typing.NDArray
   - :type:`4`: Applies the DE/current-to-rand/1 strategy.
 '''
 
-def get_differential_mutation(option: int) -> Callable[[Mesh,
+def get_differential_mutation(option: int) -> Callable[[AMESH,
                                                         tuple[np.typing.NDArray[np.number],
                                                               list[np.typing.NDArray[np.intp]]]],
                                                               tuple[np.typing.NDArray[np.number],
                                                                     np.typing.NDArray[np.intp]]]:
-  ''' Sets the Differential Mutation strategy from Differential Evolution according to :attr:`~mesh.operations.differential_mutation.differential_mutation_options`.
+  ''' Sets the Differential Mutation strategy from Differential Evolution according to :attr:`~amesh.operations.differential_mutation.differential_mutation_options`.
   
   Args:
     option (:type:`int`): Differential Mutation strategy.
 
   Returns:
-    :type:`Callable[[Mesh, tuple[np.typing.NDArray[np.number], list[np.typing.NDArray[np.intp]]]], tuple[np.typing.NDArray[np.number], np.typing.NDArray[np.intp]]]`: The Differential Mutation strategy function.
+    :type:`Callable[[AMESH, tuple[np.typing.NDArray[np.number], list[np.typing.NDArray[np.intp]]]], tuple[np.typing.NDArray[np.number], np.typing.NDArray[np.intp]]]`: The Differential Mutation strategy function.
   '''
 
   return differential_mutation_options[option]

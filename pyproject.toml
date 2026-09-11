@@ -1,7 +1,7 @@
 [project]
-name = "mesh"
+name = "amesh"
 version = "0.1.0"
-description = "Implementation of MESH"
+description = "Implementation of A-MESH"
 authors = [{name = "Leonardo Veiga Acioly Filho"}]
 requires-python = ">=3.11,<3.12"
 

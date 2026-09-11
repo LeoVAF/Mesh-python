@@ -4,4 +4,4 @@
 
 ## v0.1.0 (21/02/2025)
 
-- First release of `mesh`!
+- First release of the A-MESH Python package (`amesh`).

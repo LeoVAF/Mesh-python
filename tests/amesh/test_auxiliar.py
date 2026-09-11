@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from mesh import MeshParameters
-from mesh import auxiliar as aux
+from amesh import AMESHParameters
+from amesh import auxiliar as aux
 
 # ---------- Fixed parameters for test setup ----------
 objective_dim = 5
@@ -19,7 +19,7 @@ random_state = None
 
 def test_PreAllocated_success():
   # Create a PreAllocated instance
-  test_params = MeshParameters(
+  test_params = AMESHParameters(
     objective_dim=objective_dim,
     decision_dim=decision_dim,
     decision_lower_bounds=lower_bound,
@@ -41,7 +41,7 @@ def test_PreAllocated_success():
   assert hasattr(pre_allocated_instance, 'fitness_copy')
 
 def test_PreAllocated_failure():
-  # Create a PreAllocated instance with a non MeshParameters instance
+  # Create a PreAllocated instance with a non AMESHParameters instance
   test_params = object()
-  with pytest.raises(TypeError, match=r'The input "params" has type <class \'object\'>, but expected <class \'mesh.parameters.MeshParameters\'>.'):
+  with pytest.raises(TypeError, match=r'The input "params" has type <class \'object\'>, but expected <class \'amesh.parameters.AMESHParameters\'>.'):
     aux.PreAllocated(test_params) # type: ignore

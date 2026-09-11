@@ -6,8 +6,8 @@
 
 # -- Project information -----------------------------------------------------
 
-project = u"mesh"
-copyright = u"2025, Leonardo Veiga Acioly Filho"
+project = u"A-MESH"
+copyright = u"2025–2026, Leonardo Veiga Acioly Filho"
 author = u"Leonardo Veiga Acioly Filho"
 
 # -- General configuration ---------------------------------------------------
@@ -38,3 +38,4 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = "sphinx_book_theme"
+html_title = "A-MESH documentation"
